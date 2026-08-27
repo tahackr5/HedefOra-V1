@@ -58,6 +58,7 @@
 
 - `MASTER-TRIGGER.md`
 - `delivery/CODEX-RUNTIME-GENERATION-SPEC.md`
+- `state/W000-OWNERSHIP.md` (yalnız W000 boyunca aktif yazma sahipliği)
 - `agents/**`
 - `.agents/skills/**/SKILL.md`
 - `plugins/**`
