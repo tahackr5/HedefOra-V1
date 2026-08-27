@@ -41,7 +41,7 @@ None.
 - Repository-local commit identity: `tahackr5 <cak.ihsantaha@gmail.com>`.
 - Existing small VPS is classified as staging/pre-production only. It must not receive real-user or production data; production promotion remains a separate owner gate after quality, security, backup and restore evidence.
 - Legal/KVKK content may be AI-assisted during development but remains `DRAFT_NOT_FOR_PRODUCTION`. The owner is the review owner until a later legal review is commissioned; no draft may silently become active public policy.
-- Owner must still provide non-secret staging server inventory before bootstrap: provider, IP/hostname, SSH port, Linux distribution/version, vCPU/RAM/disk, current workloads, backup/snapshot capability and desired staging hostname. Passwords, private keys, tokens, MFA/recovery codes and real `.env` values must not be sent.
+- Deferred to staging/W007: owner must provide non-secret server inventory before server bootstrap: provider, IP/hostname, SSH port, Linux distribution/version, vCPU/RAM/disk, current workloads, backup/snapshot capability and desired staging hostname. This is not a W000 blocker. Passwords, private keys, tokens, MFA/recovery codes and real `.env` values must not be sent.
 
 ## Resume instruction
 

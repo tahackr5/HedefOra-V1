@@ -17,11 +17,11 @@ WAVE 000 HEDEFİ
 2. Çelişki varsa state/DECISION-QUEUE.md içine exact dosya/başlık/etki ile yaz. Owner gate gerektirmeyen geri alınabilir seçimlerde karar verip DECISIONS.md'e ADR bağlantılı kayıt ekle.
 3. Resmi OpenAI Codex belgelerini OpenAI Developers üzerinden doğrula. Güncel formatla minimal project-scoped .codex/config.toml ve .codex/agents/*.toml üret. Agent charters agents/*.md dosyalarından türetilsin. Model gpt-5.6-sol olsun; Ultra'nın runtime eşlemesini ezberden uydurma, parent live override'ı koru ve gerçek ayarı raporla.
 4. .agents/skills altındaki instruction-only skills'i doğrula. Plugin Eval ile evaluate edilebilecek test senaryolarını hazırla; başarı iddiası yalnız gerçekten çalıştırıldıysa yazılsın.
-5. Monorepo iskeletini oluştur: Go modular monolith backend, PostgreSQL 17 + River, React/TypeScript frontend, OpenAPI contract, migrations, tests, CI, docs ve deploy katmanı. Exact dependency sürümlerini Context7/resmi docs ile doğrula ve lock et.
+5. Monorepo iskeletini oluştur: Go modular monolith backend, PostgreSQL 17 + River, React/TypeScript frontend, OpenAPI contract, migrations, tests, CI, docs ve deploy katmanı. W000'da yalnız derlenebilir, özellik içermeyen scaffolding, toolchain ve doğrulama kodu üret; W001'e ait process mode, migration, River, API, health veya telemetry davranışını uygulama. Exact dependency sürümlerini Context7/resmi docs ile doğrula ve lock et.
 6. Root ve gerektiği kadar nested AGENTS.md/AGENTS.override.md oluştur; root talimatı 32 KiB altında ve progressive-disclosure odaklı olsun.
 7. Quality gates'i baştan kur: formatting, lint/static analysis, unit, integration, contract drift, migration up/down, dependency/license/secret scan, frontend typecheck, accessibility smoke, merged-tree validation.
 8. GitHub private repo/branch/worktree modelini kur. Tüm worktree'ler immutable WAVE_START_COMMIT'ten açılsın. Shared-file proposal ve orchestrator-only merge kuralını uygula.
-9. Uygulama koduna yalnız Wave 000 exit gate geçtikten sonra başla. Wave 001'e otomatik geçebilirsin; production deploy yapma.
+9. Domain, ürün ve runtime davranışı taşıyan uygulama koduna yalnız Wave 000 exit gate geçtikten sonra başla. Wave 001'e otomatik geçebilirsin; production deploy yapma.
 
 PLUGIN STRATEJİSİ
 - Güncel docs: Context7 ve OpenAI Developers.

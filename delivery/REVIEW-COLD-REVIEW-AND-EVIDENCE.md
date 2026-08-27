@@ -33,7 +33,7 @@ Wave exit öncesi fresh-context read-only ajan:
 - builder chat/handoff yorumlarına güvenmez,
 - yalnız canonical docs, target diff, tests ve evidence okur,
 - kod değiştirmez,
-- PASS/FAIL verir,
+- `PASS`, `FAIL` veya kanıt yetersizse `BLOCKED_EVIDENCE` verir,
 - finding severity, file/symbol, reproduction ve missing evidence döndürür.
 
 Cold reviewer aynı değişikliği yazan ajan olamaz.

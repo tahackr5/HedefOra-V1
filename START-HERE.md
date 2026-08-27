@@ -53,7 +53,7 @@ Global “full access / never ask” kullanmayın. Bir ajan, sadece işi bitirme
 
 ## 4. Eklentileri hazırla
 
-`plugins/PLUGIN-INSTALL-CHECKLIST.md` dosyasındaki Tier 0 ve Tier 1 eklentileri doğrulayın. Her eklenti her turda açık tutulmaz; `plugins/PLUGIN-TRIGGER-MATRIX.md` hangi aşamada hangisinin çağrılacağını söyler.
+Tier 0 ve Tier 1 tanımlarını `plugins/PLUGIN-STRATEGY.md` içinden okuyun; bağlantı ve permission doğrulamasını `plugins/PLUGIN-INSTALL-CHECKLIST.md` ile yapın. Her eklenti her turda açık tutulmaz; `plugins/PLUGIN-TRIGGER-MATRIX.md` hangi aşamada hangisinin çağrılacağını söyler.
 
 ## 5. Codex projesini aç
 

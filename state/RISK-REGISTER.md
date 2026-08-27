@@ -13,3 +13,4 @@
 | R-009 | Backup exists but restore fails | Medium | Critical | Scheduled restore rehearsal | Infra | OPEN |
 | R-010 | Public landing SPA harms indexing/onboarding | Medium | Medium | Static/server render public pages | Frontend/Product | OPEN |
 | R-011 | Küçük staging VPS'in production gibi kullanılmasına bağlı kapasite/veri riski | Medium | High | VPS'i yalnız staging olarak etiketle; gerçek kullanıcı/veri alma; ölçüm ve gate sonrası ayrı production hostuna taşı | Owner/Infra | MITIGATING |
+| R-012 | Native Windows elevated Codex sandbox provisioning başarısız | High | High | Owner elevated setup'ı tekrar onaylar/onarır; bu sırada reviewer run'ları explicit `unelevated` + read-only + never ile başlar ve write-denial probe kanıtı ister | Owner/Orchestrator | MITIGATING |

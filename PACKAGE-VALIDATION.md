@@ -10,4 +10,4 @@
 
 ## Important boundary
 
-This report validates the static Markdown package shape. It does not claim that application code, Codex TOML configuration, infrastructure or production deployment has been created or tested. Those begin in Wave 000.
+This report validates the static Markdown package shape at baseline commit `2efca6c8b65e3342ad5309076b7cd0dedf816943`. It is not a living-tree validator and its hashes are not regenerated after legitimate Wave 000 changes. Git history and later release manifests carry subsequent provenance. It does not claim that application code, Codex TOML configuration, infrastructure or production deployment has been created or tested. Those begin in Wave 000.

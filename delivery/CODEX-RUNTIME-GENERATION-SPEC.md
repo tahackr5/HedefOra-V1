@@ -60,7 +60,7 @@ Talimat metni gerçek enforcement yerine geçmez. Kritik single-writer/path/secr
 - Codex config parse edilir.
 - Her custom agent listelenir ve doğru sandbox ile spawn edilebilir.
 - Read-only agent write denemesinde reddedilir.
-- Writer forbidden path'e dokunamaz veya orchestrator gate'ine düşer.
+- Her writer diff'i recorded `owned_paths`/`forbidden_paths` ile orchestrator tarafından karşılaştırılır; kapsam dışı değişiklik merge gate'ini FAIL yapar. Custom-agent sandbox'ı path ownership enforcement'ıymış gibi raporlanmaz.
 - Skill selector skill'leri görür.
 - Root AGENTS loaded-source raporunda görünür.
 - Subagent summaries main context'e ham log yığmaz.

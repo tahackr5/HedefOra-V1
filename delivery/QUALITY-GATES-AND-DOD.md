@@ -28,6 +28,18 @@
 - Sonar quality gate,
 - security change scan gereken wave'lerde.
 
+## Wave applicability ve durum sözlüğü
+
+Her wave başında orchestrator, gate'i owning artifact ve acceptance criterion ile eşler. Kanıt durumu yalnız şunlardan biri olabilir:
+
+- `PASS`: uygulanabilir gate çalıştı ve başarılı oldu,
+- `FAIL`: uygulanabilir gate çalıştı ve başarısız oldu,
+- `NOT_RUN`: uygulanabilir gate henüz çalışmadı,
+- `NOT_APPLICABLE`: owning artifact/behavior aktif wave'de henüz yok; wave planı ve path kanıtı yazıldı,
+- `BLOCKED_EXTERNAL`: gerekli dış servis/entegrasyon doğrulanamadı.
+
+`NOT_APPLICABLE` PASS değildir. Mevcut bir artifact, acceptance criterion veya değişen davranış için kullanılamaz; gelecekteki suite'i sahte bir stub ile yeşil göstermez. W000'da migration, River catalog, planner property/golden ve ürün E2E gate'leri kendi owning wave'lerine kadar kanıtlı `NOT_APPLICABLE` kalabilir. Mevcut config, scaffolding, validator, dependency ve CI artifact'larının bütün gate'leri ise uygulanır.
+
 ## Release gate
 
 - staging deploy/smoke,
