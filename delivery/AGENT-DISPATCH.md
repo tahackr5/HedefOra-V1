@@ -14,6 +14,7 @@
 | infra-release-observability | deploy/telemetry/backups | owned infra | workspace-write + approvals |
 | security-privacy-review | threat/auth/privacy review | none | read-only |
 | cold-reviewer | independent release review | none | read-only fresh context |
+| legal-policy-drafter | legal/privacy/consent policy drafts | assigned legal draft paths | workspace-write; drafts never auto-publish |
 
 ## Delegation ilkesi
 
@@ -40,7 +41,7 @@ Güvensiz paralellik:
 
 ## Wave bazlı aktivasyon
 
-- W000: orchestrator, architecture, quality, security, infra, docs research.
+- W000: orchestrator, architecture, quality, security, infra, docs research ve legal-agent runtime tanımı.
 - W001: architecture, backend, quality, security.
 - W002: product/content, architecture, planning, quality.
 - W003: backend auth, frontend, quality, security.
@@ -49,3 +50,5 @@ Güvensiz paralellik:
 - W006: admin/ops, frontend, security, quality.
 - W007: infra, observability, security, quality.
 - W008: all reviewers; writer only fixes bounded findings.
+
+Legal/policy ajanı ihtiyaç olduğunda wave'den bağımsız çağrılabilir; her çıktısı `DRAFT_NOT_FOR_PRODUCTION` kalır ve aktivasyon owner gate'idir.

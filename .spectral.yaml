@@ -1,0 +1,10 @@
+extends:
+  - spectral:oas
+
+# W000 has no public/runtime API endpoint, legal entity or license decision yet.
+# These three metadata rules become applicable when W001 introduces operations.
+rules:
+  info-contact: off
+  info-license: off
+  oas3-api-servers: off
+

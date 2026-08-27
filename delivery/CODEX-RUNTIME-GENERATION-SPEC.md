@@ -15,14 +15,15 @@ Bu paket Markdown-only kalır. Codex'in gerçek custom-agent katmanı TOML gerek
 - `.codex/agents/infra-release-observability.toml`
 - `.codex/agents/security-privacy-review.toml`
 - `.codex/agents/cold-reviewer.toml`
+- `.codex/agents/legal-policy-drafter.toml`
 
-Her custom agent en az `name`, `description`, `developer_instructions` taşır. Read-only roller `sandbox_mode = "read-only"` olur. Writer roller parent approvals'ı miras alır; production full-access tanımlanmaz.
+Her custom agent en az `name`, `description`, `developer_instructions` taşır. Read-only roller `sandbox_mode = "read-only"` ve `approval_policy = "never"` olur. Writer roller parent approvals'ı miras alır; production full-access tanımlanmaz. Legal/policy ajanının her çıktısı `DRAFT_NOT_FOR_PRODUCTION` olarak kalır ve owner kararı olmadan aktive edilmez.
 
 ## Model
 
 - Ana kullanıcı seçimi: GPT-5.6 Sol + Ultra.
 - Custom agent `model` alanı gerekiyorsa `gpt-5.6-sol` doğrulanır.
-- Ultra'nın hangi config alanına karşılık geldiği tahmin edilmez; parent live runtime override korunur.
+- W000 resmi Codex belgeleri ve yerel model catalog'u üzerinden `model_reasoning_effort = "ultra"` alanını doğrular; parent live runtime override yine korunur.
 - Spawn edilen ajan gerçek model/effort'u handoff'a yazar.
 
 ## Concurrency
@@ -59,8 +60,11 @@ Talimat metni gerçek enforcement yerine geçmez. Kritik single-writer/path/secr
 
 - Codex config parse edilir.
 - Her custom agent listelenir ve doğru sandbox ile spawn edilebilir.
-- Read-only agent write denemesinde reddedilir.
+- Security ve cold-review parent run'ları da `read-only` + `never` başlatılır; write-capable remote tools verilmez.
+- Her iki read-only agent write denemesinde reddedilir ve probe dosyası oluşmaz.
 - Her writer diff'i recorded `owned_paths`/`forbidden_paths` ile orchestrator tarafından karşılaştırılır; kapsam dışı değişiklik merge gate'ini FAIL yapar. Custom-agent sandbox'ı path ownership enforcement'ıymış gibi raporlanmaz.
 - Skill selector skill'leri görür.
 - Root AGENTS loaded-source raporunda görünür.
 - Subagent summaries main context'e ham log yığmaz.
+
+Native Windows elevated sandbox helper düzelene kadar reviewer negatif testleri explicit `windows.sandbox="unelevated"` CLI override'ı ile yapılabilir. Bu geçici fallback project config'e kalıcı yazılmaz; elevated helper arızası risk kaydında açık kalır.

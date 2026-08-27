@@ -1,18 +1,31 @@
 # HedefOra — Codex Markdown Blueprint
 
-**Paket sürümü:** 0.1.0  
-**Tarih:** 2026-08-27  
-**Durum:** CLEAN START / DOCUMENTATION-ONLY / IMPLEMENTATION NOT STARTED
+**Blueprint sürümü:** 0.1.0
+**Başlangıç tarihi:** 2026-08-27
+**Durum:** W000 / NO-FEATURE SCAFFOLD IN PROGRESS
 
-Bu depo, HedefOra uygulamasının sıfırdan ve kontrollü biçimde üretilmesi için kanonik Markdown sözleşmelerini içerir. Paket bilinçli olarak yalnızca Markdown dosyalarından oluşur:
+Bu depo, HedefOra uygulamasının sıfırdan ve kontrollü biçimde üretilmesi için kanonik sözleşmeleri ve Wave 000 repository iskeletini içerir. `2efca6c8b65e3342ad5309076b7cd0dedf816943` commit'indeki teslim paketi bilinçli olarak yalnızca Markdown'dır; `PACKAGE-MANIFEST.md` o değişmez başlangıç paketini doğrular.
 
-- uygulama kodu yoktur,
-- çalıştırılabilir script yoktur,
-- TOML/JSON/YAML yapılandırması yoktur,
+- W000'da ürün özelliği veya runtime API davranışı yoktur,
+- yalnız build/test edilebilir no-feature UI, repository validator ve toolchain config vardır,
 - secret, token, özel anahtar veya gerçek sunucu adresi yoktur,
 - geçmiş projeden derlenmiş kod ya da güvenilmeyen kalıntı yoktur.
 
-Amaç, Codex'in önce bağlamı ve kuralları doğru anlaması; ardından Wave 000 içinde güncel Codex belgelerine göre gereken çalışma dosyalarını ve uygulama iskeletini üretmesidir.
+Amaç, Codex'in bağlamı ve kuralları doğru uyguladığını executable gate'lerle kanıtlamak; ürün runtime davranışına W001'den önce başlamamaktır.
+
+## W000 yerel doğrulama
+
+Exact runtime kilidi `delivery/TOOLCHAIN-LOCK.md` içindedir: Node.js `24.20.0`, pnpm `11.24.0` ve Go `1.26.7`.
+
+```text
+pnpm install --frozen-lockfile
+pnpm ci:check
+go mod verify
+go vet ./...
+go test ./...
+```
+
+PostgreSQL local scaffold ve CI ayrıntıları ilgili worktree commit'leri birleştirildikten sonra `infra/` ve `.github/` altında bulunur. Küçük VPS W000'da kullanılmaz; staging bootstrap ayrı owner kontrollü wave'dir.
 
 ## Ürün özeti
 

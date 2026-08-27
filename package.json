@@ -1,0 +1,41 @@
+{
+  "name": "hedefora",
+  "version": "0.0.0",
+  "private": true,
+  "description": "HedefOra W000 no-feature repository scaffold",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": "24.20.0",
+    "pnpm": "11.24.0"
+  },
+  "packageManager": "pnpm@11.24.0",
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.20.0",
+      "onFail": "error"
+    },
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.24.0",
+      "onFail": "error"
+    }
+  },
+  "scripts": {
+    "build": "pnpm --filter @hedefora/web build",
+    "ci:check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm generated:check && pnpm todo:check",
+    "contracts:lint": "spectral lint --fail-severity=warn contracts/openapi/openapi.yaml",
+    "format:check": "prettier --check .codex contracts scripts package.json pnpm-workspace.yaml .spectral.yaml && pnpm --filter @hedefora/web format:check",
+    "generated:check": "node scripts/check-generated.mjs",
+    "governance:check": "node scripts/validate-governance.mjs",
+    "lint": "pnpm contracts:lint && pnpm governance:check && pnpm --filter @hedefora/web lint",
+    "test": "node --test scripts/*.test.mjs && pnpm --filter @hedefora/web test",
+    "todo:check": "node scripts/check-todos.mjs",
+    "typecheck": "pnpm --filter @hedefora/web typecheck"
+  },
+  "devDependencies": {
+    "@stoplight/spectral-cli": "6.16.3",
+    "prettier": "3.9.6"
+  }
+}
+
