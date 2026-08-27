@@ -2,7 +2,7 @@
 
 > Orchestrator records unresolved canonical decisions here. Owner resolution is copied to `DECISIONS.md` or ADR and this item is closed.
 
-## Open
+## Closed
 
 ### DQ-001 — W000 buildable skeleton / application-code boundary
 
@@ -14,7 +14,8 @@
 - Work that can continue safely: Git/state, Codex runtime, toolchain lock, CI configuration and non-feature validators.
 - Blocking wave/gate: W000 clean build/test.
 - Owner decision: NOT_REQUIRED unless scope expands; orchestrator may choose the smallest reversible interpretation and record it in ADR/`DECISIONS.md`.
-- Closed commit: OPEN
+- Resolution: No-feature executable scaffolding/tooling is permitted in W000; W001 runtime and product behavior remains gated. Recorded as DEC-021 / ADR-0011.
+- Closed commit: `525134128a8d5c83dedc87be046440416375bb95`
 
 ### DQ-002 — Wave-aware merged-tree gate semantics
 
@@ -26,7 +27,8 @@
 - Work that can continue safely: Implement and run every gate applicable to W000 artifacts; retain absent feature gates as non-PASS.
 - Blocking wave/gate: W000 merged-tree/cold-review verdict.
 - Owner decision: NOT_REQUIRED unless a current acceptance criterion would be waived; orchestrator may clarify process without lowering an existing applicable gate.
-- Closed commit: OPEN
+- Resolution: Explicit `NOT_APPLICABLE` requires wave/path evidence, is never PASS and cannot cover an existing artifact or acceptance. Recorded as DEC-022 / ADR-0011.
+- Closed commit: `525134128a8d5c83dedc87be046440416375bb95`
 
 ### DQ-003 — Static package manifest lifecycle
 
@@ -38,7 +40,12 @@
 - Work that can continue safely: Preserve original hashes and Git history; do not recalculate them silently.
 - Blocking wave/gate: Blueprint consistency and repository validator design.
 - Owner decision: NOT_REQUIRED; lifecycle clarification is reversible and does not change product scope.
-- Closed commit: OPEN
+- Resolution: The v0.1.0 manifest is immutable and tied to the initial blueprint commit; later provenance uses Git/release manifests. Recorded as DEC-023 / ADR-0012.
+- Closed commit: `525134128a8d5c83dedc87be046440416375bb95`
+
+## Open
+
+None.
 
 ## Item template
 
