@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "2efca6c8b65e3342ad5309076b7cd0dedf816943",
-  "verifiedThrough": "8f45bfe09ef0533830529e325226ef7a6447ffd0",
+  "verifiedThrough": "1cccede4b835b6818f84fda84021eed8b4822f60",
   "trailingAllowedPaths": [
     "state/W000-OWNERSHIP.json"
   ],
@@ -135,6 +135,17 @@
       "head": "8f45bfe09ef0533830529e325226ef7a6447ffd0",
       "allowedPaths": [
         "state/W000-OWNERSHIP.md"
+      ]
+    },
+    "W000-T06-local-evidence": {
+      "base": "8f45bfe09ef0533830529e325226ef7a6447ffd0",
+      "head": "1cccede4b835b6818f84fda84021eed8b4822f60",
+      "allowedPaths": [
+        "FILE-INDEX.md",
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/W000-EVIDENCE.md",
+        "state/W000-OWNERSHIP.json"
       ]
     }
   }
