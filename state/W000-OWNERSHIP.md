@@ -62,12 +62,13 @@ W000 GitHub PR'ı yalnız two-parent merge commit yöntemiyle birleştirilir; sq
 
 ### W000-T06R — Cold-review remediation ve reviewer isolation
 
+- Status: `IN_PROGRESS`; final `ultra` security/cold review ve GitHub-hosted gate'ler açıktır.
 - Writer: orchestrator; security ve cold-review ajanları read-only kaldı.
 - Branch/worktree: `codex/w000-bootstrap` / repository root; temiz gate clone'u OneDrive dışındadır.
-- Makine allowlist'leri: `W000-T06-cold-review-fixes`, `W000-T06-reviewer-isolation` ve `W000-T06-reviewer-isolation-format` görevleri `state/W000-OWNERSHIP.json` içinde exact commit aralıklarıyla kayıtlıdır.
+- Makine allowlist'leri: cold-review fix, reviewer isolation, format, evidence refresh, evidence seal ve portable reviewer denial görevleri `state/W000-OWNERSHIP.json` içinde exact commit aralıklarıyla kayıtlıdır. Pre-correction manifest 18 continuous task'i `db12cf8` üzerinden ve manifest-only `2492e6f` endpoint'ini doğruladı; bu correction bir sonraki manifest seal'inde ayrıca kaydedilir.
 - Scope: ilk cold review bulgularını düzeltmek; reviewer permission profile'ını semantic-lock etmek; native Windows izolasyonunu canlı listener ile reddetmek; WSL/Linux parent-child read/write/credential/network/tool-inventory sentinel'ını geçirmek.
 - Contract: tanısal sentinel final review değildir. Final security ve cold-review ajanları exact branch hedefinde ayrı fresh-context `gpt-5.6-sol + ultra`, read-only ve `never` koşumları vermelidir.
-- Evidence: `state/W000-EVIDENCE.md`; local full-tree target `31d65b8d1287f8caadd276f65f3567eb4af12ca5` `PASS`. GitHub ve final bağımsız review kapıları açıktır.
+- Evidence: `state/W000-EVIDENCE.md`; exact isolation ve local full-tree target `2492e6f014ea4eb0ee7b7d89f4fcb686f36cbe14` `PASS`. Isolation security parent/child: `01a046a7-f755-7443-aea1-314479d4359d` / `01a046a8-5b82-7060-89d1-6bf02b511520`; cold parent/child: `01a046a8-e719-70c3-9ebb-d84c93101064` / `01a046a9-4c8f-7120-8da5-d3a0042ca2f9`. Bunlar effort `none` diagnostic session'larıdır; final `ultra` review ve GitHub kapıları açıktır.
 
 ## Generated, vendor ve secret politikası
 

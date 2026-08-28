@@ -45,7 +45,17 @@
 
 ## Open
 
-None.
+### DQ-004 — Repository backup gate zamanlaması
+
+- Opened by / date: orchestrator + independent evidence reviewer / 2026-08-28
+- Conflicting files/sections: `DECISIONS.md` DEC-016; `operations/REPOSITORY-BACKUP-POLICY.md` giriş paragrafı; `START-HERE.md` §2; `delivery/WAVE-PLAN.md` W001/W007
+- Decision needed: İkinci şifreli off-site repository kopyası ve recovery testinin W001 başlangıcını mı, yalnız public launch/production promotion'ı mı bloke edeceğini belirle.
+- Options: DEC-016'yı izleyip launch ön koşulu olarak tutmak; veya önceki repository kaybı nedeniyle W001 başlangıç ön koşuluna yükseltip DEC-016/WAVE-PLAN/operasyon belgesini birlikte güncellemek.
+- Security/privacy/cost/migration impact: Erken gate veri kaybı riskini azaltır fakat W001 geliştirmesini external backup hazırlığına bağlar; launch-only gate geliştirmeyi hızlandırır fakat ikinci kopya oluşana kadar tek-repository riskini açık bırakır.
+- Work that can continue safely: W000 final review, GitHub PR/check ve merge gate'leri; production/VPS mutation yoktur.
+- Blocking wave/gate: W001'e otomatik geçiş. W000 exit'i bloke etmez.
+- Owner decision: REQUIRED before W001 starts.
+- Closed commit: —
 
 ## Item template
 
