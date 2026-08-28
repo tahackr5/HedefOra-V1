@@ -31,6 +31,27 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Verify checked-out commit identity
+        shell: bash
+        env:
+          EXPECTED_CHECKOUT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          actual_checkout_sha="$(git rev-parse HEAD)"
+          if [[ "${actual_checkout_sha}" != "${EXPECTED_CHECKOUT_SHA}" ]]; then
+            echo "::error::Checked-out SHA ${actual_checkout_sha} does not match expected ${EXPECTED_CHECKOUT_SHA}."
+            exit 1
+          fi
+          {
+            echo "### W000 source identity"
+            echo "- Checked-out SHA: ${actual_checkout_sha}"
+            if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+              echo "- Pull request event merge SHA: ${GITHUB_SHA}"
+            else
+              echo "- Push event SHA: ${GITHUB_SHA}"
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+
       - name: Scan committed source for secrets
         shell: bash
         run: |
@@ -47,6 +68,31 @@ jobs:
           check-latest: false
           go-version-file: go.mod
 
+      - name: Check tracked Go formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          tracked_go_files="$(mktemp "${RUNNER_TEMP}/hedefora-go-files.XXXXXX")"
+          trap 'rm -f "${tracked_go_files}"' EXIT
+          git ls-files -z -- '*.go' > "${tracked_go_files}"
+          mapfile -d '' go_files < "${tracked_go_files}"
+          if ((${#go_files[@]} == 0)); then
+            echo "::error::No tracked Go files found."
+            exit 1
+          fi
+          for index in "${!go_files[@]}"; do
+            go_files[index]="./${go_files[index]}"
+          done
+          if ! unformatted="$(gofmt -l "${go_files[@]}")"; then
+            echo "::error::gofmt failed."
+            exit 1
+          fi
+          if [[ -n "${unformatted}" ]]; then
+            echo "::error::Tracked Go files are not gofmt-formatted."
+            printf '%s\n' "${unformatted}"
+            exit 1
+          fi
+
       - name: Validate immutable ownership ranges
         run: go run ./tools/repolint/cmd/repolint -manifest state/W000-OWNERSHIP.json -all -base 2efca6c8b65e3342ad5309076b7cd0dedf816943 -head HEAD
 
@@ -62,7 +108,6 @@ jobs:
           set -euo pipefail
           {
             echo "### W000 CI environment"
-            echo "- Commit: ${GITHUB_SHA}"
             echo "- Runner: ${RUNNER_OS}/${RUNNER_ARCH}"
             echo "- Image OS: ${ImageOS:-unknown}"
             echo "- Image version: ${ImageVersion:-unknown}"

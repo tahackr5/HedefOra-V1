@@ -34,9 +34,11 @@ jobs:
           - language: javascript-typescript
             build-mode: none
     steps:
-      - name: Checkout source
+      - name: Checkout synthetic PR merge or pushed commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # Pull requests analyze GitHub's synthetic merge commit; pushes analyze github.sha.
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.merge_commit_sha || github.sha }}
           fetch-depth: 1
           persist-credentials: false
 
