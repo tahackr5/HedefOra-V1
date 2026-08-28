@@ -29,16 +29,16 @@ git push -u origin main
 
 Gerçek remote adresi belgelerde tutulmaz.
 
-## 2. Yedek zincirini önce kur
+## 2. Yedek zincirini planla
 
-Kod üretiminden önce `operations/REPOSITORY-BACKUP-POLICY.md` uygulanır. En az:
+`operations/REPOSITORY-BACKUP-POLICY.md` ilk günden desired-state'tir. W001 geliştirmesi primary GitHub remote ve yerel çalışma kopyasıyla başlayabilir; ancak en geç W007 ve ilk gerçek kullanıcı/public launch/production promotion öncesinde şunların kanıtı zorunludur:
 
 - GitHub private remote,
 - ikinci şifreli off-site kopya veya Git bundle,
 - yerel çalışma kopyası,
-- haftalık geri yükleme doğrulaması
+- haftalık integrity/fetch/fsck ve aylık sıfırdan recovery doğrulaması
 
-olmadan Wave 001 başlamaz.
+Bu zamanlama geliştirme hızını yedek hazırlığına bağlamaz; `R-001`, `R-009` ve `R-013` kapılar tamamlanana kadar açık kalır.
 
 ## 3. Codex izin modu
 

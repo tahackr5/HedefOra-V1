@@ -40,6 +40,19 @@ Her wave başında orchestrator, gate'i owning artifact ve acceptance criterion 
 
 `NOT_APPLICABLE` PASS değildir. Mevcut bir artifact, acceptance criterion veya değişen davranış için kullanılamaz; gelecekteki suite'i sahte bir stub ile yeşil göstermez. W000'da migration, River catalog, planner property/golden ve ürün E2E gate'leri kendi owning wave'lerine kadar kanıtlı `NOT_APPLICABLE` kalabilir. Mevcut config, scaffolding, validator, dependency ve CI artifact'larının bütün gate'leri ise uygulanır.
 
+## Hosted gate için telafi kontrolü
+
+Bir hosted kontrol plan/entegrasyon nedeniyle çalışmıyorsa yalnız owner-onaylı, süreli telafi sözleşmesi wave progression'a izin verebilir. Kayıt şunları taşır:
+
+- çalışmayan capability ve `BLOCKED_EXTERNAL` sonucu,
+- exact source SHA/tree,
+- yerel/OSS telafi kontrolü ile kapsanan ve kapsanmayan tehdit sınıfları,
+- pinned scanner/rule/advisory DB kimlikleri ve fail-closed negatif testler,
+- residual risk owner'ı, son tarih/owning wave ve kaldırma koşulu,
+- owner risk acceptance ve literal gate kanıtı.
+
+Telafi kontrolü hosted sonucu `PASS` yapmaz. Branch protection yokluğu, client-side merge prosedürüyle yalnız azaltılır; server-side enforcement kanıtı oluşana kadar açık risk kalır. W001 runtime davranışından önce pinned OSS SAST ve all-scope dependency vulnerability/license kapısı uygulanır.
+
 ## Release gate
 
 - staging deploy/smoke,

@@ -1,21 +1,37 @@
 # W000 Kanıt Paketi
 
 - Wave: `W000`
-- Durum: `IN_PROGRESS`
+- Durum: `COMPLETED`
 - Wave başlangıcı: `2efca6c8b65e3342ad5309076b7cd0dedf816943`
-- Current branch remediation target: `5886a978df491e5a0212472183c49100b705f205`
-- Remediation target tree: `3327e526b3dfddaf0b4319a7c55fc9c4df82ea6a`
-- Son exact local full-tree checkpoint: `1bd1729fc9bb1f8ec86d381bc9ff947c03685b17`
+- Exact reviewed PR head: `383cf66723667a5ab8e0fd2001fe86b261698d10`
+- Reviewed tree: `2fc4fb23d42ea0a5ec41cfd70704b1132b04519a`
+- W000 end merge commit: `f52a8b7eaf83e8817a98e02aa5953c0faf04f6c2`
+- Son exact local full-tree checkpoint: `f52a8b7eaf83e8817a98e02aa5953c0faf04f6c2`
 - Exact isolation diagnostic target: `1bd1729fc9bb1f8ec86d381bc9ff947c03685b17`
-- Final security review target: `1bd1729fc9bb1f8ec86d381bc9ff947c03685b17`; sonuç `FAIL`
-- Final cold review target: `NOT_SET`; sonuç `NOT_RUN`
+- Final security review target/session: `383cf66723667a5ab8e0fd2001fe86b261698d10` / `01a04861-5700-79b3-840b-93dcd214c2c4`; sonuç `PASS`
+- Final cold review target/session: `383cf66723667a5ab8e0fd2001fe86b261698d10` / `01a0486e-e3e5-7fc1-b7f6-1f949b670c04`; sonuç `PASS`
 - Integration branch/worktree: `codex/w000-bootstrap` / repository root
-- Temiz doğrulama clone'u: `C:\Users\ihsan\.codex\worktrees\HedefOra\W000\VERIFY6-CLONE`
-- Kanıt zamanı: `2026-08-28T11:07:15+03:00`
+- PR-head temiz doğrulama clone'u: `C:\Users\ihsan\.codex\worktrees\HedefOra\W000\VERIFY7-CLONE`
+- Merge temiz doğrulama clone'u: `C:\Users\ihsan\.codex\worktrees\HedefOra\W000\MERGE-F52A8B7-CLONE`
+- Kanıt zamanı: `2026-08-28T20:20:00+03:00`
 
 ## Sonuç
 
-W000 no-feature monorepo, Codex runtime sözleşmesi, exact ürün toolchain'i, frontend shell, CI/local PostgreSQL ve executable repository gate'leri exact `1bd1729` detached clone üzerinde yerel doğrulamayı geçti. Aynı SHA için GitHub quality job geçti; CodeQL upload, dependency review ve private/free branch protection plan/entegrasyon kısıtları nedeniyle `BLOCKED_EXTERNAL` kaldı. Native Windows reviewer izolasyonu güvenli değildir; güçlendirilmiş parent-child negatif sentinel yalnız WSL2/Linux üzerinde geçti. Fresh final security review `1bd1729` üzerinde F-001 ve F-002 nedeniyle `FAIL` verdi. Remediation `5886a97` üzerinde kod ve regresyon testleriyle uygulandı; fresh full-tree/security/cold tekrarları geçmeden bulgular `CLOSED` veya wave `READY` sayılmaz.
+W000 no-feature monorepo, Codex runtime sözleşmesi, exact toolchain, frontend shell, CI/local PostgreSQL ve repository gate'leri exact `383cf667` PR head'inde clean-clone, GitHub quality, isolated security ve fresh cold review kapılarını geçti. PR #1 bu exact head'i ikinci parent yapan, tree'si birebir aynı `f52a8b7` merge commit'iyle `main`e alındı. Local merge-wrapper/full-tree ve exact main push quality PASS olduğu için W000 `COMPLETED`dır. Hosted CodeQL upload, Dependency Review ve private-plan branch protection `BLOCKED_EXTERNAL` kalır; owner'ın DEC-024 telafi kabulü bu sonuçları PASS yapmaz.
+
+## Final exact evidence
+
+| Gate | Exact hedef/kanıt | Sonuç |
+|---|---|---|
+| PR-head clean-clone full tree | `383cf667` / `2fc4fb2`; Node `24.20.0`, pnpm `11.24.0`, Git `2.39.5`, Go `1.26.7`, Python `3.12.13` | PASS; repository Node 11/11, frontend 3/3 ve statement/branch/function/line %100, build 16 module, Go/TOML/actionlint/Gitleaks/compose/diff/status temiz |
+| PR-head GitHub quality | run `33155512881`, job `98797220995`, exact `383cf667` | PASS |
+| Final security | session `01a04861-5700-79b3-840b-93dcd214c2c4`; `gpt-5.6-sol + ultra`; read-only/never | PASS; zero local findings/blockers; repository mutation `NONE` |
+| Final cold | session `01a0486e-e3e5-7fc1-b7f6-1f949b670c04`; `gpt-5.6-sol + ultra`; read-only/never | PASS; zero local findings/blockers; repository mutation `NONE` |
+| Review artifact integrity | `FINAL-REVIEWS-383cf66/SHA256SUMS.txt`; sanitized result SHA-256 `1f0177a43cf54cc23ec21a817c0647cf9c9b8ff938ad76556466b54559ab9fe8` | PASS, 23/23 copied artifact eşleşti; manifest strict check exit 0 |
+| Merge topology | `f52a8b7`; parents `2efca6c` + `383cf667`; tree `2fc4fb2` | PASS; two-parent, ancestor, content-identical, `repolint -merge-wrapper` exit 0 |
+| Merge clean-clone full tree | `MERGE-F52A8B7-CLONE`; exact `f52a8b7` | PASS; frozen Node/full JS, Go, Python, actionlint, Gitleaks, compose, diff/status exit 0 |
+| Main push quality | run `33193519710`, job `98924751296`, exact `f52a8b7` | PASS |
+| Hosted security/enforcement | PR Dependency Review; CodeQL runs `33155512718` ve `33193519721`; branch/ruleset API | `BLOCKED_EXTERNAL`; DEC-024/R-014/R-016 |
 
 ## Kapsam ve sözleşme
 
@@ -132,7 +148,7 @@ git diff --check
 git status --short --branch
 ```
 
-## Final security review ve `5886a97` remediation
+## Historical failed security review ve `5886a97` remediation
 
 - Session: `01a04744-b2a7-70c2-8a15-4ae79a5c3372`; target/tree `1bd1729fc9bb1f8ec86d381bc9ff947c03685b17` / `ce55605aa52ab1fe486a2fa4675e4748e522d146`.
 - Effective context: direct `exec`, Codex `0.150.0`, `gpt-5.6-sol`, `ultra`, `approval_policy=never`, `sandbox_policy=read-only`, `reviewer-readonly`, network restricted.
@@ -141,10 +157,10 @@ git status --short --branch
 
 | Bulgu | Seviye | Kanıt | Remediation | Durum |
 |---|---|---|---|---|
-| F-001 production license inventory optional/peer edge'leri ve aynı adın çoklu fiziksel sürümlerini kaybedebilir | MEDIUM | `scripts/check-licenses.mjs` yalnız `dependencies` ve name-keyed Map kullanıyordu; collector testi yoktu | `5886a97`: dependencies/optionalDependencies/peerDependencies closure; canonical-manifest ziyaret seti; tüm fiziksel kayıtları koruyan inventory; multi-version/license drift; direct/transitive optional, peer, missing optional ve duplicate metadata fixtures | OPEN; remediation uygulandı, independent re-review `NOT_RUN` |
-| F-002 ownership history scan pre-base side branch commit'lerini atlayabilir | HIGH | `commitsInRange` yalnız `--ancestry-path`; merge first-parent diff'i net-zero side history'yi göremeyebilir | `5886a97`: plain `base..head` closure + ancestry-set karşılaştırması; immutable base'den türemeyen newly-reachable commit fail-closed; pre-base add/delete merge fixture | OPEN; remediation uygulandı, independent re-review `NOT_RUN` |
+| F-001 production license inventory optional/peer edge'leri ve aynı adın çoklu fiziksel sürümlerini kaybedebilir | MEDIUM | `scripts/check-licenses.mjs` yalnız `dependencies` ve name-keyed Map kullanıyordu; collector testi yoktu | `5886a97`: dependencies/optionalDependencies/peerDependencies closure; canonical-manifest ziyaret seti; tüm fiziksel kayıtları koruyan inventory; multi-version/license drift; direct/transitive optional, peer, missing optional ve duplicate metadata fixtures | CLOSED; exact `383cf667` clean-clone + security/cold PASS |
+| F-002 ownership history scan pre-base side branch commit'lerini atlayabilir | HIGH | `commitsInRange` yalnız `--ancestry-path`; merge first-parent diff'i net-zero side history'yi göremeyebilir | `5886a97`: plain `base..head` closure + ancestry-set karşılaştırması; immutable base'den türemeyen newly-reachable commit fail-closed; pre-base add/delete merge fixture | CLOSED; exact `383cf667` clean-clone + security/cold PASS |
 
-`5886a97` targeted remediation kanıtı: exact Node `24.20.0` ile `node --test scripts/check-licenses.test.mjs` 4/4, `node --test scripts/*.test.mjs` 11/11, `node scripts/check-licenses.mjs` ve `pnpm format:check` `PASS`; exact Go `1.26.7` ile tracked `gofmt -l`, `go mod verify`, `go vet ./...`, `go test ./...` `PASS`. İki patch ayrı read-only adversarial review'de `PASS` aldı. Bunlar fresh clean-clone full gate, final security veya cold review yerine geçmez.
+`5886a97` targeted remediation kanıtı: exact Node `24.20.0` ile `node --test scripts/check-licenses.test.mjs` 4/4, `node --test scripts/*.test.mjs` 11/11, `node scripts/check-licenses.mjs` ve `pnpm format:check` `PASS`; exact Go `1.26.7` ile tracked `gofmt -l`, `go mod verify`, `go vet ./...`, `go test ./...` `PASS`. İki patch ayrı read-only adversarial review'de `PASS` aldı; ardından exact `383cf667` full-tree/security/cold tekrarları da PASS verdi.
 
 ### Tarihsel security checkpoint
 
@@ -157,26 +173,23 @@ Read-only `security_privacy_review`, target `97586859ce272e8390fdf9b405533914f02
 - Planner property/golden: `NOT_APPLICABLE` — W002 artifact'ı yok.
 - Ürün E2E: `NOT_APPLICABLE` — W000 no-feature shell; mevcut frontend component/a11y smoke testleri uygulandı.
 - Staging deploy, DB backup/restore, rollback drill, SLO/alerts: `NOT_APPLICABLE` — W007 kapsamı; VPS'e mutation yapılmadı.
-- İkinci şifreli off-site repository kopyası + recovery testi: `NOT_RUN`; gate zamanlaması DQ-004 owner kararında, en geç launch öncesi zorunlu.
-- GitHub PR quality CI: `PASS @ 1bd1729`. Dependency review, CodeQL upload ve ruleset/branch protection: `BLOCKED_EXTERNAL`; dependency review/branch protection için public repository veya uygun ücretli plan, CodeQL için uygun integration erişimi gerekir. Merge yöntemi merge-only olarak ayarlandı; final main merge-wrapper henüz `NOT_RUN`.
+- İkinci şifreli off-site repository kopyası + recovery testi: W000 için `NOT_APPLICABLE`; W007/pre-user gate'i için `NOT_RUN`. DQ-004 owner kararıyla kapandı.
+- GitHub PR quality CI: `PASS @ 383cf667`. Main push quality: `PASS @ f52a8b7`. Dependency Review, CodeQL upload ve ruleset/branch protection: `BLOCKED_EXTERNAL`; DEC-024 telafisi bunları PASS yapmaz.
 - CodeRabbit/Sonar: `BLOCKED_EXTERNAL` — bağlı ve kanıtlanmış servis yok; sahte review üretilmedi.
-- Final security re-review: `FAIL @ 1bd1729`; F-001/F-002 `5886a97` ile remediated, fresh exact rerun `NOT_RUN`. Fresh-context cold re-review security FAIL nedeniyle `NOT_RUN`.
+- Final security ve cold re-review: `PASS @ 383cf667`; F-001/F-002 kapandı.
 
 ## Açık risk ve owner girdisi
 
-- R-001/R-009/R-013: backup/recovery/kalıcı checkout gate zamanlaması DQ-004 owner kararı bekliyor; DEC-016 uyarınca en geç launch öncesi tamamlanır. W001'e otomatik geçiş karar çözülene kadar durur; W000 exit'i bloke değildir.
+- R-001/R-009/R-013: backup/recovery/kalıcı checkout W007 ve ilk gerçek kullanıcı/public launch/production promotion öncesi tamamlanır; W001 başlangıcını engellemez.
 - R-011: küçük VPS yalnız staging/pre-production; gerçek kullanıcı ve production verisi alınmaz.
 - R-012: native Windows sandbox loopback'i engellemiyor; reviewer yalnız executable sentinel geçmiş WSL/Linux yolunda çalışır.
-- R-014: GitHub merge yöntemi merge-only olarak doğrulandı; branch protection, required checks ve final main merge-wrapper henüz doğrulanmadı.
-- R-015: final reviewer harness gerçek FAIL'i korudu fakat wrapper biçimini yanlış reddetti; semantic parser, skill-first mandatory bootstrap ve PASS/FAIL/BLOCKED_EVIDENCE işleme düzeltmesi fresh rerun öncesi zorunludur.
-- VPS secret/SSH bilgisi W000 için gerekmedi ve istenmedi. Staging envanteri W007'ye ertelendi.
+- R-014: exact merge-only ve final merge-wrapper doğrulandı; branch/ruleset server-side enforcement private planda yok ve risk açık.
+- R-015: semantic parser, backslashsız transport, tri-state terminal correlation ve adversarial/static/no-model regresyonları PASS; runtime yükseltmesinde tekrar zorunlu.
+- R-016: pinned OSS SAST ve all-scope dependency gate'i W001 runtime davranışından önce zorunludur.
+- VPS secret/SSH bilgisi istenmedi. Owner'ın secretsiz staging envanteri repo dışında kaydedildi; W007'de exact port/OS/vCPU/fingerprint doğrulanır.
 
-## Bu evidence snapshot'ında çıkış için kalanlar
+## Post-exit bookkeeping ve sonraki wave
 
-1. Ownership seal sırası: önce bu evidence commit'i; hemen ardından manifest-only commit, `52a8a23..5886a97` remediation aralığını ve `5886a97..<evidence commit>` aralığını ayrı task'lerle zincirler. JSON at HEAD doğrulandığında bu madde sağlanır; sonra yeni exact target local full-tree gate'leri çalıştırılır.
-2. R-015 harness protokolünü semantic/fail-closed düzeltmek ve adversarial statik + no-model doğrulamadan geçirmek.
-3. Exact remediation target üzerinde WSL/Linux `gpt-5.6-sol + ultra` read-only security re-review ve `PASS` verdict'i.
-4. Aynı target üzerinde fresh-context WSL/Linux cold re-review ve `PASS` verdict'i.
-5. Branch push ve PR quality CI'ı yeni exact head için yenilemek; CodeQL/dependency-review/branch-protection `BLOCKED_EXTERNAL` çözüm yolunu owner ile seçmek.
-6. Two-parent merge commit sonrası final `main` merge-wrapper + full-tree push gate'i ve state/ledger kapanışı.
-7. Final WSL review'lerden sonra yalnız doğrulanmış geçici runtime yollarının temizlenmesi ve yokluk kanıtı.
+1. Bu kapanış/owner-decision değişiklikleri ayrı post-exit PR ve ownership seal ile doğrulanır; W000 end commit'i değişmez: `f52a8b7`.
+2. W001 açılışında R-016 için pinned OSS SAST ve all-scope dependency vulnerability/license gate'i runtime davranışından önce uygulanır.
+3. W007'de staging host, Cloudflare, off-site backup/recovery ve restore/rollback kanıtları ayrı owner gate'leriyle tamamlanır.
