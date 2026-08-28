@@ -14,6 +14,7 @@ Exit: clean install/build/test, no code feature claim, runtime governance verifi
 
 ## W001 — Platform, DB ve contract foundation
 
+- runtime davranışından önce pinned OSS SAST ve all-scope dependency vulnerability/license gate
 - Go app/process modes
 - PostgreSQL migrations/roles
 - River baseline
@@ -66,6 +67,7 @@ Exit: clean install/build/test, no code feature claim, runtime governance verifi
 - Cloudflare/private origin
 - SSH service account
 - backup/restore rehearsal
+- ikinci şifreli off-site repository kopyası ve sıfırdan recovery kanıtı
 - Sentry/alerts/SLO dashboards
 - rollback/incident drill
 

@@ -1,13 +1,15 @@
 # Repository Yedek Politikası
 
-Bu politika, önceki yedek kaybının tekrarını önlemek için Wave 001 ön koşuludur.
+Bu politika ilk günden desired-state'tir. İkinci şifreli kopya ve sıfırdan recovery kanıtı W001 başlangıcını engellemez; W007 kapsamında ve en geç ilk gerçek kullanıcı, public launch veya production promotion öncesinde hard gate'tir.
 
 ## Kanonik source
 
 - GitHub private repository ana remote.
-- `main` protected; doğrudan force push/delete engelli.
+- `main` için branch/ruleset protection hedef kontroldür; doğrulanmadan etkin varsayılmaz.
 - release tags protected/signed mümkünse.
 - branch protection ve required checks.
+
+Private/current GitHub planı bu kontrolleri sağlamıyorsa durum `BLOCKED_EXTERNAL` kalır. DEC-024 altındaki exact-SHA telafi protokolü geçici ilerleme sağlar fakat main'i server tarafında protected yapmaz; `R-014` kapanmaz.
 
 ## İkinci kopya
 

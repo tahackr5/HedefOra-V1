@@ -82,3 +82,5 @@ Commit SHA'larını kanıt zinciri olarak kullanan wave'lerde GitHub entegrasyon
 taşır. Birinci parent ikinci parent'ın atası olmalı ve merge commit tree'si ikinci parent tree'siyle aynı olmalıdır; conflict-resolution veya wrapper-only içerik kabul edilmez. PR branch'i yalnız `READY_TO_MERGE` olabilir. Wave ancak final `main` push workflow'u merge-wrapper doğrulamasıyla ve full-tree gate'lerle geçince `COMPLETED` olur.
 
 İlgili GitHub repository ayarlarında merge commit açık, squash/rebase/linear-history/force-push/delete kapalı, PR ve required checks zorunlu olmalıdır. Bu dış ayarlar API veya UI kanıtı olmadan etkin varsayılmaz.
+
+Private plan branch/ruleset enforcement sağlamıyorsa bu eksik `BLOCKED_EXTERNAL` ve `R-014` olarak kalır. Owner-onaylı geçici akış yalnız exact PR-head clean-clone/quality/security/cold kanıtı, head-SHA kilitli owner merge'i, two-parent content-identical merge commit, `repolint -merge-wrapper` ve final `main` push full-tree gate'i ile ilerleyebilir. Bu client-side akış direct/force push veya branch deletion'ı server tarafında engellemez; hosted protection ile eşdeğer değildir ve uygun plan/entegrasyon sağlanınca kaldırılır.

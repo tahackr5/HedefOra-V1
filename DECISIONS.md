@@ -19,7 +19,7 @@ Bu dosya yalnız kabul edilmiş, repository çapında etkili kararların kısa k
 | DEC-013 | Maksimum dört eşzamanlı writer; dosya başına tek writer; shared file merge orchestrator-only. | ACCEPTED |
 | DEC-014 | Tüm writer worktree'leri aynı immutable wave-start commit'inden açılır. | ACCEPTED |
 | DEC-015 | Security/cold-review ajanları read-only; release için fresh-context review zorunludur. | ACCEPTED |
-| DEC-016 | GitHub ana source control; ikinci off-site şifreli yedek launch ön koşuludur. | ACCEPTED |
+| DEC-016 | GitHub ana source control'dür. İkinci off-site şifreli repository kopyası ve sıfırdan recovery testi W001 başlangıcını engellemez; W007 kapsamında ve en geç ilk gerçek kullanıcı, public launch veya production promotion öncesinde zorunludur. | ACCEPTED |
 | DEC-017 | Kullanıcıya başarı garantisi, resmi kurum izlenimi veya suçlayıcı dil verilmeyecektir. | ACCEPTED |
 | DEC-018 | Ödeme, native mobile, sosyal/messaging, leaderboard, izinsiz scraping ve media download MVP dışıdır. | ACCEPTED |
 | DEC-019 | Production dependency eklemek risk/lisans/alternatif değerlendirmesi ister. | ACCEPTED |
@@ -27,6 +27,7 @@ Bu dosya yalnız kabul edilmiş, repository çapında etkili kararların kısa k
 | DEC-021 | W000 yalnız build/test edilebilir no-feature scaffolding, toolchain ve repository validator kodu üretebilir; W001 platform/runtime davranışı W000 exit öncesi uygulanmaz. | ACCEPTED |
 | DEC-022 | Gate'ler aktif wave kapsamına göre uygulanır; kanıtlı `NOT_APPLICABLE` PASS değildir ve mevcut artifact/acceptance için kullanılamaz. | ACCEPTED |
 | DEC-023 | `PACKAGE-MANIFEST.md` ilk Markdown teslim paketinin değişmez provenance kaydıdır; yaşayan repository manifesti değildir. | ACCEPTED |
+| DEC-024 | Repository private ve mevcut GitHub planında kalır. Kullanılamayan hosted security/enforcement kontrolleri `BLOCKED_EXTERNAL` kalır; exact-SHA yerel/OSS telafi kapıları wave progression için kullanılabilir fakat hosted kontrolü `PASS` yapmaz. Server-side enforcement boşluğu residual risk olarak izlenir. | ACCEPTED |
 
 ## Değiştirme kuralı
 
