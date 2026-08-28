@@ -113,12 +113,9 @@ export async function validateGovernance(repositoryRoot) {
       "utf8",
     );
     if (
-      readTomlString(document, "default_permissions") !==
-      "reviewer-readonly"
+      readTomlString(document, "default_permissions") !== "reviewer-readonly"
     ) {
-      errors.push(
-        `${reviewer}: default_permissions must be reviewer-readonly`,
-      );
+      errors.push(`${reviewer}: default_permissions must be reviewer-readonly`);
     }
     if (readTomlString(document, "approval_policy") !== "never") {
       errors.push(`${reviewer}: approval_policy must be never`);
@@ -139,9 +136,7 @@ export async function validateGovernance(repositoryRoot) {
     hasTomlKey(quality, "sandbox_mode") ||
     hasTomlKey(quality, "default_permissions")
   ) {
-    errors.push(
-      "quality-testing.toml: permissions must inherit its task mode",
-    );
+    errors.push("quality-testing.toml: permissions must inherit its task mode");
   }
 
   const config = await readFile(
