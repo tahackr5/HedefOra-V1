@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "2efca6c8b65e3342ad5309076b7cd0dedf816943",
-  "verifiedThrough": "1cccede4b835b6818f84fda84021eed8b4822f60",
+  "verifiedThrough": "4a36dfbb6ab086a70dfa96371456e4e8fdd60fb5",
   "trailingAllowedPaths": [
     "state/W000-OWNERSHIP.json"
   ],
@@ -146,6 +146,23 @@
         "state/RELEASE-LEDGER.md",
         "state/W000-EVIDENCE.md",
         "state/W000-OWNERSHIP.json"
+      ]
+    },
+    "W000-T06-cold-review-fixes": {
+      "base": "1cccede4b835b6818f84fda84021eed8b4822f60",
+      "head": "4a36dfbb6ab086a70dfa96371456e4e8fdd60fb5",
+      "allowedPaths": [
+        ".codex/agents/cold-reviewer.toml",
+        ".codex/agents/security-privacy-review.toml",
+        ".github/**",
+        "contracts/**",
+        "delivery/CODEX-RUNTIME-GENERATION-SPEC.md",
+        "delivery/WORKTREE-OWNERSHIP-AND-MERGE.md",
+        "scripts/**",
+        "state/RISK-REGISTER.md",
+        "state/W000-OWNERSHIP.json",
+        "state/W000-OWNERSHIP.md",
+        "tools/**"
       ]
     }
   }
