@@ -1,19 +1,10 @@
-import { readFile, readdir } from "node:fs/promises";
+import { lstat, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { listRepositoryFiles } from "./list-repository-files.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const repositoryRoot = path.resolve(path.dirname(scriptPath), "..");
-const excludedDirectories = new Set([
-  ".git",
-  ".cache",
-  ".pnpm-store",
-  "artifacts",
-  "build",
-  "coverage",
-  "dist",
-  "node_modules",
-]);
 const scannableExtensions = new Set([
   "",
   ".bash",
@@ -44,7 +35,7 @@ const markerPattern = new RegExp(
   `\\b(?:${["TO", "DO"].join("")}|FIXME|XXX)\\b`,
   "i",
 );
-const separatedTodoPattern = /\bTO(?:\s*-\s*|\s+)DO\b/;
+const separatedTodoPattern = /\bTO(?:\s*-\s*|\s+)DO\b/i;
 const packageCommandIdentifier = /\btodo:check\b/gi;
 
 if (path.resolve(process.argv[1] ?? "") === path.resolve(scriptPath)) {
@@ -61,9 +52,12 @@ if (path.resolve(process.argv[1] ?? "") === path.resolve(scriptPath)) {
 
 export async function findWorkMarkers(root) {
   const findings = [];
-  const workingTreeFiles = await collectFiles(root);
+  const workingTreeFiles = await listRepositoryFiles(root);
   for (const relativePath of workingTreeFiles) {
+    const fileStats = await lstat(path.join(root, relativePath));
     if (
+      fileStats.isSymbolicLink() ||
+      !fileStats.isFile() ||
       !scannableExtensions.has(path.extname(relativePath)) ||
       ["scripts/check-todos.mjs", "scripts/check-todos.test.mjs"].includes(
         relativePath.replaceAll("\\", "/"),
@@ -87,27 +81,4 @@ export async function findWorkMarkers(root) {
     });
   }
   return findings.sort();
-}
-
-async function collectFiles(directory, relativeDirectory = "") {
-  const files = [];
-  const entries = await readdir(directory, { withFileTypes: true });
-  for (const entry of entries) {
-    const relativePath = path.join(relativeDirectory, entry.name);
-    if (entry.isDirectory()) {
-      if (!excludedDirectories.has(entry.name)) {
-        files.push(
-          ...(await collectFiles(
-            path.join(directory, entry.name),
-            relativePath,
-          )),
-        );
-      }
-      continue;
-    }
-    if (entry.isFile()) {
-      files.push(relativePath);
-    }
-  }
-  return files;
 }

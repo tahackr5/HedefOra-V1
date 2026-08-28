@@ -1,19 +1,10 @@
-import { readFile, readdir } from "node:fs/promises";
+import { lstat, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { listRepositoryFiles } from "./list-repository-files.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const repositoryRoot = path.resolve(path.dirname(scriptPath), "..");
-const excludedDirectories = new Set([
-  ".git",
-  ".cache",
-  ".pnpm-store",
-  "artifacts",
-  "build",
-  "coverage",
-  "dist",
-  "node_modules",
-]);
 const forbiddenRuntimeRoots = ["cmd", "internal", "db/migrations"];
 const generatedMarker = /(?:Code generated .* DO NOT EDIT|@generated)/i;
 const generatedFilename = /\.(?:gen|generated)(?:\.[^/]+)?$/i;
@@ -88,9 +79,23 @@ export async function findGeneratedArtifacts(root) {
     }
   }
 
-  const files = await collectFiles(root, "", findings);
+  const files = await listRepositoryFiles(root);
   for (const relativePath of files) {
     const normalized = relativePath.replaceAll("\\", "/");
+    const fileStats = await lstat(path.join(root, relativePath));
+    if (fileStats.isSymbolicLink()) {
+      findings.push(`${normalized}#symbolic-link`);
+      continue;
+    }
+    if (!fileStats.isFile()) continue;
+    const pathParts = normalized.split("/");
+    const generatedDirectoryIndex = pathParts.findIndex(
+      (part) => part.toLowerCase() === "generated",
+    );
+    if (generatedDirectoryIndex >= 0) {
+      findings.push(pathParts.slice(0, generatedDirectoryIndex + 1).join("/"));
+      continue;
+    }
     if (
       normalized === "scripts/check-generated.mjs" ||
       normalized === "scripts/check-generated.test.mjs"
@@ -131,35 +136,6 @@ function isAllowedW000Source(relativePath) {
     relativePath.startsWith("tools/repolint/") ||
     allowedW000FrontendSourceFiles.has(relativePath)
   );
-}
-
-async function collectFiles(directory, relativeDirectory, findings) {
-  const files = [];
-  const entries = await readdir(directory, { withFileTypes: true });
-  for (const entry of entries) {
-    const relativePath = path.join(relativeDirectory, entry.name);
-    if (entry.isSymbolicLink()) {
-      findings.push(`${relativePath.replaceAll("\\", "/")}#symbolic-link`);
-    } else if (entry.isDirectory()) {
-      if (excludedDirectories.has(entry.name)) {
-        continue;
-      }
-      if (entry.name.toLowerCase() === "generated") {
-        findings.push(relativePath.replaceAll("\\", "/"));
-        continue;
-      }
-      files.push(
-        ...(await collectFiles(
-          path.join(directory, entry.name),
-          relativePath,
-          findings,
-        )),
-      );
-    } else if (entry.isFile()) {
-      files.push(relativePath);
-    }
-  }
-  return files;
 }
 
 async function pathExists(target) {

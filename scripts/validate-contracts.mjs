@@ -23,21 +23,30 @@ if (canonical.status !== 0) {
   console.error("ERROR: canonical OpenAPI contract failed Spectral.");
   process.exitCode = 1;
 } else {
-  const negative = runSpectral(
-    "contracts/openapi/fixtures/reject-webhook.yaml",
-  );
-  if (
-    negative.status === 0 ||
-    !negative.output.includes("w000-no-webhook-operations")
-  ) {
-    process.stderr.write(negative.output);
+  const negativeFixtures = [
+    {
+      path: "contracts/openapi/fixtures/reject-path-operation.yaml",
+      rule: "w000-no-path-operations",
+    },
+    {
+      path: "contracts/openapi/fixtures/reject-webhook.yaml",
+      rule: "w000-no-webhook-operations",
+    },
+  ];
+  const failedFixture = negativeFixtures.find(({ path, rule }) => {
+    const result = runSpectral(path);
+    if (result.status !== 0 && result.output.includes(rule)) return false;
+    process.stderr.write(result.output);
     console.error(
-      "ERROR: W000 webhook negative fixture did not fail the expected structural rule.",
+      `ERROR: W000 negative fixture ${path} did not fail the expected ${rule} rule.`,
     );
+    return true;
+  });
+  if (failedFixture) {
     process.exitCode = 1;
   } else {
     console.log(
-      "PASS: canonical OpenAPI 3.1 scaffold is valid and the webhook negative fixture is rejected.",
+      "PASS: canonical OpenAPI 3.1 scaffold is valid and path/webhook operation fixtures are rejected by their exact W000 rules.",
     );
   }
 }

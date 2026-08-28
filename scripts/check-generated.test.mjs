@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -12,6 +13,10 @@ test("generated artifacts and W001 runtime roots fail closed", async () => {
     await mkdir(path.join(root, "apps", "web", "src", "generated"), {
       recursive: true,
     });
+    await writeFile(
+      path.join(root, "apps", "web", "src", "generated", "placeholder.txt"),
+      "fixture\n",
+    );
     await mkdir(path.join(root, "api"));
     await mkdir(path.join(root, "misc"));
     await mkdir(path.join(root, "scripts"));
@@ -74,3 +79,57 @@ test("generated artifacts and W001 runtime roots fail closed", async () => {
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test("force-tracked source in ignored output directories fails closed", async () => {
+  const root = await mkdtemp(
+    path.join(os.tmpdir(), "hedefora-tracked-output-"),
+  );
+  try {
+    runGit(root, "init", "--quiet");
+    const outputDirectories = [
+      ".cache",
+      ".pnpm-store",
+      "artifacts",
+      "build",
+      "coverage",
+      "dist",
+      "node_modules",
+    ];
+    await writeFile(
+      path.join(root, ".gitignore"),
+      `${outputDirectories.map((directory) => `${directory}/`).join("\n")}\n`,
+    );
+    runGit(root, "add", ".gitignore");
+    for (const directory of outputDirectories) {
+      await mkdir(path.join(root, directory), { recursive: true });
+      await writeFile(
+        path.join(root, directory, "feature.js"),
+        "export const feature = true;\n",
+      );
+      runGit(root, "add", "--force", `${directory}/feature.js`);
+    }
+
+    assert.deepEqual(await findGeneratedArtifacts(root), [
+      ".cache/feature.js#unexpected-source",
+      ".pnpm-store/feature.js#unexpected-source",
+      "artifacts/feature.js#unexpected-source",
+      "build/feature.js#unexpected-source",
+      "coverage/feature.js#unexpected-source",
+      "dist/feature.js#unexpected-source",
+      "node_modules/feature.js#unexpected-source",
+    ]);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+function runGit(root, ...arguments_) {
+  const result = spawnSync("git", ["-C", root, ...arguments_], {
+    encoding: "utf8",
+  });
+  assert.equal(
+    result.status,
+    0,
+    `git ${arguments_.join(" ")} failed: ${result.stderr || result.error?.message}`,
+  );
+}
