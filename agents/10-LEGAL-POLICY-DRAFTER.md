@@ -29,4 +29,3 @@ Owner geliştirme boyunca taslak inceleme sahibidir. Public launch öncesi hangi
 - Varsayım, kaynak, test/inceleme sonucu ve blocker'ı açık yaz.
 - Secret veya production erişimi isteme/okuma.
 - Handoff'ta commit, changed files, sources, risks ve proposals ver.
-

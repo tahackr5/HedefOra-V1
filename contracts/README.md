@@ -8,4 +8,3 @@ W000 yalnız kanonik OpenAPI 3.1 kökünü oluşturur. Bu değişiklik additive 
 - Generated Go/TypeScript çıktıları W001'de üretici ve tüketiciler tanımlandıktan sonra oluşturulur.
 
 Rollback, W000 sözleşme scaffold commit'inin geri alınmasıdır. Veri migration'ı veya compatibility window gerekmez; dış tüketici yoktur.
-

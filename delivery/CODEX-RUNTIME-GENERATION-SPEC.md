@@ -64,6 +64,7 @@ Talimat metni gerçek enforcement yerine geçmez. Kritik single-writer/path/secr
 - Her iki read-only agent write denemesinde reddedilir ve probe dosyası oluşmaz.
 - Her writer diff'i recorded `owned_paths`/`forbidden_paths` ile orchestrator tarafından karşılaştırılır; kapsam dışı değişiklik merge gate'ini FAIL yapar. Custom-agent sandbox'ı path ownership enforcement'ıymış gibi raporlanmaz.
 - Skill selector skill'leri görür.
+- Statik prompt fixture coverage gerçek semantic selector sonucu gibi raporlanmaz; positive/negative runtime prompt probe sonucu ayrıca kaydedilir.
 - Root AGENTS loaded-source raporunda görünür.
 - Subagent summaries main context'e ham log yığmaz.
 

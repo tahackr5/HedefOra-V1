@@ -12,6 +12,7 @@ if (errors.length > 0) {
   }
   process.exitCode = 1;
 } else {
-  console.log("PASS: Codex agents, skills and governance fixtures are consistent.");
+  console.log(
+    "PASS: static Codex agent/skill metadata and prompt fixtures are consistent. Runtime discovery and semantic prompt matching require separate Codex probes.",
+  );
 }
-

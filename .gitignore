@@ -21,6 +21,8 @@ bin/
 
 # Tooling and editors
 .cache/
+__pycache__/
+*.py[cod]
 .idea/
 .vscode/
 .DS_Store
@@ -29,4 +31,3 @@ Thumbs.db
 # Codex and local evidence
 .codex-*-probe
 artifacts/
-

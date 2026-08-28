@@ -43,7 +43,7 @@ W000 ürün runtime'ına yalnız React ve React DOM ekler:
 |---|---|---|---|
 | React + React DOM `19.2.8` | Kanonik etkileşimli web UI yönü ve buildable scaffold. | MIT | Public sayfa SSG/SSR kararı açık; W000 shell public launch değildir. API dar tutulur; major yükseltme ayrı compatibility PR'ıdır. |
 
-Spectral, Vite, TypeScript, lint, format ve test paketleri development-only'dir. Install scriptleri deny-by-default tutulur; W000'da yalnız Vite'ın build zincirindeki `esbuild` açıkça izinlidir. `pnpm-lock.yaml` review edilmeden dependency yükseltilmez.
+Spectral, Vite, TypeScript, lint, format ve test paketleri development-only'dir. Install scriptleri deny-by-default tutulur; W000 lock'unda lifecycle script izni verilen paket yoktur. Spectral'ın telemetry amaçlı `@scarf/scarf` script'i açıkça reddedilir. `pnpm-lock.yaml` review edilmeden dependency yükseltilmez.
 
 ## W001 için production dependency ön değerlendirmesi
 
@@ -57,6 +57,7 @@ Bu kayıt ekleme izni değildir; W001 task'ı gerçek producer/consumer, lisans,
 ## Supply-chain gate'leri
 
 - npm direct dependencies exact, lockfile commitli ve CI install `--frozen-lockfile`.
+- Registry publish-age politikası 24 saattir ve missing-time fail-closed'dur. 27 Ağustos 2026'da yayımlanan, exact integrity/lisansı incelenmiş `@testing-library/react@16.3.3` ilk lock üretimi için version-scoped istisnadır; pattern veya package-wide istisna değildir.
 - Go standard library dışı dependency W000'da yoktur; `go mod verify` ve tidy drift kontrol edilir.
 - GitHub Actions yalnız full commit SHA ile çağrılır; tag/SHA eşleşmesi merge öncesi upstream'den doğrulanır.
 - OCI image tag ile birlikte digest'e sabitlenir.
@@ -71,4 +72,3 @@ Bu kayıt ekleme izni değildir; W001 task'ı gerçek producer/consumer, lisans,
 - React release kayıtları: `https://github.com/facebook/react/releases`
 - Vite release kayıtları: `https://github.com/vitejs/vite/releases`
 - GitHub Actions secure-use: `https://docs.github.com/en/actions/reference/security/secure-use`
-

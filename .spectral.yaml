@@ -7,4 +7,19 @@ rules:
   info-contact: off
   info-license: off
   oas3-api-servers: off
-
+  w000-no-path-operations:
+    description: W000 must not define HTTP operations.
+    severity: error
+    given: $.paths
+    then:
+      function: length
+      functionOptions:
+        max: 0
+  w000-no-webhook-operations:
+    description: W000 must not define webhook operations.
+    severity: error
+    given: $.webhooks
+    then:
+      function: length
+      functionOptions:
+        max: 0

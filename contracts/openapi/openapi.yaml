@@ -7,4 +7,3 @@ info:
     their producers, consumers, errors and compatibility behavior are defined.
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
 paths: {}
-

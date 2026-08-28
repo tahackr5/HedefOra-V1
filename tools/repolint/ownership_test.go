@@ -57,3 +57,20 @@ func TestIsOwnedPath(t *testing.T) {
 	}
 }
 
+func TestValidateOwnedPaths(t *testing.T) {
+	t.Parallel()
+
+	violations := ValidateOwnedPaths(
+		[]string{"state/ACTIVE-WAVE.md", "apps/web/src/App.tsx", "package.json"},
+		[]string{"apps/web/**"},
+	)
+	want := []string{"package.json", "state/ACTIVE-WAVE.md"}
+	if len(violations) != len(want) {
+		t.Fatalf("ValidateOwnedPaths() = %v, want %v", violations, want)
+	}
+	for index := range want {
+		if violations[index] != want[index] {
+			t.Fatalf("ValidateOwnedPaths() = %v, want %v", violations, want)
+		}
+	}
+}

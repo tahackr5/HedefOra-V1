@@ -9,4 +9,3 @@ approvals_reviewer = "user"
 enabled = true
 max_concurrent_threads_per_session = 4
 interrupt_message = true
-

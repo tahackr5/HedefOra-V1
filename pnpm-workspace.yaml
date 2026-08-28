@@ -1,11 +1,16 @@
 packages:
   - apps/*
 
+failIfNoMatch: true
 saveExact: true
 strictPeerDependencies: true
 blockExoticSubdeps: true
 minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true
+minimumReleaseAgeIgnoreMissingTime: false
+minimumReleaseAgeExcludePrune: true
+minimumReleaseAgeExclude:
+  - "@testing-library/react@16.3.3"
 
 allowBuilds:
-  esbuild: true
-
+  "@scarf/scarf": false

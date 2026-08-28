@@ -5,6 +5,7 @@ package repolint
 import (
 	"fmt"
 	"path"
+	"sort"
 	"strings"
 )
 
@@ -54,7 +55,19 @@ func IsOwnedPath(value string, patterns []string) bool {
 	return false
 }
 
+// ValidateOwnedPaths returns a stable, sorted list of paths that are not
+// covered by any assigned ownership pattern.
+func ValidateOwnedPaths(values, patterns []string) []string {
+	violations := make([]string, 0)
+	for _, value := range values {
+		if !IsOwnedPath(value, patterns) {
+			violations = append(violations, value)
+		}
+	}
+	sort.Strings(violations)
+	return violations
+}
+
 func hasWindowsVolume(value string) bool {
 	return len(value) >= 2 && ((value[0] >= 'a' && value[0] <= 'z') || (value[0] >= 'A' && value[0] <= 'Z')) && value[1] == ':'
 }
-

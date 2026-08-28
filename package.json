@@ -23,13 +23,15 @@
   },
   "scripts": {
     "build": "pnpm --filter @hedefora/web build",
-    "ci:check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm generated:check && pnpm todo:check",
-    "contracts:lint": "spectral lint --fail-severity=warn contracts/openapi/openapi.yaml",
-    "format:check": "prettier --check .codex contracts scripts package.json pnpm-workspace.yaml .spectral.yaml && pnpm --filter @hedefora/web format:check",
+    "audit:prod": "pnpm audit --prod --audit-level high",
+    "ci:check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm generated:check && pnpm todo:check && pnpm licenses:check && pnpm audit:prod",
+    "contracts:lint": "node scripts/validate-contracts.mjs",
+    "format:check": "prettier --check contracts scripts package.json pnpm-workspace.yaml .spectral.yaml && pnpm --filter @hedefora/web format:check",
     "generated:check": "node scripts/check-generated.mjs",
     "governance:check": "node scripts/validate-governance.mjs",
+    "licenses:check": "node scripts/check-licenses.mjs",
     "lint": "pnpm contracts:lint && pnpm governance:check && pnpm --filter @hedefora/web lint",
-    "test": "node --test scripts/*.test.mjs && pnpm --filter @hedefora/web test",
+    "test": "node --test scripts/*.test.mjs && pnpm --filter @hedefora/web test:coverage",
     "todo:check": "node scripts/check-todos.mjs",
     "typecheck": "pnpm --filter @hedefora/web typecheck"
   },
@@ -38,4 +40,3 @@
     "prettier": "3.9.6"
   }
 }
-
