@@ -27,7 +27,7 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Scan committed source for secrets
@@ -46,6 +46,9 @@ jobs:
           check-latest: false
           go-version-file: go.mod
 
+      - name: Validate immutable ownership ranges
+        run: go run ./tools/repolint/cmd/repolint -manifest state/W000-OWNERSHIP.json -all
+
       - name: Set up pnpm and Node.js from package.json
         uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
         with:
@@ -63,9 +66,16 @@ jobs:
             echo "- Image OS: ${ImageOS:-unknown}"
             echo "- Image version: ${ImageVersion:-unknown}"
             echo "- Go: $(go env GOVERSION)"
+            echo "- Python: $(python3 --version)"
             echo "- Node.js: $(node --version)"
             echo "- pnpm: $(pnpm --version)"
           } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Validate repository-owned TOML
+        run: python3 scripts/validate_toml.py
+
+      - name: Test TOML validator
+        run: python3 -m unittest scripts/test_validate_toml.py
 
       - name: Install JavaScript dependencies from lockfile
         run: pnpm install --frozen-lockfile
