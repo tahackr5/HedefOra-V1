@@ -394,20 +394,41 @@ func changedPaths(repository, base, head string) ([]string, error) {
 }
 
 func commitsInRange(repository, base, head string) ([]string, error) {
-	command := exec.Command(
+	allCommand := exec.Command(
 		"git",
 		"rev-list",
 		"--reverse",
 		"--topo-order",
-		"--ancestry-path",
 		base+".."+head,
 	)
-	command.Dir = repository
-	output, err := command.Output()
+	allCommand.Dir = repository
+	allOutput, err := allCommand.Output()
 	if err != nil {
 		return nil, fmt.Errorf("git rev-list failed: %w", err)
 	}
-	return strings.Fields(string(output)), nil
+	commits := strings.Fields(string(allOutput))
+
+	ancestryCommand := exec.Command(
+		"git",
+		"rev-list",
+		"--ancestry-path",
+		base+".."+head,
+	)
+	ancestryCommand.Dir = repository
+	ancestryOutput, err := ancestryCommand.Output()
+	if err != nil {
+		return nil, fmt.Errorf("git ancestry rev-list failed: %w", err)
+	}
+	ancestryCommits := make(map[string]struct{})
+	for _, commit := range strings.Fields(string(ancestryOutput)) {
+		ancestryCommits[commit] = struct{}{}
+	}
+	for _, commit := range commits {
+		if _, ok := ancestryCommits[commit]; !ok {
+			return nil, fmt.Errorf("commit %s is reachable from head but not descended from immutable base %s", commit, base)
+		}
+	}
+	return commits, nil
 }
 
 func changedPathsForCommit(repository, base, head string) ([]string, error) {

@@ -119,6 +119,37 @@ func TestChangedPathsPreservesTransientPathFromMergedBranch(t *testing.T) {
 	}
 }
 
+func TestValidateTaskRejectsMergedHistoryDivergedBeforeBase(t *testing.T) {
+	repository := initializeRepository(t)
+	writeRepositoryFile(t, repository, "README.md", "common\n")
+	commitRepository(t, repository, "common ancestor")
+
+	runGit(t, repository, "checkout", "-b", "pre-base-side")
+	writeRepositoryFile(t, repository, "forbidden.txt", "transient pre-base history\n")
+	commitRepository(t, repository, "add forbidden pre-base path")
+	if err := os.Remove(filepath.Join(repository, "forbidden.txt")); err != nil {
+		t.Fatalf("remove pre-base forbidden fixture: %v", err)
+	}
+	commitRepository(t, repository, "remove forbidden pre-base path")
+
+	runGit(t, repository, "checkout", "main")
+	writeRepositoryFile(t, repository, "owned/base.txt", "immutable base\n")
+	base := commitRepository(t, repository, "task base")
+	writeRepositoryFile(t, repository, "owned/change.txt", "owned task change\n")
+	commitRepository(t, repository, "owned task change")
+	runGit(t, repository, "merge", "--no-ff", "pre-base-side", "-m", "merge pre-base history")
+	head := strings.TrimSpace(runGit(t, repository, "rev-parse", "HEAD"))
+
+	err := validateTask(repository, "pre-base-history", taskSpec{
+		Base:         base,
+		Head:         head,
+		AllowedPaths: []string{"owned/**"},
+	}, true)
+	if err == nil || !strings.Contains(err.Error(), "not descended from immutable base") {
+		t.Fatalf("validateTask() pre-base history error = %v", err)
+	}
+}
+
 func TestValidateTaskRejectsLeadingSpaceOwnershipAlias(t *testing.T) {
 	repository := initializeRepository(t)
 	writeRepositoryFile(t, repository, "README.md", "base\n")
