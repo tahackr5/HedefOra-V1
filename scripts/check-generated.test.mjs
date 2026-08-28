@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -12,7 +12,42 @@ test("generated artifacts and W001 runtime roots fail closed", async () => {
     await mkdir(path.join(root, "apps", "web", "src", "generated"), {
       recursive: true,
     });
+    await mkdir(path.join(root, "api"));
     await mkdir(path.join(root, "misc"));
+    await mkdir(path.join(root, "scripts"));
+    await mkdir(path.join(root, "tools", "repolint"), { recursive: true });
+    await writeFile(
+      path.join(root, "apps", "web", "index.html"),
+      "<script>window.productBehavior = true;</script>\n",
+    );
+    await writeFile(
+      path.join(root, "apps", "web", "src", "App.tsx"),
+      "export function App() { return null; }\n",
+    );
+    await writeFile(
+      path.join(root, "apps", "web", "src", "Feature.tsx"),
+      "export function Feature() { return null; }\n",
+    );
+    await writeFile(path.join(root, "api", "server.go"), "package api\n");
+    await writeFile(path.join(root, "api", "client.generated"), "{}\n");
+    await writeFile(path.join(root, "api", "client.generated.json"), "{}\n");
+    await writeFile(
+      path.join(root, "scripts", "check-policy.mjs"),
+      "export {};\n",
+    );
+    await writeFile(
+      path.join(root, "tools", "repolint", "new.go"),
+      "package repolint\n",
+    );
+    await symlink(
+      path.join(root, "apps", "web", "src", "App.tsx"),
+      path.join(root, "apps", "web", "src", "LinkedFeature.tsx"),
+    );
+    await symlink(
+      path.join(root, "apps", "web", "src"),
+      path.join(root, "apps", "web", "src", "linked-src"),
+      "dir",
+    );
     await writeFile(
       path.join(root, "misc", "client.generated.ts"),
       "export {};\n",
@@ -23,7 +58,14 @@ test("generated artifacts and W001 runtime roots fail closed", async () => {
     );
 
     assert.deepEqual(await findGeneratedArtifacts(root), [
+      "api/client.generated",
+      "api/client.generated.json",
+      "api/server.go#unexpected-source",
+      "apps/web/index.html#inline-behavior",
+      "apps/web/src/Feature.tsx#unexpected-source",
+      "apps/web/src/LinkedFeature.tsx#symbolic-link",
       "apps/web/src/generated",
+      "apps/web/src/linked-src#symbolic-link",
       "internal",
       "misc/client.generated.ts",
       "misc/marker.go#generated-marker",

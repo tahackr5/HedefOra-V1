@@ -15,9 +15,13 @@ const excludedDirectories = new Set([
   "node_modules",
 ]);
 const scannableExtensions = new Set([
+  "",
   ".bash",
+  ".css",
   ".go",
+  ".html",
   ".js",
+  ".json",
   ".md",
   ".mjs",
   ".ps1",
@@ -40,6 +44,8 @@ const markerPattern = new RegExp(
   `\\b(?:${["TO", "DO"].join("")}|FIXME|XXX)\\b`,
   "i",
 );
+const separatedTodoPattern = /\bTO(?:\s*-\s*|\s+)DO\b/;
+const packageCommandIdentifier = /\btodo:check\b/gi;
 
 if (path.resolve(process.argv[1] ?? "") === path.resolve(scriptPath)) {
   const findings = await findWorkMarkers(repositoryRoot);
@@ -67,7 +73,15 @@ export async function findWorkMarkers(root) {
     }
     const contents = await readFile(path.join(root, relativePath), "utf8");
     contents.split(/\r?\n/).forEach((line, index) => {
-      if (markerPattern.test(line) && !policyLines.has(line.trim())) {
+      const inspectedLine =
+        relativePath.replaceAll("\\", "/") === "package.json"
+          ? line.replace(packageCommandIdentifier, "")
+          : line;
+      if (
+        (markerPattern.test(inspectedLine) ||
+          separatedTodoPattern.test(inspectedLine)) &&
+        !policyLines.has(line.trim())
+      ) {
         findings.push(`${relativePath.replaceAll("\\", "/")}:${index + 1}`);
       }
     });

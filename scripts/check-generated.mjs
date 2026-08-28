@@ -16,11 +16,48 @@ const excludedDirectories = new Set([
 ]);
 const forbiddenRuntimeRoots = ["cmd", "internal", "db/migrations"];
 const generatedMarker = /(?:Code generated .* DO NOT EDIT|@generated)/i;
-const generatedFilename = /(?:\.gen\.go|\.generated\.(?:ts|tsx))$/i;
-const textExtensions = new Set([
+const generatedFilename = /\.(?:gen|generated)(?:\.[^/]+)?$/i;
+const forbiddenHtmlBehavior =
+  /(?:<script\b(?![^>]*\bsrc\s*=)[^>]*>|\son[a-z]+\s*=|javascript\s*:)/i;
+const executableSourceExtensions = new Set([
+  ".bash",
+  ".cjs",
+  ".cts",
   ".go",
+  ".html",
   ".js",
+  ".jsx",
   ".mjs",
+  ".mts",
+  ".ps1",
+  ".py",
+  ".sh",
+  ".ts",
+  ".tsx",
+]);
+const allowedW000FrontendSourceFiles = new Set([
+  "apps/web/eslint.config.js",
+  "apps/web/index.html",
+  "apps/web/src/App.test.tsx",
+  "apps/web/src/App.tsx",
+  "apps/web/src/main.tsx",
+  "apps/web/src/test/setup.ts",
+  "apps/web/src/vite-env.d.ts",
+  "apps/web/vite.config.ts",
+]);
+const textExtensions = new Set([
+  ".css",
+  ".go",
+  ".html",
+  ".js",
+  ".json",
+  ".md",
+  ".mjs",
+  ".ps1",
+  ".py",
+  ".sh",
+  ".sql",
+  ".toml",
   ".ts",
   ".tsx",
   ".yaml",
@@ -38,7 +75,7 @@ if (path.resolve(process.argv[1] ?? "") === path.resolve(scriptPath)) {
     process.exitCode = 1;
   } else {
     console.log(
-      "PASS: W000 has no forbidden runtime roots, generated directories, filenames or source markers.",
+      "PASS: W000 has no unexpected runtime source paths, generated directories, filenames or source markers.",
     );
   }
 }
@@ -68,10 +105,32 @@ export async function findGeneratedArtifacts(root) {
       const contents = await readFile(path.join(root, relativePath), "utf8");
       if (generatedMarker.test(contents)) {
         findings.push(`${normalized}#generated-marker`);
+        continue;
       }
+      if (
+        path.extname(normalized) === ".html" &&
+        forbiddenHtmlBehavior.test(contents)
+      ) {
+        findings.push(`${normalized}#inline-behavior`);
+        continue;
+      }
+    }
+    if (
+      executableSourceExtensions.has(path.extname(normalized)) &&
+      !isAllowedW000Source(normalized)
+    ) {
+      findings.push(`${normalized}#unexpected-source`);
     }
   }
   return [...new Set(findings)].sort();
+}
+
+function isAllowedW000Source(relativePath) {
+  return (
+    relativePath.startsWith("scripts/") ||
+    relativePath.startsWith("tools/repolint/") ||
+    allowedW000FrontendSourceFiles.has(relativePath)
+  );
 }
 
 async function collectFiles(directory, relativeDirectory, findings) {
@@ -79,7 +138,9 @@ async function collectFiles(directory, relativeDirectory, findings) {
   const entries = await readdir(directory, { withFileTypes: true });
   for (const entry of entries) {
     const relativePath = path.join(relativeDirectory, entry.name);
-    if (entry.isDirectory()) {
+    if (entry.isSymbolicLink()) {
+      findings.push(`${relativePath.replaceAll("\\", "/")}#symbolic-link`);
+    } else if (entry.isDirectory()) {
       if (excludedDirectories.has(entry.name)) {
         continue;
       }
