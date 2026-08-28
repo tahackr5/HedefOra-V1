@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "2efca6c8b65e3342ad5309076b7cd0dedf816943",
-  "verifiedThrough": "db12cf85948730f27228ba9d0bba4a8a8738b37e",
+  "verifiedThrough": "52a8a23757bc97e2337117a89df4340bccf450d0",
   "trailingAllowedPaths": [
     "state/W000-OWNERSHIP.json"
   ],
@@ -217,6 +217,25 @@
         "delivery/CODEX-RUNTIME-GENERATION-SPEC.md",
         "scripts/test_validate_toml.py",
         "scripts/validate_toml.py"
+      ]
+    },
+    "W000-T06-portable-reviewer-denials-seal": {
+      "base": "db12cf85948730f27228ba9d0bba4a8a8738b37e",
+      "head": "2492e6f014ea4eb0ee7b7d89f4fcb686f36cbe14",
+      "allowedPaths": [
+        "state/W000-OWNERSHIP.json"
+      ]
+    },
+    "W000-T06-evidence-correction": {
+      "base": "2492e6f014ea4eb0ee7b7d89f4fcb686f36cbe14",
+      "head": "52a8a23757bc97e2337117a89df4340bccf450d0",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W000-EVIDENCE.md",
+        "state/W000-OWNERSHIP.md"
       ]
     }
   }
