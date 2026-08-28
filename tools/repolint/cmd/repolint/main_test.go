@@ -176,6 +176,33 @@ func TestValidateManifestAcceptsContinuousCoverageAndManifestOnlyTrailingCommit(
 	}
 }
 
+func TestValidateManifestDerivesTrailingPathFromSelectedManifest(t *testing.T) {
+	repository, manifestPath, manifest, start, _ := coverageFixtureAt(t, "state/W001-OWNERSHIP.json", false)
+	writeManifest(t, manifestPath, manifest)
+
+	if err := validateManifest(repository, manifestPath, "", true, start, "HEAD", false); err != nil {
+		t.Fatalf("validateManifest() W001 error = %v", err)
+	}
+
+	manifest.TrailingAllowedPaths = []string{"state/W000-OWNERSHIP.json"}
+	writeManifest(t, manifestPath, manifest)
+	err := validateManifest(repository, manifestPath, "", true, start, "HEAD", false)
+	if err == nil || !strings.Contains(err.Error(), `exactly ["state/W001-OWNERSHIP.json"]`) {
+		t.Fatalf("validateManifest() mismatched trailing path error = %v", err)
+	}
+}
+
+func TestValidateManifestRejectsPathOutsideRepository(t *testing.T) {
+	repository, _, manifest, start, _ := coverageFixture(t, false)
+	outsidePath := filepath.Join(t.TempDir(), "W001-OWNERSHIP.json")
+	writeManifest(t, outsidePath, manifest)
+
+	err := validateManifest(repository, outsidePath, "", true, start, "HEAD", false)
+	if err == nil || !strings.Contains(err.Error(), "must be inside the repository") {
+		t.Fatalf("validateManifest() outside path error = %v", err)
+	}
+}
+
 func TestValidateManifestRejectsCoverageGapAndForbiddenTrailingPath(t *testing.T) {
 	t.Run("gap", func(t *testing.T) {
 		repository, manifestPath, manifest, start, trailingHead := coverageFixture(t, false)
@@ -332,6 +359,10 @@ func TestDecodeOwnershipManifestRejectsUnknownFields(t *testing.T) {
 }
 
 func coverageFixture(t *testing.T, forbiddenTrailingPath bool) (string, string, ownershipManifest, string, string) {
+	return coverageFixtureAt(t, "state/W000-OWNERSHIP.json", forbiddenTrailingPath)
+}
+
+func coverageFixtureAt(t *testing.T, manifestRepositoryPath string, forbiddenTrailingPath bool) (string, string, ownershipManifest, string, string) {
 	t.Helper()
 	repository := initializeRepository(t)
 	writeRepositoryFile(t, repository, "README.md", "initial\n")
@@ -340,7 +371,7 @@ func coverageFixture(t *testing.T, forbiddenTrailingPath bool) (string, string, 
 	writeRepositoryFile(t, repository, "allowed/task.txt", "owned\n")
 	verified := commitRepository(t, repository, "owned task")
 
-	writeRepositoryFile(t, repository, "state/W000-OWNERSHIP.json", "{}\n")
+	writeRepositoryFile(t, repository, manifestRepositoryPath, "{}\n")
 	if forbiddenTrailingPath {
 		writeRepositoryFile(t, repository, "forbidden.txt", "outside trailing ownership\n")
 	}
@@ -350,7 +381,7 @@ func coverageFixture(t *testing.T, forbiddenTrailingPath bool) (string, string, 
 		SchemaVersion:        2,
 		WaveStart:            start,
 		VerifiedThrough:      verified,
-		TrailingAllowedPaths: []string{"state/W000-OWNERSHIP.json"},
+		TrailingAllowedPaths: []string{manifestRepositoryPath},
 		Tasks: map[string]taskSpec{
 			"owned-task": {
 				Base:         start,
@@ -359,7 +390,7 @@ func coverageFixture(t *testing.T, forbiddenTrailingPath bool) (string, string, 
 			},
 		},
 	}
-	return repository, filepath.Join(repository, "state", "W000-OWNERSHIP.json"), manifest, start, trailingHead
+	return repository, filepath.Join(repository, filepath.FromSlash(manifestRepositoryPath)), manifest, start, trailingHead
 }
 
 func initializeRepository(t *testing.T) string {
