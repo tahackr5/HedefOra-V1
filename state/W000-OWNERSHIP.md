@@ -11,6 +11,8 @@ W000 GitHub PR'ı yalnız two-parent merge commit yöntemiyle birleştirilir; sq
 - Parent hedef runtime: `gpt-5.6-sol` + `ultra`.
 - Alt ajanlar parent runtime'ını miras alır; custom-agent dosyaları model veya effort override etmez.
 - Gerçek model/effort runtime tarafından görünürse her handoff'ta yazılır; görünmüyorsa `UNKNOWN` denir, tahmin edilmez.
+- WSL/Linux parent-child isolation sentinel'ı capability testi olarak effort `none` ile çalıştırılmıştır; final security/cold review koşumları bundan ayrı olarak `gpt-5.6-sol + ultra` ister.
+- Native Windows `unelevated` ve `elevated` reviewer koşumları canlı loopback bağlantısını engellemediği için kabul edilmez. Reviewer yalnız hash-doğrulanmış resmi Linux Codex paketi, isolated `CODEX_HOME`, resolved absolute credential deny ve executable sentinel geçmiş WSL2/Linux sandbox'ında başlatılır.
 - Aynı anda en fazla dört writer ve her path için tek writer kuralı geçerlidir.
 
 ## Tamamlanan salt-okunur işler
@@ -19,7 +21,7 @@ W000 GitHub PR'ı yalnız two-parent merge commit yöntemiyle birleştirilir; sq
 |---|---|---|---|
 | W000-T01 | `infra_contracts` / Lovelace | blueprint denetçisi | Tamamlandı; DQ-001..003, DEC-021..023 ve ADR-0011..0012 ile çözüldü. |
 | W000-T02 | `provider_research` / Aristotle | resmi provider/toolchain araştırmacısı | Tamamlandı; sürüm, lisans, uyumluluk ve supply-chain önerisi teslim edildi. |
-| W000-T03 | `security_owner` / Franklin | runtime güvenlik denetçisi | Tamamlandı; elevated Windows helper arızası ve doğrulanmış unelevated read-only geçici yolu kaydedildi. |
+| W000-T03 | `security_owner` / Franklin | runtime güvenlik denetçisi | Tamamlandı; ilk Windows helper riski kaydedildi. Sonraki executable sentinel her iki native Windows modunu reddetti ve WSL2/Linux yolunu doğruladı. |
 
 ## Aktif writer görevleri
 
@@ -57,6 +59,15 @@ W000 GitHub PR'ı yalnız two-parent merge commit yöntemiyle birleştirilir; sq
 - Shared proposals: root script/dependency gereksinimleri handoff'ta structured proposal olarak verilir; writer root dosyası değiştirmez.
 - Scope: exact-SHA GitHub Actions, least-privilege permissions, concurrency, timeout ve yalnız W000 artifact'larını test eden CI; digest-pinned PostgreSQL 17.11 yerel compose scaffold. Deploy, DNS, SSH, secret veya production mutation yoktur.
 - Expected tests: workflow YAML parse/lint, action SHA/tag doğrulaması, compose config ve image digest doğrulaması; Docker/GitHub erişimi yoksa ayrı `BLOCKED_EXTERNAL` kanıtı.
+
+### W000-T06R — Cold-review remediation ve reviewer isolation
+
+- Writer: orchestrator; security ve cold-review ajanları read-only kaldı.
+- Branch/worktree: `codex/w000-bootstrap` / repository root; temiz gate clone'u OneDrive dışındadır.
+- Makine allowlist'leri: `W000-T06-cold-review-fixes`, `W000-T06-reviewer-isolation` ve `W000-T06-reviewer-isolation-format` görevleri `state/W000-OWNERSHIP.json` içinde exact commit aralıklarıyla kayıtlıdır.
+- Scope: ilk cold review bulgularını düzeltmek; reviewer permission profile'ını semantic-lock etmek; native Windows izolasyonunu canlı listener ile reddetmek; WSL/Linux parent-child read/write/credential/network/tool-inventory sentinel'ını geçirmek.
+- Contract: tanısal sentinel final review değildir. Final security ve cold-review ajanları exact branch hedefinde ayrı fresh-context `gpt-5.6-sol + ultra`, read-only ve `never` koşumları vermelidir.
+- Evidence: `state/W000-EVIDENCE.md`; local full-tree target `31d65b8d1287f8caadd276f65f3567eb4af12ca5` `PASS`. GitHub ve final bağımsız review kapıları açıktır.
 
 ## Generated, vendor ve secret politikası
 
