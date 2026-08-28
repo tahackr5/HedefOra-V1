@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "2efca6c8b65e3342ad5309076b7cd0dedf816943",
-  "verifiedThrough": "3820f2dd3ed69ceba47afe887bf281ea1b400ab7",
+  "verifiedThrough": "fa402f5a7768d9e3a7375424582a5ba927437733",
   "trailingAllowedPaths": [
     "state/W000-OWNERSHIP.json"
   ],
@@ -186,6 +186,18 @@
       "allowedPaths": [
         "scripts/lib/governance.mjs",
         "state/W000-OWNERSHIP.json"
+      ]
+    },
+    "W000-T06-evidence-refresh": {
+      "base": "3820f2dd3ed69ceba47afe887bf281ea1b400ab7",
+      "head": "fa402f5a7768d9e3a7375424582a5ba927437733",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W000-EVIDENCE.md",
+        "state/W000-OWNERSHIP.json",
+        "state/W000-OWNERSHIP.md"
       ]
     }
   }
