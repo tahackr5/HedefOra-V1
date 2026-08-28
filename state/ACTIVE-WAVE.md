@@ -3,11 +3,14 @@
 > Bu dosyanın tek writer'ı orchestrator'dır.
 
 - Wave ID: W000
-- Status: IN_PROGRESS
+- Status: COMPLETED
 - Wave start commit: `2efca6c8b65e3342ad5309076b7cd0dedf816943`
 - Integration branch: `codex/w000-bootstrap`
 - Started at: `2026-08-28T02:13:12+03:00` (`2026-08-27T23:13:12Z`)
-- Last checkpoint: Exact local full-tree ve WSL/Linux isolation diagnostic `PASS @ 1bd1729`; GitHub quality job `PASS @ 1bd1729`, plan-kısıtlı hosted güvenlik kapıları `BLOCKED_EXTERNAL`. Fresh final security review `FAIL @ 1bd1729` ile F-001/F-002'yi açtı; kod/test remediation'ı `5886a97`, fresh full-tree/security/cold tekrarları bekleniyor.
+- Completed at: `2026-08-28T20:13:02+03:00` (`2026-08-28T17:13:02Z`)
+- Reviewed PR head/tree: `383cf66723667a5ab8e0fd2001fe86b261698d10` / `2fc4fb23d42ea0a5ec41cfd70704b1132b04519a`
+- End merge commit: `f52a8b7eaf83e8817a98e02aa5953c0faf04f6c2`
+- Last checkpoint: PR #1 exact reviewed head two-parent/content-identical merge ile `main`e alındı; local merge-wrapper/full-tree gate ve GitHub main push quality job `98924751296` `PASS`. Hosted CodeQL/Dependency Review/branch protection `BLOCKED_EXTERNAL` kalır ve DEC-024/R-014/R-016 altında izlenir.
 - Current objective: Blueprint audit, exact toolchain lock, Codex runtime generation and monorepo bootstrap
 
 ## Active tasks
@@ -21,8 +24,8 @@
 | W000-T05A Shared runtime/contracts/repository scaffold | orchestrator | `codex/w000-bootstrap` / repository root | root/shared paths in `state/W000-OWNERSHIP.md` | COMPLETED | W000-T01..T03 |
 | W000-T05B Frontend no-feature scaffold | `provider_research` | immutable-base worktree | `apps/web/**` | COMPLETED | W000-T01..T02 |
 | W000-T05C CI/local-infra scaffold | `infra_contracts` | immutable-base worktree | `.github/**`, `infra/**` | COMPLETED | W000-T01..T03 |
-| W000-T06R Cold-review remediation ve reviewer isolation | orchestrator + read-only reviewers | `codex/w000-bootstrap` / WSL2 isolated runtime | exact task allowlist'leri `state/W000-OWNERSHIP.json` içinde | IN_PROGRESS | İlk cold review `FAIL @ 8d44587`; final security `FAIL @ 1bd1729`; remediation `5886a97`; fresh reviews açık |
-| W000-T06 Merged-tree gates | orchestrator + read-only reviewers | `codex/w000-bootstrap` / repository root | orchestrator-owned shared evidence/state | IN_PROGRESS | W000-T05 |
+| W000-T06R Cold-review remediation ve reviewer isolation | orchestrator + read-only reviewers | `codex/w000-bootstrap` / WSL2 isolated runtime | exact task allowlist'leri `state/W000-OWNERSHIP.json` içinde | COMPLETED | Security/cold `PASS @ 383cf66` |
+| W000-T06 Merged-tree gates | orchestrator + read-only reviewers | `codex/w000-bootstrap` / repository root | orchestrator-owned shared evidence/state | COMPLETED | Merge-wrapper/full-tree/main quality `PASS @ f52a8b7` |
 
 ## Shared proposals
 
@@ -32,28 +35,27 @@ Writer kapsamları, proposal kuralları, testler ve merge sırası `state/W000-O
 
 | Gate | Status | Evidence |
 |---|---|---|
-| Blueprint consistency | PASS | DEC-021..023, ADR-0011..0012; W000 exit'i bloke etmeyen DQ-004 açık |
-| Codex runtime config | PASS | 11/11 discovery; güçlendirilmiş WSL/Linux parent-child read/write/credential/loopback/tool-inventory sentinel `PASS @ 1bd1729`; R-012 açık; final review değildir |
-| Historical clean build/test | PASS | `state/W000-EVIDENCE.md`; exact `1bd1729` / tree `ce55605`; `5886a97` remediation'ını kapsamaz |
-| Current-target clean build/test | NOT_RUN | `5886a97` üzerinde yalnız bounded Node/Go remediation kontrolleri `PASS`; sealed target temiz-clone full gate'i bekleniyor |
-| Historical security review | PASS | `SECURITY_FIX_VERDICT:PASS`, target `9758685`; final hedefi kapsamaz |
-| Final security attempt | FAIL | `gpt-5.6-sol + ultra`, session `01a04744-b2a7-70c2-8a15-4ae79a5c3372`, exact `1bd1729`: F-001 lisans envanteri ve F-002 ownership history |
-| Remediation security re-review | NOT_RUN | F-001/F-002 `5886a97` ile remediated; manifest-sealed exact target üzerinde fresh rerun bekleniyor |
-| Initial cold review | FAIL | target `8d44587`; sekiz remediation grubu kaydedildi |
-| Cold fix re-review | NOT_RUN | security FAIL nedeniyle başlatılmadı; fresh remediation hedefinde WSL/Linux `ultra` koşumu bekleniyor |
-| Historical GitHub quality | PASS | PR #1, run `33143640272`, quality job `98759826096`, exact head `1bd1729`; `5886a97` değişikliklerini kapsamaz |
-| Current-target GitHub quality | NOT_RUN | `5886a97` henüz origin head değildir; sealed target push'u bekleniyor |
-| Hosted security/enforcement | BLOCKED_EXTERNAL | Dependency review plan özelliği yok; CodeQL upload integration erişimi yok; private/free repo branch protection API `403` |
+| Blueprint consistency | PASS | DEC-021..024, ADR-0011..0014; DQ-004 owner kararıyla kapandı |
+| Codex runtime config | PASS | WSL/Linux isolation sentinel ve adversarial/static/no-model harness regresyonları `PASS`; R-012/R-015 izleniyor |
+| Exact PR-head clean build/test | PASS | `383cf667` / tree `2fc4fb2`; clean detached clone; Node 11/11, frontend 3/3 ve %100 coverage, Go/Python/actionlint/Gitleaks/compose PASS |
+| Final security review | PASS | `gpt-5.6-sol + ultra`, session `01a04861-5700-79b3-840b-93dcd214c2c4`, zero local finding/blocker, no mutation |
+| Final cold review | PASS | `gpt-5.6-sol + ultra`, session `01a0486e-e3e5-7fc1-b7f6-1f949b670c04`, zero local finding/blocker, no mutation |
+| Exact PR-head GitHub quality | PASS | run `33155512881`, job `98797220995`, exact `383cf667` |
+| Merge-wrapper/full-tree | PASS | merge `f52a8b7`; exact parents/tree; local gates PASS |
+| Main push quality | PASS | run `33193519710`, job `98924751296`, exact `f52a8b7` |
+| Hosted security/enforcement | BLOCKED_EXTERNAL | CodeQL upload/integration, PR Dependency Review ve private-plan branch/ruleset protection; DEC-024 telafisi hosted sonucu PASS yapmaz; R-014/R-016 açık |
 
-## Blockers / owner input
+## Owner kararları ve sonraki sınırlar
 
 - Owner provided the primary GitHub repository: `https://github.com/tahackr5/HedefOra-V1.git`.
 - Repository-local commit identity: `tahackr5 <cak.ihsantaha@gmail.com>`.
-- Existing small VPS is classified as staging/pre-production only. It must not receive real-user or production data; production promotion remains a separate owner gate after quality, security, backup and restore evidence.
+- Owner repository'nin private/current planda kalmasını ve DEC-024 exact-SHA telafi sözleşmesini onayladı. Hosted kontroller `BLOCKED_EXTERNAL` kalır.
+- Owner DQ-004 için backup/recovery'nin W001'i engellememesini; W007 ve ilk gerçek kullanıcı/public launch/production promotion öncesinde hard gate olmasını onayladı.
+- Owner PR #1 exact merge ve W001 başlangıcını onayladı; PR #1 `f52a8b7` ile merge edildi.
+- Existing small VPS yalnız staging/pre-production adayıdır. Owner beyanı: HostingDünyam/Datacasa İstanbul, Ubuntu, 2 GB RAM, 30 GB NVMe, Cloudflare ve snapshot özelliği; exact SSH portu, Ubuntu sürümü, vCPU ve host fingerprint'i doğrulanmamıştır. Gerçek kullanıcı veya production verisi alamaz.
 - Legal/KVKK content may be AI-assisted during development but remains `DRAFT_NOT_FOR_PRODUCTION`. The owner is the review owner until a later legal review is commissioned; no draft may silently become active public policy.
-- W000 exit blockers: `5886a97` sonrası exact full-tree/GitHub quality yenilemesi, fresh security PASS, fresh cold PASS, GitHub enforcement alternatifi owner kararı ve final `main` merge-wrapper gate'i.
-- W001'e otomatik geçiş, backup/recovery ve kalıcı checkout gate zamanlamasını çözecek DQ-004 owner kararı gelene kadar durur; bu karar W000 exit'ini bloke etmez. DEC-016 uyarınca ikinci şifreli off-site kopya ve recovery testi en geç launch öncesi zorunludur.
-- Deferred to staging/W007: owner must provide non-secret server inventory before server bootstrap: provider, IP/hostname, SSH port, Linux distribution/version, vCPU/RAM/disk, current workloads, backup/snapshot capability and desired staging hostname. This is not a W000 blocker. Passwords, private keys, tokens, MFA/recovery codes and real `.env` values must not be sent.
+- W000 exit blocker'ı yoktur. R-014/R-016 W001'in ilk telafi-gate task'ında ele alınır; runtime davranışı bu kapılar kurulmadan başlamaz.
+- W007 öncesi eksik sunucu envanteri owner/provider console üzerinden doğrulanır. Password, private key, token, MFA/recovery code veya gerçek `.env` istenmez ve kaydedilmez.
 
 ## Resume instruction
 

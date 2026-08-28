@@ -43,8 +43,6 @@
 - Resolution: The v0.1.0 manifest is immutable and tied to the initial blueprint commit; later provenance uses Git/release manifests. Recorded as DEC-023 / ADR-0012.
 - Closed commit: `525134128a8d5c83dedc87be046440416375bb95`
 
-## Open
-
 ### DQ-004 — Repository backup gate zamanlaması
 
 - Opened by / date: orchestrator + independent evidence reviewer / 2026-08-28
@@ -54,8 +52,13 @@
 - Security/privacy/cost/migration impact: Erken gate veri kaybı riskini azaltır fakat W001 geliştirmesini external backup hazırlığına bağlar; launch-only gate geliştirmeyi hızlandırır fakat ikinci kopya oluşana kadar tek-repository riskini açık bırakır.
 - Work that can continue safely: W000 final review, GitHub PR/check ve merge gate'leri; production/VPS mutation yoktur.
 - Blocking wave/gate: W001'e otomatik geçiş. W000 exit'i bloke etmez.
-- Owner decision: REQUIRED before W001 starts.
-- Closed commit: —
+- Owner decision: Owner, W001'i engellemeyen W007/pre-user hard gate seçeneğini 2026-08-28 tarihinde açıkça onayladı.
+- Resolution: İkinci şifreli off-site repository kopyası ve sıfırdan recovery testi W001 başlangıç blocker'ı değildir; W007 kapsamında ve en geç ilk gerçek kullanıcı, public launch veya production promotion öncesinde zorunludur. DEC-016 açıklaması ve ADR-0014 ile kaydedildi.
+- Closed commit: `9f7703b8411a5252afc54a53174b824eefcdb37a`
+
+## Open
+
+Açık karar yoktur.
 
 ## Item template
 

@@ -62,14 +62,23 @@ W000 GitHub PR'ı yalnız two-parent merge commit yöntemiyle birleştirilir; sq
 
 ### W000-T06R — Cold-review remediation ve reviewer isolation
 
-- Status: `IN_PROGRESS`; exact `1bd1729` final security review'ü `FAIL` verdi, F-001/F-002 remediation'ı `5886a97` üzerinde tamamlandı; fresh `ultra` security/cold ve final hosted gate'ler açıktır.
+- Status: `COMPLETED`; F-001/F-002 remediation'ı `5886a97` üzerinde tamamlandı, exact `383cf667` clean-clone/security/cold/GitHub quality PASS ve `f52a8b7` merge-wrapper/main quality PASS verdi.
 - Writer: orchestrator; security ve cold-review ajanları read-only kaldı.
 - Branch/worktree: `codex/w000-bootstrap` / repository root; temiz gate clone'u OneDrive dışındadır.
-- Bu evidence snapshot'ının başlangıcındaki makine allowlist'i `verifiedThrough=52a8a23757bc97e2337117a89df4340bccf450d0` idi ve yalnız manifest-only trailing `1bd1729` endpoint'ini kabul ediyordu. Mühürleme sırası: önce bu evidence commit'i; hemen ardından manifest-only commit, `52a8a23..5886a97` kod/test remediation aralığını ve `5886a97..<evidence commit>` aralığını ayrı task'lerle zincirler. Yetkili güncel endpoint her zaman HEAD'deki `state/W000-OWNERSHIP.json` değeridir.
+- Exact reviewed branch endpoint'i `383cf66723667a5ab8e0fd2001fe86b261698d10`, `verifiedThrough=dacac84bc9896c6bb8da7ea776ce5de59638edfe` ve manifest-only trailing path ile mühürlendi. Yetkili güncel endpoint her zaman HEAD'deki `state/W000-OWNERSHIP.json` değeridir.
 - Remediation paths: `scripts/check-licenses.mjs`, `scripts/check-licenses.test.mjs`, `tools/repolint/cmd/repolint/main.go`, `tools/repolint/cmd/repolint/main_test.go`.
-- Scope: ilk cold review bulgularını düzeltmek; reviewer permission profile'ını semantic-lock etmek; native Windows izolasyonunu canlı listener ile reddetmek; WSL/Linux parent-child read/write/credential/network/tool-inventory sentinel'ını geçirmek; final security review'ün F-001 lisans-closure ve F-002 pre-base merge-history bulgularını test-first remediate etmek. Harness validator correction henüz pending'dir; fresh review öncesi fail-closed düzeltilecek ve doğrulanacaktır.
+- Scope: ilk cold review bulgularını düzeltmek; reviewer permission profile'ını semantic-lock etmek; native Windows izolasyonunu canlı listener ile reddetmek; WSL/Linux parent-child read/write/credential/network/tool-inventory sentinel'ını geçirmek; F-001 lisans-closure ve F-002 pre-base merge-history bulgularını test-first remediate etmek; semantic/backslashsız mandatory transport ve tri-state terminal correlation harness'ını adversarial/static/no-model kapılarla doğrulamak.
 - Contract: tanısal sentinel final review değildir. Final security ve cold-review ajanları exact branch hedefinde ayrı fresh-context `gpt-5.6-sol + ultra`, read-only ve `never` koşumları vermelidir.
-- Evidence: `state/W000-EVIDENCE.md`; historical exact isolation ve local full-tree target `1bd1729fc9bb1f8ec86d381bc9ff947c03685b17` `PASS`. Isolation security parent/child: `01a046b7-faf8-7343-adcc-d8a8ac8493b3` / `01a046b8-5ee0-7e30-b3de-2f27913e5f1b`; cold parent/child: `01a046b8-e9c1-7a22-be9a-026f013fe520` / `01a046b9-568d-7350-a075-c6df6bb14cd4`. Bunlar effort `none` diagnostic session'larıdır. Final security session `01a04744-b2a7-70c2-8a15-4ae79a5c3372`, exact `1bd1729` üzerinde `ultra` ve read-only çalıştı; F-001/F-002 nedeniyle `FAIL` verdi. `5886a97` bounded remediation kontrolleri `PASS`; sealed-target clean clone/security/current GitHub `NOT_RUN`, cold review ise security FAIL nedeniyle dispatch edilmedi.
+- Evidence: `state/W000-EVIDENCE.md`; final security session `01a04861-5700-79b3-840b-93dcd214c2c4` ve cold session `01a0486e-e3e5-7fc1-b7f6-1f949b670c04`, exact `383cf667` üzerinde `gpt-5.6-sol + ultra`, read-only/never koştu ve zero local finding/blocker ile PASS verdi. PR-head/main clean-clone, GitHub quality ve merge-wrapper kapıları PASS'tir; hosted kontroller `BLOCKED_EXTERNAL` kalır.
+
+### W000-T06P — Post-exit owner decisions ve state bookkeeping
+
+- Writer: orchestrator; shared/governance dosyalarının tek writer'ı.
+- Base: reviewed endpoint `383cf667`; aradaki `f52a8b7` merge wrapper content-identical olduğu için task diff'ine yeni endpoint eklemez.
+- Contract task: owner-approved DEC-016 açıklaması, DEC-024, ADR-0013/0014 ve ilgili delivery/operations sözleşmeleri; exact head `9f7703b8411a5252afc54a53174b824eefcdb37a`.
+- State task: active wave, decision queue, risk, ledger, W000 evidence ve bu ownership belgesinin post-exit kapanışı; exact head manifest seal'inde kaydedilir.
+- Bu bookkeeping W000 end commit'ini değiştirmez: `f52a8b7eaf83e8817a98e02aa5953c0faf04f6c2`.
+- Expected gates: diff/ownership, full repository gate, exact GitHub quality, governance-focused fresh security/cold review ve two-parent content-identical closure merge-wrapper.
 
 ## Generated, vendor ve secret politikası
 
