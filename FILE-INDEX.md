@@ -67,6 +67,7 @@
 - `delivery/CODEX-RUNTIME-GENERATION-SPEC.md`
 - `delivery/TOOLCHAIN-LOCK.md`
 - `state/W000-OWNERSHIP.md` (yalnız W000 boyunca aktif yazma sahipliği)
+- `state/W000-OWNERSHIP.json` (W000 commit aralığı ve path allowlist kanıtı)
 - `agents/**`
 - `.agents/skills/**/SKILL.md`
 - `plugins/**`

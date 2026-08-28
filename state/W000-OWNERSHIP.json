@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "tasks": {
+    "W000-T05A-runtime": {
+      "base": "171628f44e27061047d9e0e4e7e7ad123bc13e67",
+      "head": "75a9fe26703d741a42ebdec1dc8cff876ae1241e",
+      "allowedPaths": [
+        ".codex/**",
+        ".editorconfig",
+        ".gitattributes",
+        ".gitignore",
+        ".node-version",
+        ".spectral.yaml",
+        ".tool-versions",
+        "FILE-INDEX.md",
+        "README.md",
+        "agents/10-LEGAL-POLICY-DRAFTER.md",
+        "contracts/**",
+        "delivery/AGENT-DISPATCH.md",
+        "delivery/CODEX-RUNTIME-GENERATION-SPEC.md",
+        "delivery/TOOLCHAIN-LOCK.md",
+        "go.mod",
+        "package.json",
+        "pnpm-workspace.yaml",
+        "scripts/**",
+        "state/**",
+        "tools/**"
+      ]
+    },
+    "W000-T05B-frontend": {
+      "base": "75a9fe26703d741a42ebdec1dc8cff876ae1241e",
+      "head": "8b75eeeeb4f2666ffe02980a8b5fc87aeeadf74d",
+      "allowedPaths": [
+        "apps/web/**"
+      ]
+    },
+    "W000-T05C-ci-infra": {
+      "base": "8b75eeeeb4f2666ffe02980a8b5fc87aeeadf74d",
+      "head": "2cb444c162ad772043634fad00d2c1d81d41f7ec",
+      "allowedPaths": [
+        ".github/**",
+        "infra/**"
+      ]
+    },
+    "W000-T05A-hardening": {
+      "base": "2cb444c162ad772043634fad00d2c1d81d41f7ec",
+      "head": "79b2f29ddc2aed8233f34b452d63dc88dd4d9235",
+      "allowedPaths": [
+        ".codex/**",
+        ".editorconfig",
+        ".gitattributes",
+        ".gitignore",
+        ".node-version",
+        ".spectral.yaml",
+        ".tool-versions",
+        "agents/10-LEGAL-POLICY-DRAFTER.md",
+        "contracts/**",
+        "delivery/CODEX-RUNTIME-GENERATION-SPEC.md",
+        "delivery/TOOLCHAIN-LOCK.md",
+        "go.mod",
+        "package.json",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        "scripts/**",
+        "tools/**"
+      ]
+    }
+  }
+}

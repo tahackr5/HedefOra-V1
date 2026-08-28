@@ -2,6 +2,8 @@
 
 > Bu dosyanın tek writer'ı orchestrator'dır. Tüm writer branch'leri değişmez `WAVE_START_COMMIT` olan `2efca6c8b65e3342ad5309076b7cd0dedf816943` üzerinden açılır.
 
+Makine tarafından doğrulanan commit aralıkları ve path allowlist'leri `state/W000-OWNERSHIP.json` içindedir. İnsan tarafından okunabilir bu plan ile JSON manifesti birlikte kanoniktir; commit aralıkları `go run ./tools/repolint/cmd/repolint -manifest state/W000-OWNERSHIP.json -all` ile doğrulanır.
+
 ## Runtime kanıtı
 
 - Parent hedef runtime: `gpt-5.6-sol` + `ultra`.
