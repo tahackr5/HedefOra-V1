@@ -1,6 +1,33 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
+  "waveStart": "2efca6c8b65e3342ad5309076b7cd0dedf816943",
+  "verifiedThrough": "8f45bfe09ef0533830529e325226ef7a6447ffd0",
+  "trailingAllowedPaths": [
+    "state/W000-OWNERSHIP.json"
+  ],
   "tasks": {
+    "W000-T04-governance": {
+      "base": "2efca6c8b65e3342ad5309076b7cd0dedf816943",
+      "head": "171628f44e27061047d9e0e4e7e7ad123bc13e67",
+      "allowedPaths": [
+        "DECISIONS.md",
+        "FILE-INDEX.md",
+        "MASTER-TRIGGER.md",
+        "PACKAGE-MANIFEST.md",
+        "PACKAGE-VALIDATION.md",
+        "START-HERE.md",
+        "architecture/ADR-REGISTER.md",
+        "delivery/CODEX-RUNTIME-GENERATION-SPEC.md",
+        "delivery/QUALITY-GATES-AND-DOD.md",
+        "delivery/REVIEW-COLD-REVIEW-AND-EVIDENCE.md",
+        "plugins/PLUGIN-INSTALL-CHECKLIST.md",
+        "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W000-OWNERSHIP.md"
+      ]
+    },
     "W000-T05A-runtime": {
       "base": "171628f44e27061047d9e0e4e7e7ad123bc13e67",
       "head": "75a9fe26703d741a42ebdec1dc8cff876ae1241e",
@@ -42,13 +69,6 @@
         "infra/**"
       ]
     },
-    "W000-T05C-merged-gates": {
-      "base": "5f292fc64a51557b548fb64d5ba3a78d47224084",
-      "head": "9ab761730c4576d1a999982bdac5eb783ef1b2fd",
-      "allowedPaths": [
-        ".github/**"
-      ]
-    },
     "W000-T05A-hardening": {
       "base": "2cb444c162ad772043634fad00d2c1d81d41f7ec",
       "head": "79b2f29ddc2aed8233f34b452d63dc88dd4d9235",
@@ -70,6 +90,51 @@
         "pnpm-workspace.yaml",
         "scripts/**",
         "tools/**"
+      ]
+    },
+    "W000-T05A-ownership-evidence": {
+      "base": "79b2f29ddc2aed8233f34b452d63dc88dd4d9235",
+      "head": "5f292fc64a51557b548fb64d5ba3a78d47224084",
+      "allowedPaths": [
+        "FILE-INDEX.md",
+        "state/W000-OWNERSHIP.json",
+        "state/W000-OWNERSHIP.md"
+      ]
+    },
+    "W000-T05C-merged-gates": {
+      "base": "5f292fc64a51557b548fb64d5ba3a78d47224084",
+      "head": "9ab761730c4576d1a999982bdac5eb783ef1b2fd",
+      "allowedPaths": [
+        ".github/**"
+      ]
+    },
+    "W000-T05A-ownership-gate-update": {
+      "base": "9ab761730c4576d1a999982bdac5eb783ef1b2fd",
+      "head": "2e9ba35b5aa25fe844dfbe6a59839d6aeb5e1014",
+      "allowedPaths": [
+        "state/W000-OWNERSHIP.json"
+      ]
+    },
+    "W000-T06-security-gate-fixes": {
+      "base": "2e9ba35b5aa25fe844dfbe6a59839d6aeb5e1014",
+      "head": "f4ce601d9c71ef6e9106a345ed37c7c6d8ba3610",
+      "allowedPaths": [
+        "scripts/**",
+        "tools/**"
+      ]
+    },
+    "W000-T05C-current-head-gate": {
+      "base": "f4ce601d9c71ef6e9106a345ed37c7c6d8ba3610",
+      "head": "eeda6d7a3d7676736957695e36697d16900dbf62",
+      "allowedPaths": [
+        ".github/**"
+      ]
+    },
+    "W000-T06-ownership-documentation": {
+      "base": "eeda6d7a3d7676736957695e36697d16900dbf62",
+      "head": "8f45bfe09ef0533830529e325226ef7a6447ffd0",
+      "allowedPaths": [
+        "state/W000-OWNERSHIP.md"
       ]
     }
   }
