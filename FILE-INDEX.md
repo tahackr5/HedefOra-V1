@@ -68,6 +68,7 @@
 - `delivery/TOOLCHAIN-LOCK.md`
 - `state/W000-OWNERSHIP.md` (yalnız W000 boyunca aktif yazma sahipliği)
 - `state/W000-OWNERSHIP.json` (W000 commit aralığı ve path allowlist kanıtı)
+- `state/W000-EVIDENCE.md` (W000 gate, security, risk ve exit kanıt paketi)
 - `agents/**`
 - `.agents/skills/**/SKILL.md`
 - `plugins/**`

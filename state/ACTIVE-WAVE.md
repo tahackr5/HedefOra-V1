@@ -7,7 +7,7 @@
 - Wave start commit: `2efca6c8b65e3342ad5309076b7cd0dedf816943`
 - Integration branch: `codex/w000-bootstrap`
 - Started at: `2026-08-28T02:13:12+03:00` (`2026-08-27T23:13:12Z`)
-- Last checkpoint: Blueprint, toolchain ve runtime denetimleri tamamlandı; W000 sahiplik planı kilitleniyor.
+- Last checkpoint: Local merged-tree ve security fix re-review PASS; cold review ile GitHub-hosted gate'ler bekleniyor.
 - Current objective: Blueprint audit, exact toolchain lock, Codex runtime generation and monorepo bootstrap
 
 ## Active tasks
@@ -17,11 +17,11 @@
 | W000-T01 Blueprint audit | `infra_contracts` | read-only / shared checkout | none | COMPLETED | — |
 | W000-T02 Toolchain lock research | `provider_research` | read-only / shared checkout | none | COMPLETED | — |
 | W000-T03 Codex runtime governance audit | `security_owner` | read-only / shared checkout | none | COMPLETED | — |
-| W000-T04 Git and state bootstrap | orchestrator | `codex/w000-bootstrap` / repository root | `.git` metadata, `state/*` | IN_PROGRESS | W000-T01..T03 for final state |
-| W000-T05A Shared runtime/contracts/repository scaffold | orchestrator | `codex/w000-bootstrap` / repository root | root/shared paths in `state/W000-OWNERSHIP.md` | IN_PROGRESS | W000-T01..T03 |
-| W000-T05B Frontend no-feature scaffold | `provider_research` | immutable-base worktree | `apps/web/**` | ASSIGNED | W000-T01..T02 |
-| W000-T05C CI/local-infra scaffold | `infra_contracts` | immutable-base worktree | `.github/**`, `infra/**` | ASSIGNED | W000-T01..T03 |
-| W000-T06 Merged-tree gates | orchestrator + read-only reviewers | `codex/w000-bootstrap` / repository root | orchestrator-owned shared evidence/state | NOT_STARTED | W000-T05 |
+| W000-T04 Git and state bootstrap | orchestrator | `codex/w000-bootstrap` / repository root | `.git` metadata, `state/*` | COMPLETED | W000-T01..T03 for final state |
+| W000-T05A Shared runtime/contracts/repository scaffold | orchestrator | `codex/w000-bootstrap` / repository root | root/shared paths in `state/W000-OWNERSHIP.md` | COMPLETED | W000-T01..T03 |
+| W000-T05B Frontend no-feature scaffold | `provider_research` | immutable-base worktree | `apps/web/**` | COMPLETED | W000-T01..T02 |
+| W000-T05C CI/local-infra scaffold | `infra_contracts` | immutable-base worktree | `.github/**`, `infra/**` | COMPLETED | W000-T01..T03 |
+| W000-T06 Merged-tree gates | orchestrator + read-only reviewers | `codex/w000-bootstrap` / repository root | orchestrator-owned shared evidence/state | IN_PROGRESS | W000-T05 |
 
 ## Shared proposals
 
@@ -31,10 +31,10 @@ Writer kapsamları, proposal kuralları, testler ve merge sırası `state/W000-O
 
 | Gate | Status | Evidence |
 |---|---|---|
-| Blueprint consistency | IN_PROGRESS | W000-T01 salt-okunur denetimi |
-| Codex runtime config | IN_PROGRESS | W000-T03 + resmi OpenAI belge doğrulaması |
-| Clean build/test | NOT_RUN | — |
-| Security review | NOT_RUN | — |
+| Blueprint consistency | PASS | DEC-021..023, ADR-0011..0012 ve kapalı decision queue |
+| Codex runtime config | PASS | 11/11 spawn, skill probes ve iki reviewer write-denial; R-012 açık risk |
+| Clean build/test | PASS | `state/W000-EVIDENCE.md`, target `9758685` |
+| Security review | PASS | `SECURITY_FIX_VERDICT:PASS`, target `9758685` |
 | Cold review | NOT_RUN | — |
 
 ## Blockers / owner input
