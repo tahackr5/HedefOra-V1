@@ -36,25 +36,6 @@ const allowedW000FrontendSourceFiles = new Set([
   "apps/web/src/vite-env.d.ts",
   "apps/web/vite.config.ts",
 ]);
-const textExtensions = new Set([
-  ".css",
-  ".go",
-  ".html",
-  ".js",
-  ".json",
-  ".md",
-  ".mjs",
-  ".ps1",
-  ".py",
-  ".sh",
-  ".sql",
-  ".toml",
-  ".ts",
-  ".tsx",
-  ".yaml",
-  ".yml",
-]);
-
 if (path.resolve(process.argv[1] ?? "") === path.resolve(scriptPath)) {
   const findings = await findGeneratedArtifacts(repositoryRoot);
   if (findings.length > 0) {
@@ -106,22 +87,21 @@ export async function findGeneratedArtifacts(root) {
       findings.push(normalized);
       continue;
     }
-    if (textExtensions.has(path.extname(normalized))) {
-      const contents = await readFile(path.join(root, relativePath), "utf8");
+    const extension = path.extname(normalized).toLowerCase();
+    const document = await readFile(path.join(root, relativePath));
+    if (!document.includes(0)) {
+      const contents = document.toString("utf8");
       if (generatedMarker.test(contents)) {
         findings.push(`${normalized}#generated-marker`);
         continue;
       }
-      if (
-        path.extname(normalized) === ".html" &&
-        forbiddenHtmlBehavior.test(contents)
-      ) {
+      if (extension === ".html" && forbiddenHtmlBehavior.test(contents)) {
         findings.push(`${normalized}#inline-behavior`);
         continue;
       }
     }
     if (
-      executableSourceExtensions.has(path.extname(normalized)) &&
+      executableSourceExtensions.has(extension) &&
       !isAllowedW000Source(normalized)
     ) {
       findings.push(`${normalized}#unexpected-source`);

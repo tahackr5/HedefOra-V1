@@ -5,26 +5,6 @@ import { listRepositoryFiles } from "./list-repository-files.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const repositoryRoot = path.resolve(path.dirname(scriptPath), "..");
-const scannableExtensions = new Set([
-  "",
-  ".bash",
-  ".css",
-  ".go",
-  ".html",
-  ".js",
-  ".json",
-  ".md",
-  ".mjs",
-  ".ps1",
-  ".py",
-  ".sh",
-  ".sql",
-  ".toml",
-  ".ts",
-  ".tsx",
-  ".yaml",
-  ".yml",
-]);
 const policyLines = new Set([
   "- Untracked TODO yasaktır.",
   "- Untracked TODO yasaktır. Takip edilen TODO issue, owner ve son tarih taşır; mevcut acceptance'ı bypass edemez.",
@@ -58,14 +38,15 @@ export async function findWorkMarkers(root) {
     if (
       fileStats.isSymbolicLink() ||
       !fileStats.isFile() ||
-      !scannableExtensions.has(path.extname(relativePath)) ||
       ["scripts/check-todos.mjs", "scripts/check-todos.test.mjs"].includes(
         relativePath.replaceAll("\\", "/"),
       )
     ) {
       continue;
     }
-    const contents = await readFile(path.join(root, relativePath), "utf8");
+    const document = await readFile(path.join(root, relativePath));
+    if (document.includes(0)) continue;
+    const contents = document.toString("utf8");
     contents.split(/\r?\n/).forEach((line, index) => {
       const inspectedLine =
         relativePath.replaceAll("\\", "/") === "package.json"

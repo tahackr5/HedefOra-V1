@@ -12,7 +12,10 @@ func TestNormalizeRepositoryPath(t *testing.T) {
 		wantErr bool
 	}{
 		{name: "slash path", input: "apps/web/src/main.tsx", want: "apps/web/src/main.tsx"},
-		{name: "windows separators", input: `apps\web\src\main.tsx`, want: "apps/web/src/main.tsx"},
+		{name: "windows separators", input: `apps\web\src\main.tsx`, wantErr: true},
+		{name: "leading whitespace", input: " apps/web/src/main.tsx", wantErr: true},
+		{name: "trailing whitespace", input: "apps/web/src/main.tsx ", wantErr: true},
+		{name: "redundant separator", input: "apps//web/src/main.tsx", wantErr: true},
 		{name: "absolute unix", input: "/etc/passwd", wantErr: true},
 		{name: "absolute windows", input: `C:\secrets\.env`, wantErr: true},
 		{name: "parent traversal", input: "../outside", wantErr: true},
@@ -44,13 +47,13 @@ func TestIsOwnedPath(t *testing.T) {
 	t.Parallel()
 
 	patterns := []string{"apps/web/**", "README.md"}
-	for _, owned := range []string{"apps/web", "apps/web/src/App.tsx", `apps\web\package.json`, "README.md"} {
+	for _, owned := range []string{"apps/web", "apps/web/src/App.tsx", "README.md"} {
 		if !IsOwnedPath(owned, patterns) {
 			t.Errorf("IsOwnedPath(%q) = false, want true", owned)
 		}
 	}
 
-	for _, forbidden := range []string{"apps/website/package.json", "package.json", "../apps/web/package.json", `C:\apps\web\package.json`} {
+	for _, forbidden := range []string{"apps/website/package.json", "package.json", "../apps/web/package.json", `C:\apps\web\package.json`, `apps\web\package.json`, " apps/web/src/App.tsx"} {
 		if IsOwnedPath(forbidden, patterns) {
 			t.Errorf("IsOwnedPath(%q) = true, want false", forbidden)
 		}

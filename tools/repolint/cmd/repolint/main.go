@@ -50,6 +50,7 @@ func main() {
 	manifestPath := flag.String("manifest", "", "JSON ownership manifest")
 	taskID := flag.String("task", "", "task ID from the ownership manifest")
 	all := flag.Bool("all", false, "validate every task in the ownership manifest")
+	mergeWrapper := flag.Bool("merge-wrapper", false, "validate a two-parent, content-identical final merge wrapper")
 	flag.Var(&allowed, "allow", "owned repository path or directory/** pattern; repeatable")
 	flag.Parse()
 
@@ -60,9 +61,11 @@ func main() {
 	}
 
 	if *manifestPath != "" {
-		err = validateManifest(repository, *manifestPath, *taskID, *all, *base, *head)
+		err = validateManifest(repository, *manifestPath, *taskID, *all, *base, *head, *mergeWrapper)
 	} else {
-		if *base == "" || len(allowed) == 0 {
+		if *mergeWrapper {
+			err = errors.New("-merge-wrapper requires -manifest -all")
+		} else if *base == "" || len(allowed) == 0 {
 			err = errors.New("-base and at least one -allow are required")
 		} else {
 			err = validateTask(repository, "ad-hoc", taskSpec{
@@ -79,7 +82,7 @@ func main() {
 	}
 }
 
-func validateManifest(repository, manifestPath, taskID string, all bool, expectedWaveStart, currentHead string) error {
+func validateManifest(repository, manifestPath, taskID string, all bool, expectedWaveStart, currentHead string, mergeWrapper bool) error {
 	document, err := os.ReadFile(manifestPath)
 	if err != nil {
 		return fmt.Errorf("read ownership manifest: %w", err)
@@ -96,6 +99,13 @@ func validateManifest(repository, manifestPath, taskID string, all bool, expecte
 	}
 
 	if all {
+		coverageHead := currentHead
+		if mergeWrapper {
+			coverageHead, err = validateMergeWrapper(repository, currentHead)
+			if err != nil {
+				return err
+			}
+		}
 		ids := make([]string, 0, len(manifest.Tasks))
 		for id := range manifest.Tasks {
 			ids = append(ids, id)
@@ -106,7 +116,10 @@ func validateManifest(repository, manifestPath, taskID string, all bool, expecte
 				return err
 			}
 		}
-		return validateCoverage(repository, manifest, expectedWaveStart, currentHead)
+		return validateCoverage(repository, manifest, expectedWaveStart, coverageHead)
+	}
+	if mergeWrapper {
+		return errors.New("-merge-wrapper requires -manifest -all")
 	}
 
 	if taskID == "" {
@@ -117,6 +130,49 @@ func validateManifest(repository, manifestPath, taskID string, all bool, expecte
 		return fmt.Errorf("task %q is absent from ownership manifest", taskID)
 	}
 	return validateTask(repository, taskID, spec, true)
+}
+
+func validateMergeWrapper(repository, currentHead string) (string, error) {
+	resolvedMerge, err := resolveCommit(repository, currentHead)
+	if err != nil {
+		return "", fmt.Errorf("resolve merge wrapper: %w", err)
+	}
+	command := exec.Command("git", "show", "--no-patch", "--format=%P", resolvedMerge)
+	command.Dir = repository
+	output, err := command.Output()
+	if err != nil {
+		return "", fmt.Errorf("read merge wrapper parents: %w", err)
+	}
+	parents := strings.Fields(string(output))
+	if len(parents) != 2 {
+		return "", fmt.Errorf("merge wrapper %s must have exactly two parents; found %d", resolvedMerge, len(parents))
+	}
+	mainParent, reviewedHead := parents[0], parents[1]
+	ancestor, err := isAncestor(repository, mainParent, reviewedHead)
+	if err != nil {
+		return "", fmt.Errorf("merge wrapper ancestry: %w", err)
+	}
+	if !ancestor {
+		return "", fmt.Errorf("merge wrapper first parent %s is not an ancestor of reviewed second parent %s", mainParent, reviewedHead)
+	}
+
+	diffCommand := exec.Command("git", "diff", "--quiet", reviewedHead, resolvedMerge, "--")
+	diffCommand.Dir = repository
+	if err := diffCommand.Run(); err != nil {
+		var exitError *exec.ExitError
+		if errors.As(err, &exitError) && exitError.ExitCode() == 1 {
+			return "", fmt.Errorf("merge wrapper tree differs from reviewed second parent %s", reviewedHead)
+		}
+		return "", fmt.Errorf("compare merge wrapper tree: %w", err)
+	}
+
+	fmt.Printf(
+		"PASS: merge wrapper %s has two parents, advances %s without divergence, and matches reviewed head %s.\n",
+		resolvedMerge,
+		mainParent,
+		reviewedHead,
+	)
+	return reviewedHead, nil
 }
 
 func decodeOwnershipManifest(document []byte) (ownershipManifest, error) {
@@ -343,7 +399,6 @@ func commitsInRange(repository, base, head string) ([]string, error) {
 		"rev-list",
 		"--reverse",
 		"--topo-order",
-		"--first-parent",
 		"--ancestry-path",
 		base+".."+head,
 	)

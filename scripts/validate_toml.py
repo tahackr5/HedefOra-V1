@@ -26,6 +26,8 @@ ALLOWED_AGENT_KEYS = {
     "developer_instructions",
     "sandbox_mode",
     "approval_policy",
+    "features",
+    "mcp_servers",
 }
 REVIEWER_FILES = {"cold-reviewer.toml", "security-privacy-review.toml"}
 ALLOWED_CONFIG_KEYS = {
@@ -40,6 +42,25 @@ ALLOWED_AGENTS_CONFIG_KEYS = {
     "enabled",
     "max_concurrent_threads_per_session",
     "interrupt_message",
+}
+REVIEWER_DISABLED_FEATURES = {
+    "apps",
+    "auth_elicitation",
+    "browser_use",
+    "browser_use_external",
+    "browser_use_full_cdp_access",
+    "computer_use",
+    "enable_mcp_apps",
+    "hooks",
+    "image_generation",
+    "in_app_browser",
+    "plugin_sharing",
+    "plugins",
+    "recommended_plugins",
+    "remote_plugin",
+    "skill_mcp_dependency_install",
+    "standalone_web_search",
+    "tool_call_mcp_elicitation",
 }
 
 
@@ -135,8 +156,31 @@ def validate_agent(
             errors.append(f"{file_name}: sandbox_mode must be read-only")
         if document.get("approval_policy") != "never":
             errors.append(f"{file_name}: approval_policy must be never")
+        if document.get("mcp_servers") != {}:
+            errors.append(f"{file_name}: mcp_servers must be an empty table")
+        features = document.get("features")
+        if not isinstance(features, dict):
+            errors.append(f"{file_name}: features table is required")
+        else:
+            unexpected_features = sorted(set(features) - REVIEWER_DISABLED_FEATURES)
+            missing_features = sorted(REVIEWER_DISABLED_FEATURES - set(features))
+            if unexpected_features:
+                errors.append(
+                    f"{file_name}: unsupported reviewer features: "
+                    + ", ".join(unexpected_features)
+                )
+            if missing_features:
+                errors.append(
+                    f"{file_name}: missing disabled reviewer features: "
+                    + ", ".join(missing_features)
+                )
+            for feature in sorted(REVIEWER_DISABLED_FEATURES & set(features)):
+                if features[feature] is not False:
+                    errors.append(f"{file_name}: features.{feature} must be false")
     elif "sandbox_mode" in document or "approval_policy" in document:
         errors.append(f"{file_name}: writer permissions must inherit the parent task")
+    elif "features" in document or "mcp_servers" in document:
+        errors.append(f"{file_name}: writer capabilities must inherit the parent task")
 
     if file_name == "legal-policy-drafter.toml" and "DRAFT_NOT_FOR_PRODUCTION" not in str(
         document.get("developer_instructions", "")

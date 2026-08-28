@@ -9,20 +9,28 @@ import (
 	"strings"
 )
 
-// NormalizeRepositoryPath converts a relative repository path into slash form
-// and rejects absolute or parent-traversal paths.
+// NormalizeRepositoryPath validates a canonical Git repository path without
+// rewriting bytes that could alias a different path.
 func NormalizeRepositoryPath(value string) (string, error) {
-	normalized := strings.ReplaceAll(strings.TrimSpace(value), "\\", "/")
-	if normalized == "" {
+	if value == "" {
 		return "", fmt.Errorf("repository path is empty")
 	}
-	if strings.HasPrefix(normalized, "/") || hasWindowsVolume(normalized) {
+	if value != strings.TrimSpace(value) {
+		return "", fmt.Errorf("repository path has leading or trailing whitespace: %q", value)
+	}
+	if strings.Contains(value, "\\") {
+		return "", fmt.Errorf("repository path contains a non-canonical backslash: %q", value)
+	}
+	if strings.HasPrefix(value, "/") || hasWindowsVolume(value) {
 		return "", fmt.Errorf("repository path must be relative: %q", value)
 	}
 
-	cleaned := path.Clean(normalized)
+	cleaned := path.Clean(value)
 	if cleaned == "." || cleaned == ".." || strings.HasPrefix(cleaned, "../") {
 		return "", fmt.Errorf("repository path escapes the root: %q", value)
+	}
+	if cleaned != value {
+		return "", fmt.Errorf("repository path is not canonical: %q", value)
 	}
 
 	return cleaned, nil
@@ -37,7 +45,6 @@ func IsOwnedPath(value string, patterns []string) bool {
 	}
 
 	for _, pattern := range patterns {
-		pattern = strings.ReplaceAll(strings.TrimSpace(pattern), "\\", "/")
 		if strings.HasSuffix(pattern, "/**") {
 			prefix, prefixErr := NormalizeRepositoryPath(strings.TrimSuffix(pattern, "/**"))
 			if prefixErr == nil && (normalized == prefix || strings.HasPrefix(normalized, prefix+"/")) {

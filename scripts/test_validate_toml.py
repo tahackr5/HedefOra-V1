@@ -39,10 +39,15 @@ class ValidateTomlTests(unittest.TestCase):
         )
         document = target.read_text(encoding="utf-8")
         document = document.replace('sandbox_mode = "read-only"', 'sandbox_mode = "workspace-write"')
-        target.write_text(document + '\nunknown_key = "value"\n', encoding="utf-8")
+        document = document.replace("apps = false", "apps = true")
+        document = document.replace(
+            "mcp_servers = {}", 'unknown_key = "value"\nmcp_servers = {}'
+        )
+        target.write_text(document, encoding="utf-8")
         errors = validate_toml.validate(self.root)
         self.assertTrue(any("unsupported keys" in error for error in errors))
         self.assertTrue(any("sandbox_mode must be read-only" in error for error in errors))
+        self.assertTrue(any("features.apps must be false" in error for error in errors))
 
 
 if __name__ == "__main__":

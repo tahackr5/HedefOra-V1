@@ -2,7 +2,9 @@
 
 > Bu dosyanın tek writer'ı orchestrator'dır. Tüm writer branch'leri değişmez `WAVE_START_COMMIT` olan `2efca6c8b65e3342ad5309076b7cd0dedf816943` üzerinden açılır.
 
-Makine tarafından doğrulanan commit aralıkları ve path allowlist'leri `state/W000-OWNERSHIP.json` içindedir. İnsan tarafından okunabilir bu plan ile JSON manifesti birlikte kanoniktir. Schema v2, wave başlangıcından `verifiedThrough` commit'ine kadar tüm task'leri kesintisiz zincirler; self-referential son commit'te yalnız `state/W000-OWNERSHIP.json` değişebilir. Yerel doğrulama `go run ./tools/repolint/cmd/repolint -manifest state/W000-OWNERSHIP.json -all -base 2efca6c8b65e3342ad5309076b7cd0dedf816943 -head HEAD` komutudur.
+Makine tarafından doğrulanan commit aralıkları ve path allowlist'leri `state/W000-OWNERSHIP.json` içindedir. İnsan tarafından okunabilir bu plan ile JSON manifesti birlikte kanoniktir. Schema v2, wave başlangıcından `verifiedThrough` commit'ine kadar tüm task'leri kesintisiz zincirler; self-referential son commit'te yalnız `state/W000-OWNERSHIP.json` değişebilir. Yerel PR-head doğrulaması `go run ./tools/repolint/cmd/repolint -manifest state/W000-OWNERSHIP.json -all -base 2efca6c8b65e3342ad5309076b7cd0dedf816943 -head HEAD` komutudur.
+
+W000 GitHub PR'ı yalnız two-parent merge commit yöntemiyle birleştirilir; squash ve rebase yasaktır. Final `main` commit'inde aynı komut `-merge-wrapper` ile çalışır: birinci parent reviewed head'in atası, ikinci parent exact PR head'i ve final tree ikinci parent tree'siyle aynı olmalıdır. W000 branch üzerinde en fazla `READY_TO_MERGE`; `COMPLETED` yalnız final `main` push gate'inden sonra verilir.
 
 ## Runtime kanıtı
 
@@ -71,5 +73,7 @@ Makine tarafından doğrulanan commit aralıkları ve path allowlist'leri `state
 4. Orchestrator root lockfile ve merged-tree uyarlaması.
 5. T06 read-only security review.
 6. Fresh-context T06 cold review.
+7. GitHub PR checks ve yalnız merge-commit entegrasyonu.
+8. Final `main` merge-wrapper + full-tree push gate'i.
 
 Writer kendi branch'inde conflict'i `ours/theirs` ile çözmez. Orchestrator her commit için immutable base diff'ini owned/forbidden path'lerle karşılaştırır; kapsam dışı path varsa merge gate `FAIL` olur.

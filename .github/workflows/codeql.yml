@@ -42,6 +42,25 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Verify CodeQL source identity
+        shell: bash
+        env:
+          EXPECTED_ANALYSIS_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.merge_commit_sha || github.sha }}
+        run: |
+          set -euo pipefail
+          actual_analysis_sha="$(git rev-parse HEAD)"
+          if [[ "${actual_analysis_sha}" != "${EXPECTED_ANALYSIS_SHA}" ]]; then
+            echo "::error::CodeQL checkout ${actual_analysis_sha} does not match expected ${EXPECTED_ANALYSIS_SHA}."
+            exit 1
+          fi
+          {
+            echo "### W000 CodeQL source identity"
+            echo "- Analyzed SHA: ${actual_analysis_sha}"
+            if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+              echo "- Reviewed PR head SHA: ${{ github.event.pull_request.head.sha }}"
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+
       - name: Set up Go from go.mod
         if: matrix.language == 'go'
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0

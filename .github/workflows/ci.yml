@@ -94,7 +94,19 @@ jobs:
           fi
 
       - name: Validate immutable ownership ranges
-        run: go run ./tools/repolint/cmd/repolint -manifest state/W000-OWNERSHIP.json -all -base 2efca6c8b65e3342ad5309076b7cd0dedf816943 -head HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          ownership_args=(
+            -manifest state/W000-OWNERSHIP.json
+            -all
+            -base 2efca6c8b65e3342ad5309076b7cd0dedf816943
+            -head HEAD
+          )
+          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            ownership_args+=(-merge-wrapper)
+          fi
+          go run ./tools/repolint/cmd/repolint "${ownership_args[@]}"
 
       - name: Set up pnpm and Node.js from package.json
         uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2

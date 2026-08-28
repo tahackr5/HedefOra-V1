@@ -61,7 +61,8 @@ Talimat metni gerçek enforcement yerine geçmez. Kritik single-writer/path/secr
 - Codex config parse edilir.
 - Her custom agent listelenir ve doğru sandbox ile spawn edilebilir.
 - Security ve cold-review parent run'ları da `read-only` + `never` başlatılır; write-capable remote tools verilmez.
-- Her iki read-only agent write denemesinde reddedilir ve probe dosyası oluşmaz.
+- Reviewer parent, user config'i yüklemeden; apps/plugins/MCP elicitation, browser/computer, image generation, hooks ve web-search yüzeylerini explicit kapatan live override'larla başlatılır. Project custom-agent dosyaları aynı deny-set'i ve boş `mcp_servers` tablosunu defense-in-depth olarak taşır; parent live override'larının child'a yeniden uygulandığı kabul edilir.
+- Her iki read-only agent yerel write ve loopback network denemesinde reddedilir; probe dosyası oluşmaz, loopback listener bağlantı almaz ve child tool inventory'sinde MCP/app/connector/web/browser/computer/image-generation aracı bulunmaz.
 - Her writer diff'i recorded `owned_paths`/`forbidden_paths` ile orchestrator tarafından karşılaştırılır; kapsam dışı değişiklik merge gate'ini FAIL yapar. Custom-agent sandbox'ı path ownership enforcement'ıymış gibi raporlanmaz.
 - Skill selector skill'leri görür.
 - Statik prompt fixture coverage gerçek semantic selector sonucu gibi raporlanmaz; positive/negative runtime prompt probe sonucu ayrıca kaydedilir.

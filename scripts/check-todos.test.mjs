@@ -84,6 +84,26 @@ test("force-tracked markers in ignored output directories and case variants fail
       await writeFile(path.join(root, relativePath), contents);
       runGit(root, "add", "--force", relativePath);
     }
+    await writeFile(
+      path.join(root, "dist", "ignored-untracked.json"),
+      '{"note":"todo ignored because this output is untracked"}\n',
+    );
+    const additionalTrackedFixtures = {
+      "nested/component.CJS": "// to do later\n",
+      "nested/module.CTS": "// to-do later\n",
+      "nested/view.JSX": "// To-Do later\n",
+      "nested/worker.MTS": "// tO dO later\n",
+      "nested/schema.graphql": "# todo later\n",
+    };
+    for (const [relativePath, contents] of Object.entries(
+      additionalTrackedFixtures,
+    )) {
+      await mkdir(path.dirname(path.join(root, relativePath)), {
+        recursive: true,
+      });
+      await writeFile(path.join(root, relativePath), contents);
+      runGit(root, "add", relativePath);
+    }
 
     assert.deepEqual(await findWorkMarkers(root), [
       ".cache/lower.json:1",
@@ -92,6 +112,11 @@ test("force-tracked markers in ignored output directories and case variants fail
       "build/mixed.json:1",
       "coverage/fixme.json:1",
       "dist/xxx.json:1",
+      "nested/component.CJS:1",
+      "nested/module.CTS:1",
+      "nested/schema.graphql:1",
+      "nested/view.JSX:1",
+      "nested/worker.MTS:1",
       "node_modules/compact.json:1",
     ]);
   } finally {
