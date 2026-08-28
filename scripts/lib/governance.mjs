@@ -112,11 +112,22 @@ export async function validateGovernance(repositoryRoot) {
       path.join(agentDirectory, reviewer),
       "utf8",
     );
-    if (readTomlString(document, "sandbox_mode") !== "read-only") {
-      errors.push(`${reviewer}: sandbox_mode must be read-only`);
+    if (
+      readTomlString(document, "default_permissions") !==
+      "reviewer-readonly"
+    ) {
+      errors.push(
+        `${reviewer}: default_permissions must be reviewer-readonly`,
+      );
     }
     if (readTomlString(document, "approval_policy") !== "never") {
       errors.push(`${reviewer}: approval_policy must be never`);
+    }
+    if (hasTomlKey(document, "sandbox_mode")) {
+      errors.push(`${reviewer}: legacy sandbox_mode must not be present`);
+    }
+    if (readTomlString(document, "web_search") !== "disabled") {
+      errors.push(`${reviewer}: web_search must be disabled`);
     }
   }
 
@@ -124,9 +135,12 @@ export async function validateGovernance(repositoryRoot) {
     path.join(agentDirectory, "quality-testing.toml"),
     "utf8",
   );
-  if (hasTomlKey(quality, "sandbox_mode")) {
+  if (
+    hasTomlKey(quality, "sandbox_mode") ||
+    hasTomlKey(quality, "default_permissions")
+  ) {
     errors.push(
-      "quality-testing.toml: sandbox_mode must inherit its task mode",
+      "quality-testing.toml: permissions must inherit its task mode",
     );
   }
 
@@ -139,6 +153,12 @@ export async function validateGovernance(repositoryRoot) {
   }
   if (readTomlString(config, "model_reasoning_effort") !== "ultra") {
     errors.push("config.toml: model_reasoning_effort must be ultra");
+  }
+  if (readTomlString(config, "default_permissions") !== "project-edit") {
+    errors.push("config.toml: default_permissions must be project-edit");
+  }
+  if (hasTomlKey(config, "sandbox_mode")) {
+    errors.push("config.toml: legacy sandbox_mode must not be present");
   }
   if (!/^max_concurrent_threads_per_session\s*=\s*4\s*$/m.test(config)) {
     errors.push("config.toml: max concurrent agent threads must be 4");

@@ -24,8 +24,11 @@ ALLOWED_AGENT_KEYS = {
     "name",
     "description",
     "developer_instructions",
-    "sandbox_mode",
+    "default_permissions",
     "approval_policy",
+    "permissions",
+    "tools",
+    "web_search",
     "features",
     "mcp_servers",
 }
@@ -33,9 +36,10 @@ REVIEWER_FILES = {"cold-reviewer.toml", "security-privacy-review.toml"}
 ALLOWED_CONFIG_KEYS = {
     "model",
     "model_reasoning_effort",
-    "sandbox_mode",
+    "default_permissions",
     "approval_policy",
     "approvals_reviewer",
+    "permissions",
     "agents",
 }
 ALLOWED_AGENTS_CONFIG_KEYS = {
@@ -61,6 +65,20 @@ REVIEWER_DISABLED_FEATURES = {
     "skill_mcp_dependency_install",
     "standalone_web_search",
     "tool_call_mcp_elicitation",
+}
+REVIEWER_EXCLUDED_TOOL_NAMESPACES = ["image_gen", "mcp__codex_app", "web"]
+REVIEWER_DENIED_CREDENTIAL_PATHS = {
+    "~/.aws",
+    "~/.codex",
+    "~/.config/gh",
+    "~/.docker",
+    "~/.kube",
+    "~/.ssh",
+}
+REVIEWER_PERMISSION_PROFILE = {
+    "extends": ":read-only",
+    "filesystem": {path: "deny" for path in REVIEWER_DENIED_CREDENTIAL_PATHS},
+    "network": {"enabled": False},
 }
 
 
@@ -111,13 +129,23 @@ def validate_config(document: dict[str, Any], errors: list[str]) -> None:
     expected = {
         "model": "gpt-5.6-sol",
         "model_reasoning_effort": "ultra",
-        "sandbox_mode": "workspace-write",
+        "default_permissions": "project-edit",
         "approval_policy": "on-request",
         "approvals_reviewer": "user",
     }
     for key, value in expected.items():
         if document.get(key) != value:
             errors.append(f"config.toml: {key} must be {value!r}")
+
+    expected_permissions = {
+        "project-edit": {
+            "extends": ":workspace",
+            "network": {"enabled": False},
+        },
+        "reviewer-readonly": REVIEWER_PERMISSION_PROFILE,
+    }
+    if document.get("permissions") != expected_permissions:
+        errors.append("config.toml: permission profiles differ from the locked policy")
 
     agents = document.get("agents")
     if not isinstance(agents, dict):
@@ -152,17 +180,27 @@ def validate_agent(
         errors.append(f"{file_name}: model and effort must be inherited")
 
     if file_name in REVIEWER_FILES:
-        if document.get("sandbox_mode") != "read-only":
-            errors.append(f"{file_name}: sandbox_mode must be read-only")
+        if document.get("default_permissions") != "reviewer-readonly":
+            errors.append(
+                f"{file_name}: default_permissions must be reviewer-readonly"
+            )
         if document.get("approval_policy") != "never":
             errors.append(f"{file_name}: approval_policy must be never")
         if document.get("mcp_servers") != {}:
             errors.append(f"{file_name}: mcp_servers must be an empty table")
+        if document.get("web_search") != "disabled":
+            errors.append(f"{file_name}: web_search must be disabled")
+        if document.get("tools") != {"web_search": False}:
+            errors.append(f"{file_name}: tools.web_search must be false")
+        permissions = document.get("permissions")
+        if permissions != {"reviewer-readonly": REVIEWER_PERMISSION_PROFILE}:
+            errors.append(f"{file_name}: reviewer permission profile differs")
         features = document.get("features")
         if not isinstance(features, dict):
             errors.append(f"{file_name}: features table is required")
         else:
-            unexpected_features = sorted(set(features) - REVIEWER_DISABLED_FEATURES)
+            expected_feature_keys = REVIEWER_DISABLED_FEATURES | {"code_mode"}
+            unexpected_features = sorted(set(features) - expected_feature_keys)
             missing_features = sorted(REVIEWER_DISABLED_FEATURES - set(features))
             if unexpected_features:
                 errors.append(
@@ -177,9 +215,18 @@ def validate_agent(
             for feature in sorted(REVIEWER_DISABLED_FEATURES & set(features)):
                 if features[feature] is not False:
                     errors.append(f"{file_name}: features.{feature} must be false")
-    elif "sandbox_mode" in document or "approval_policy" in document:
+            expected_code_mode = {
+                "enabled": True,
+                "excluded_tool_namespaces": REVIEWER_EXCLUDED_TOOL_NAMESPACES,
+            }
+            if features.get("code_mode") != expected_code_mode:
+                errors.append(f"{file_name}: features.code_mode differs")
+    elif "default_permissions" in document or "approval_policy" in document:
         errors.append(f"{file_name}: writer permissions must inherit the parent task")
-    elif "features" in document or "mcp_servers" in document:
+    elif any(
+        key in document
+        for key in ("features", "mcp_servers", "permissions", "tools", "web_search")
+    ):
         errors.append(f"{file_name}: writer capabilities must inherit the parent task")
 
     if file_name == "legal-policy-drafter.toml" and "DRAFT_NOT_FOR_PRODUCTION" not in str(

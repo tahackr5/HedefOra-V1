@@ -1,9 +1,29 @@
 model = "gpt-5.6-sol"
 model_reasoning_effort = "ultra"
 
-sandbox_mode = "workspace-write"
+default_permissions = "project-edit"
 approval_policy = "on-request"
 approvals_reviewer = "user"
+
+[permissions.project-edit]
+extends = ":workspace"
+
+[permissions.project-edit.network]
+enabled = false
+
+[permissions.reviewer-readonly]
+extends = ":read-only"
+
+[permissions.reviewer-readonly.filesystem]
+"~/.aws" = "deny"
+"~/.codex" = "deny"
+"~/.config/gh" = "deny"
+"~/.docker" = "deny"
+"~/.kube" = "deny"
+"~/.ssh" = "deny"
+
+[permissions.reviewer-readonly.network]
+enabled = false
 
 [agents]
 enabled = true

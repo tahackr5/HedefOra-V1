@@ -16,8 +16,11 @@
 | Vite / React plugin | `8.2.2` / `6.1.0` | Node 24.20.0 ile uyumlu build scaffold. |
 | Spectral CLI | `6.16.3` | Kanonik OpenAPI 3.1 lint. |
 | Prettier | `3.9.6` | Format-only; lint kurallarıyla çakışmaz. |
+| Codex reviewer runtime | Linux `0.150.0`; `codex-package-x86_64-unknown-linux-musl.tar.gz`; SHA-256 `2d27b8569ca760eeb2bf21fa12bd31f59ac42b81617b340cf8958e9b38d743d5` | WSL2 Ubuntu 24.04 üzerinde resmi release paketi; read-only reviewer parent/child isolation. Kaynak: `https://github.com/openai/codex/releases/download/rust-v0.150.0/codex-package-x86_64-unknown-linux-musl.tar.gz`. |
 
 Frontend lint/test sürümleri `apps/web/package.json` içinde exact tutulur: ESLint `9.39.5`, `@eslint/js` `9.39.5`, `typescript-eslint` `8.68.0`, React Hooks `7.1.1`, JSX a11y `6.10.2`, Vitest/coverage `4.1.11`, jsdom `30.0.1`, Testing Library React `16.3.3`, DOM `10.4.1`, user-event `14.6.6`, jest-dom `7.0.1`.
+
+Native Windows Codex `0.150.0-alpha.8`, hem `unelevated` hem `elevated` sandbox'ta canlı loopback listener'a bağlantıyı engelleyemediği için reviewer acceptance runtime'ı değildir. Runtime yükseltmesinde native ve WSL yolları yeniden executable sentinel ile ölçülür; yalnız repository read başarılı, repository write/credential read/loopback bağlantı başarısız olduğunda reviewer yolu kabul edilir.
 
 ## Bilinçli olarak sonraki wave'e ertelenenler
 

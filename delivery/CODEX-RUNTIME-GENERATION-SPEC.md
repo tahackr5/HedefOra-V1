@@ -17,7 +17,7 @@ Bu paket Markdown-only kalır. Codex'in gerçek custom-agent katmanı TOML gerek
 - `.codex/agents/cold-reviewer.toml`
 - `.codex/agents/legal-policy-drafter.toml`
 
-Her custom agent en az `name`, `description`, `developer_instructions` taşır. Read-only roller `sandbox_mode = "read-only"` ve `approval_policy = "never"` olur. Writer roller parent approvals'ı miras alır; production full-access tanımlanmaz. Legal/policy ajanının her çıktısı `DRAFT_NOT_FOR_PRODUCTION` olarak kalır ve owner kararı olmadan aktive edilmez.
+Her custom agent en az `name`, `description`, `developer_instructions` taşır. Read-only roller `default_permissions = "reviewer-readonly"` ve `approval_policy = "never"` olur. `reviewer-readonly`, Codex `:read-only` profilini genişletir; command network'ünü kapatır ve credential taşıyan kullanıcı dizinlerini okumayı reddeder. Writer roller parent permissions/approvals katmanını miras alır; production full-access tanımlanmaz. Legal/policy ajanının her çıktısı `DRAFT_NOT_FOR_PRODUCTION` olarak kalır ve owner kararı olmadan aktive edilmez.
 
 ## Model
 
@@ -60,13 +60,13 @@ Talimat metni gerçek enforcement yerine geçmez. Kritik single-writer/path/secr
 
 - Codex config parse edilir.
 - Her custom agent listelenir ve doğru sandbox ile spawn edilebilir.
-- Security ve cold-review parent run'ları da `read-only` + `never` başlatılır; write-capable remote tools verilmez.
-- Reviewer parent, user config'i yüklemeden; apps/plugins/MCP elicitation, browser/computer, image generation, hooks ve web-search yüzeylerini explicit kapatan live override'larla başlatılır. Project custom-agent dosyaları aynı deny-set'i ve boş `mcp_servers` tablosunu defense-in-depth olarak taşır; parent live override'larının child'a yeniden uygulandığı kabul edilir.
-- Her iki read-only agent yerel write ve loopback network denemesinde reddedilir; probe dosyası oluşmaz, loopback listener bağlantı almaz ve child tool inventory'sinde MCP/app/connector/web/browser/computer/image-generation aracı bulunmaz.
+- Security ve cold-review parent run'ları da `reviewer-readonly` + `never` başlatılır; write-capable remote tools verilmez.
+- Reviewer parent, user config'i yüklemeden; apps/plugins/MCP elicitation, browser/computer, image generation, hooks ve web-search yüzeylerini explicit kapatan live override'larla başlatılır. Project custom-agent dosyaları aynı deny-set'i, `web_search = "disabled"`, `tools.web_search = false`, code-mode namespace dışlamalarını ve boş `mcp_servers` tablosunu defense-in-depth olarak taşır. İzole koşum standart `~/.codex` dışında bir `CODEX_HOME` kullanıyorsa resolved absolute runtime dizini ayrıca live filesystem deny listesine eklenir; `~/.codex` kuralının onu kapsadığı varsayılmaz. Parent live override'larının child'a yeniden uygulandığı executable probe ile doğrulanır.
+- Her iki read-only agent repository dosyalarını okuyabilir; repository'ye yazamaz, credential dizinlerini okuyamaz ve loopback network'e bağlanamaz. Probe dosyası oluşmaz, bağımsız loopback listener logu boş kalır ve child tool inventory'sinde MCP/app/connector/web/browser/computer/image-generation/plugin aracı bulunmaz.
 - Her writer diff'i recorded `owned_paths`/`forbidden_paths` ile orchestrator tarafından karşılaştırılır; kapsam dışı değişiklik merge gate'ini FAIL yapar. Custom-agent sandbox'ı path ownership enforcement'ıymış gibi raporlanmaz.
 - Skill selector skill'leri görür.
 - Statik prompt fixture coverage gerçek semantic selector sonucu gibi raporlanmaz; positive/negative runtime prompt probe sonucu ayrıca kaydedilir.
 - Root AGENTS loaded-source raporunda görünür.
 - Subagent summaries main context'e ham log yığmaz.
 
-Native Windows elevated sandbox helper düzelene kadar reviewer negatif testleri explicit `windows.sandbox="unelevated"` CLI override'ı ile yapılabilir. Bu geçici fallback project config'e kalıcı yazılmaz; elevated helper arızası risk kaydında açık kalır.
+Codex CLI `0.150.0-alpha.8` native Windows `unelevated` ve `elevated` sandbox'ları bu repository'nin canlı `curl` loopback sentinel'inde bağlantıyı engellemedi. Bu nedenle reviewer acceptance native Windows üzerinde verilemez. W000 reviewer koşumları WSL2/Linux üzerinde, SHA-256 ile doğrulanmış resmi Codex paketi ve Linux `bwrap + seccomp` sandbox'ı ile çalışır. Runtime sürümü değiştiğinde hem native Windows hem WSL davranışı yeniden sentinel ile ölçülür; yalnız gerçek listener bağlantı almadığında uygun yol kullanılabilir.
