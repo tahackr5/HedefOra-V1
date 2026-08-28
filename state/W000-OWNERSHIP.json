@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "2efca6c8b65e3342ad5309076b7cd0dedf816943",
-  "verifiedThrough": "b7b95197bb0473f581870c45bba5c1bca432adee",
+  "verifiedThrough": "3820f2dd3ed69ceba47afe887bf281ea1b400ab7",
   "trailingAllowedPaths": [
     "state/W000-OWNERSHIP.json"
   ],
@@ -177,6 +177,14 @@
         "scripts/lib/governance.mjs",
         "scripts/test_validate_toml.py",
         "scripts/validate_toml.py",
+        "state/W000-OWNERSHIP.json"
+      ]
+    },
+    "W000-T06-reviewer-isolation-format": {
+      "base": "b7b95197bb0473f581870c45bba5c1bca432adee",
+      "head": "3820f2dd3ed69ceba47afe887bf281ea1b400ab7",
+      "allowedPaths": [
+        "scripts/lib/governance.mjs",
         "state/W000-OWNERSHIP.json"
       ]
     }
