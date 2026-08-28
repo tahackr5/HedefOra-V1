@@ -42,6 +42,13 @@
         "infra/**"
       ]
     },
+    "W000-T05C-merged-gates": {
+      "base": "5f292fc64a51557b548fb64d5ba3a78d47224084",
+      "head": "9ab761730c4576d1a999982bdac5eb783ef1b2fd",
+      "allowedPaths": [
+        ".github/**"
+      ]
+    },
     "W000-T05A-hardening": {
       "base": "2cb444c162ad772043634fad00d2c1d81d41f7ec",
       "head": "79b2f29ddc2aed8233f34b452d63dc88dd4d9235",
