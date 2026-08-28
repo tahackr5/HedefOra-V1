@@ -3,19 +3,19 @@
 - Wave: `W000`
 - Durum: `IN_PROGRESS`
 - Wave başlangıcı: `2efca6c8b65e3342ad5309076b7cd0dedf816943`
-- Current branch target: `2492e6f014ea4eb0ee7b7d89f4fcb686f36cbe14`
-- Target tree: `32612078d124f18c2ad1cbb4ea334bc2371f02ce`
-- Son exact local full-tree checkpoint: `2492e6f014ea4eb0ee7b7d89f4fcb686f36cbe14`
-- Exact isolation diagnostic target: `2492e6f014ea4eb0ee7b7d89f4fcb686f36cbe14`
-- Final security review target: `NOT_SET`; sonuç `NOT_RUN`
+- Current branch remediation target: `5886a978df491e5a0212472183c49100b705f205`
+- Remediation target tree: `3327e526b3dfddaf0b4319a7c55fc9c4df82ea6a`
+- Son exact local full-tree checkpoint: `1bd1729fc9bb1f8ec86d381bc9ff947c03685b17`
+- Exact isolation diagnostic target: `1bd1729fc9bb1f8ec86d381bc9ff947c03685b17`
+- Final security review target: `1bd1729fc9bb1f8ec86d381bc9ff947c03685b17`; sonuç `FAIL`
 - Final cold review target: `NOT_SET`; sonuç `NOT_RUN`
 - Integration branch/worktree: `codex/w000-bootstrap` / repository root
-- Temiz doğrulama clone'u: `C:\Users\ihsan\.codex\worktrees\HedefOra\W000\VERIFY5-CLONE`
-- Kanıt zamanı: `2026-08-28T07:39:00+03:00`
+- Temiz doğrulama clone'u: `C:\Users\ihsan\.codex\worktrees\HedefOra\W000\VERIFY6-CLONE`
+- Kanıt zamanı: `2026-08-28T11:07:15+03:00`
 
 ## Sonuç
 
-W000 no-feature monorepo, Codex runtime sözleşmesi, exact ürün toolchain'i, frontend shell, CI/local PostgreSQL ve executable repository gate'leri temiz detached clone üzerinde yerel doğrulamayı geçti. Native Windows reviewer izolasyonu güvenli değildir; güçlendirilmiş parent-child negatif sentinel yalnız WSL2/Linux üzerinde geçti. İlk fresh-context cold review `FAIL` verdi ve sekiz bulgu grubu için remediation uygulandı. Hiçbir bulgu final bağımsız re-review yapılmadan `CLOSED` sayılmaz. Final security/cold re-review ile GitHub-hosted kapılar henüz çalışmadığı için wave çıkışı verilmedi.
+W000 no-feature monorepo, Codex runtime sözleşmesi, exact ürün toolchain'i, frontend shell, CI/local PostgreSQL ve executable repository gate'leri exact `1bd1729` detached clone üzerinde yerel doğrulamayı geçti. Aynı SHA için GitHub quality job geçti; CodeQL upload, dependency review ve private/free branch protection plan/entegrasyon kısıtları nedeniyle `BLOCKED_EXTERNAL` kaldı. Native Windows reviewer izolasyonu güvenli değildir; güçlendirilmiş parent-child negatif sentinel yalnız WSL2/Linux üzerinde geçti. Fresh final security review `1bd1729` üzerinde F-001 ve F-002 nedeniyle `FAIL` verdi. Remediation `5886a97` üzerinde kod ve regresyon testleriyle uygulandı; fresh full-tree/security/cold tekrarları geçmeden bulgular `CLOSED` veya wave `READY` sayılmaz.
 
 ## Kapsam ve sözleşme
 
@@ -32,13 +32,13 @@ W000 no-feature monorepo, Codex runtime sözleşmesi, exact ürün toolchain'i, 
 - Önceki discovery smoke testinde 11 project custom agent'ın tamamı gerçek parent üzerinden spawn edildi: `TOTAL:11/11`. Bu sonuç isolation veya final review kanıtı değildir.
 - Native Windows Codex `0.150.0-alpha.8` üzerinde `unelevated`, permission-profile ve `elevated` denemelerinin tamamında bağımsız canlı loopback listener bağlantı aldı; native Windows reviewer acceptance için kullanılamaz.
 - Kabul edilen diagnostic ortam WSL2 Ubuntu 24.04 ve resmi Linux Codex `0.150.0` paketidir. Package SHA-256: `2d27b8569ca760eeb2bf21fa12bd31f59ac42b81617b340cf8958e9b38d743d5`; freshly extracted Codex binary SHA-256: `f0222a59e7d06f7b97014fb672731285b453b945fc0f0aab36c89278dec36e14`; `bwrap` SHA-256: `01fb705f067bd5365b63d8ad2323a61c8d007733ca5e649437e086f3fb9935d8`.
-- Source bundle SHA-256: `2e1e9415bb8c92e3c14fb76cdc0af493365f47eadef7c722b016333da636baf6`; config blob: `9c4ab4c5899e30b22770c275d5b2fbef4795410a`; security agent blob: `1c154ea4d22c39ca9b314c4bcd630891a9234db7`; cold agent blob: `317a017bbac5431684a7f1b43ae397088cbb2c2c`.
-- Son başarılı harness kökü: `/tmp/hedefora-w000-isolation-2492.KdOeXXia`; `harness.exit-code=0`; stdout SHA-256 `12c0144e80e7471b6f667999785a1591cc3e71f7a6261c6f8321f68a6d340dd3`; sanitized result SHA-256 `644334cf56984650569879f7fb8f38134e78aa2d64728adea1e7570aa157f541`.
+- Exact `1bd1729` config blob: `9c4ab4c5899e30b22770c275d5b2fbef4795410a`; security agent blob: `1c154ea4d22c39ca9b314c4bcd630891a9234db7`; cold agent blob: `317a017bbac5431684a7f1b43ae397088cbb2c2c`.
+- Son başarılı exact harness kökü: `/tmp/hedefora-w000-isolation-1bd1729.y95K30JP`; target/tree `1bd1729fc9bb1f8ec86d381bc9ff947c03685b17` / `ce55605aa52ab1fe486a2fa4675e4748e522d146`; `harness.exit-code=0`. Güvenlik parent/child ve cold parent/child yalnız canonical `exec` wrapper'ı kullandı; credential içeriği okunmadı.
 
-| Rol | Parent session | Child session | UTC aralığı |
+| Rol | Parent session | Child session | Hedef/koşum |
 |---|---|---|---|
-| Security isolation | `01a046a7-f755-7443-aea1-314479d4359d` | `01a046a8-5b82-7060-89d1-6bf02b511520` | `04:36:48.487–04:37:48.561Z` |
-| Cold isolation | `01a046a8-e719-70c3-9ebb-d84c93101064` | `01a046a9-4c8f-7120-8da5-d3a0042ca2f9` | `04:37:49.808–04:38:49.330Z` |
+| Security isolation | `01a046b7-faf8-7343-adcc-d8a8ac8493b3` | `01a046b8-5ee0-7e30-b3de-2f27913e5f1b` | exact `1bd1729` run |
+| Cold isolation | `01a046b8-e9c1-7a22-be9a-026f013fe520` | `01a046b9-568d-7350-a075-c6df6bb14cd4` | exact `1bd1729` run |
 
 Dört session context'i de `model=gpt-5.6-sol`, `effort=none`, `approval_policy=never`, `sandbox_policy=read-only` verdi. Bu yalnız capability/isolation diagnostic'idir; final `ultra` security/cold review değildir.
 
@@ -80,25 +80,29 @@ repository_status=""
 | 4 | MEDIUM | OpenAPI path-operation negatif fixture yok | `65b3a13` | Remediated; final review açık |
 | 5 | HIGH | Generated/marker scanner ignored-directory, case ve fail-open kapsamı | `65b3a13`, `4a36dfb` | Remediated; final review açık |
 | 6 | HIGH | Reviewer isolation child tool inventory ve remote-write yüzeyini kapsamıyor | `4a36dfb`, `b7b9519`, `db12cf8`; seal `2492e6f` | Exact isolation diagnostic PASS; final reviews açık |
-| 7 | HIGH | Exact komut/süre/artifact ve hosted exit kanıtı eksik | `fa402f5` ve bu correction | `OPEN/PARTIAL` |
+| 7 | HIGH | Exact komut/süre/artifact ve hosted exit kanıtı eksik | `fa402f5`, correction `52a8a23`, seal `1bd1729` | `OPEN/PARTIAL` |
 | 8 | HIGH | Backup/recovery ve GitHub protection/required-check kanıtı yok | DQ-004 + dış GitHub işlemleri | `OPEN`; zamanlama owner kararı |
 
-## Exact `2492e6f` yerel gate sonuçları
+## Historical exact `1bd1729` yerel ve hosted gate sonuçları
 
 | Gate | Ortam/komut özeti | Sonuç |
 |---|---|---|
-| Frozen install + full JS gate | Node `24.20.0`, pnpm `11.24.0`, Git `2.39.5`; `pnpm install --frozen-lockfile`; `pnpm ci:check` | `PASS`; exact full chain exit `0`. İlk temiz install koşumunda yalnız Vitest worker start timeout'u oluştu; aynı test 3/3 ve sonra full chain değişikliksiz geçti. |
+| Frozen install + full JS gate | Node `24.20.0`, pnpm `11.24.0`, Git `2.39.5`; clean detached clone; `pnpm install --frozen-lockfile`; `pnpm ci:check` | `PASS`; exact full chain exit `0`; 502 package kuruldu. |
 | Repository Node tests | `node --test scripts/*.test.mjs` | `PASS`, 8/8 |
 | Frontend test/coverage | Vitest `4.1.11` | `PASS`, 3/3; statement/branch/function/line `%100` |
 | Frontend build | Vite `8.2.2` | `PASS`; 16 module |
 | OpenAPI/governance/generated/marker/license/audit | Root `pnpm ci:check` zinciri | `PASS`; production audit'te bilinen vulnerability yok |
 | Go format/module/vet/test | Go `1.26.7`; tracked `gofmt -l`, `go mod verify`, `go vet ./...`, `go test ./...` | `PASS`, exit `0`; iki package |
-| Ownership | `repolint -all -base 2efca6c... -head HEAD` | `PASS`; 18 continuous task + manifest-only trailing endpoint |
+| Ownership | `repolint -all -base 2efca6c... -head HEAD` | `PASS`; ownership `52a8a23` üzerinden sürekli ve manifest-only `1bd1729` trailing endpoint |
 | TOML | Python `3.12.13`; validator + unittest | `PASS`; 4/4 |
-| Secret scan | Gitleaks `8.30.1`; committed history | `PASS`; 40 commit, 518.64 KB, leak yok |
+| Secret scan | Gitleaks `8.30.1`; committed history | `PASS`; 35 commit, yaklaşık 513.91 KB, leak yok |
 | Local PostgreSQL config | `docker compose -f infra/compose.dev.yml config --quiet` | `PASS`, exit `0` |
 | Workflow lint | actionlint `1.7.12 -color` | `PASS`, exit `0` |
-| Diff/worktree | `git diff --check`; detached clone status | `PASS`; exact HEAD `2492e6f`; tracked tree temiz |
+| Diff/worktree | `git diff --check`; detached clone status | `PASS`; exact HEAD `1bd1729`; tree `ce55605aa52ab1fe486a2fa4675e4748e522d146`; tracked tree temiz |
+
+Bu tablo `5886a97` remediation'ını kapsamaz. `5886a97` üzerinde yalnız aşağıda kaydedilen bounded Node/Go remediation kontrolleri geçmiştir; yeni sealed target temiz-clone full gate'i `NOT_RUN` durumundadır.
+
+GitHub PR #1 (`W000: bootstrap repository and governance runtime`) draft olarak historical exact `1bd1729` head'ine bağlıdır. CI run `33143640272` içindeki quality job `98759826096` tüm exact-source, secret, ownership, TOML, frozen JavaScript, build/audit ve Go adımlarını `PASS` tamamladı; bu sonuç `5886a97` değişikliklerini kapsamaz. Dependency review job `98759826273`, private/free planda özellik bulunmadığı için çalışamadı. CodeQL run `33143640327` Go/JavaScript init-extract-query aşamalarını tamamladı fakat upload `Resource not accessible by integration` ile reddedildi. Main branch protection API private/free plan için `403` verdi. Merge yöntemi yalnız merge commit olarak ayarlandı; squash/rebase kapalıdır. Bu üç hosted enforcement alanı `BLOCKED_EXTERNAL` kalır ve workflow'lar gevşetilmez. Current-target GitHub quality `NOT_RUN`; sealed target push'u bekleniyor.
 
 Tam image kimlikleri:
 
@@ -128,9 +132,23 @@ git diff --check
 git status --short --branch
 ```
 
-## Security checkpoint geçmişi
+## Final security review ve `5886a97` remediation
 
-Read-only `security_privacy_review`, target `97586859ce272e8390fdf9b405533914f02c3885` üzerinde önceki dört security-fix grubuna `SECURITY_FIX_VERDICT:PASS` verdi. Bu yalnız tarihsel checkpoint'tir ve sonraki cold-review/runtime remediation'ını kapsamaz. Exact final target security re-review `NOT_RUN` durumundadır.
+- Session: `01a04744-b2a7-70c2-8a15-4ae79a5c3372`; target/tree `1bd1729fc9bb1f8ec86d381bc9ff947c03685b17` / `ce55605aa52ab1fe486a2fa4675e4748e522d146`.
+- Effective context: direct `exec`, Codex `0.150.0`, `gpt-5.6-sol`, `ultra`, `approval_policy=never`, `sandbox_policy=read-only`, `reviewer-readonly`, network restricted.
+- Terminal verdict: `SECURITY_REVIEW_VERDICT: FAIL`; `LOCAL_FINDINGS: 2`; repository mutation ve forbidden tool surface yok; external gates ayrıca `BLOCKED_EXTERNAL`.
+- Harness root: `/tmp/hfwr-1bd1729.O3rGD8wM`. Session 65 `exec` çağrısı ve 65 eşleşen output üretti. Terminal FAIL korunmuştur; ancak post-validator, gerçek runtime'ın bare JS key/backtick/inline `text(r)` wrapper biçimini aşırı dar JSON/newline grameriyle reddetti. Bu ek harness kusuru R-015 olarak açıldı; bulguları silmez veya downgrade etmez. Security FAIL nedeniyle cold review başlatılmadı.
+
+| Bulgu | Seviye | Kanıt | Remediation | Durum |
+|---|---|---|---|---|
+| F-001 production license inventory optional/peer edge'leri ve aynı adın çoklu fiziksel sürümlerini kaybedebilir | MEDIUM | `scripts/check-licenses.mjs` yalnız `dependencies` ve name-keyed Map kullanıyordu; collector testi yoktu | `5886a97`: dependencies/optionalDependencies/peerDependencies closure; canonical-manifest ziyaret seti; tüm fiziksel kayıtları koruyan inventory; multi-version/license drift; direct/transitive optional, peer, missing optional ve duplicate metadata fixtures | OPEN; remediation uygulandı, independent re-review `NOT_RUN` |
+| F-002 ownership history scan pre-base side branch commit'lerini atlayabilir | HIGH | `commitsInRange` yalnız `--ancestry-path`; merge first-parent diff'i net-zero side history'yi göremeyebilir | `5886a97`: plain `base..head` closure + ancestry-set karşılaştırması; immutable base'den türemeyen newly-reachable commit fail-closed; pre-base add/delete merge fixture | OPEN; remediation uygulandı, independent re-review `NOT_RUN` |
+
+`5886a97` targeted remediation kanıtı: exact Node `24.20.0` ile `node --test scripts/check-licenses.test.mjs` 4/4, `node --test scripts/*.test.mjs` 11/11, `node scripts/check-licenses.mjs` ve `pnpm format:check` `PASS`; exact Go `1.26.7` ile tracked `gofmt -l`, `go mod verify`, `go vet ./...`, `go test ./...` `PASS`. İki patch ayrı read-only adversarial review'de `PASS` aldı. Bunlar fresh clean-clone full gate, final security veya cold review yerine geçmez.
+
+### Tarihsel security checkpoint
+
+Read-only `security_privacy_review`, target `97586859ce272e8390fdf9b405533914f02c3885` üzerinde önceki dört security-fix grubuna `SECURITY_FIX_VERDICT:PASS` verdi. Bu yalnız tarihsel checkpoint'tir ve sonraki cold-review/runtime remediation'ını kapsamaz.
 
 ## Uygulanabilirlik ve açık kapılar
 
@@ -140,24 +158,25 @@ Read-only `security_privacy_review`, target `97586859ce272e8390fdf9b405533914f02
 - Ürün E2E: `NOT_APPLICABLE` — W000 no-feature shell; mevcut frontend component/a11y smoke testleri uygulandı.
 - Staging deploy, DB backup/restore, rollback drill, SLO/alerts: `NOT_APPLICABLE` — W007 kapsamı; VPS'e mutation yapılmadı.
 - İkinci şifreli off-site repository kopyası + recovery testi: `NOT_RUN`; gate zamanlaması DQ-004 owner kararında, en geç launch öncesi zorunlu.
-- GitHub PR CI, dependency review, CodeQL, ruleset/branch protection ve merge-method kanıtı: `NOT_RUN`.
+- GitHub PR quality CI: `PASS @ 1bd1729`. Dependency review, CodeQL upload ve ruleset/branch protection: `BLOCKED_EXTERNAL`; dependency review/branch protection için public repository veya uygun ücretli plan, CodeQL için uygun integration erişimi gerekir. Merge yöntemi merge-only olarak ayarlandı; final main merge-wrapper henüz `NOT_RUN`.
 - CodeRabbit/Sonar: `BLOCKED_EXTERNAL` — bağlı ve kanıtlanmış servis yok; sahte review üretilmedi.
-- Final security re-review ve fresh-context cold re-review: `NOT_RUN`.
+- Final security re-review: `FAIL @ 1bd1729`; F-001/F-002 `5886a97` ile remediated, fresh exact rerun `NOT_RUN`. Fresh-context cold re-review security FAIL nedeniyle `NOT_RUN`.
 
 ## Açık risk ve owner girdisi
 
 - R-001/R-009/R-013: backup/recovery/kalıcı checkout gate zamanlaması DQ-004 owner kararı bekliyor; DEC-016 uyarınca en geç launch öncesi tamamlanır. W001'e otomatik geçiş karar çözülene kadar durur; W000 exit'i bloke değildir.
 - R-011: küçük VPS yalnız staging/pre-production; gerçek kullanıcı ve production verisi alınmaz.
 - R-012: native Windows sandbox loopback'i engellemiyor; reviewer yalnız executable sentinel geçmiş WSL/Linux yolunda çalışır.
-- R-014: GitHub merge yöntemi, branch protection, required checks ve final main merge-wrapper henüz dış sistemde doğrulanmadı.
+- R-014: GitHub merge yöntemi merge-only olarak doğrulandı; branch protection, required checks ve final main merge-wrapper henüz doğrulanmadı.
+- R-015: final reviewer harness gerçek FAIL'i korudu fakat wrapper biçimini yanlış reddetti; semantic parser, skill-first mandatory bootstrap ve PASS/FAIL/BLOCKED_EVIDENCE işleme düzeltmesi fresh rerun öncesi zorunludur.
 - VPS secret/SSH bilgisi W000 için gerekmedi ve istenmedi. Staging envanteri W007'ye ertelendi.
 
-## Çıkış için kalanlar
+## Bu evidence snapshot'ında çıkış için kalanlar
 
-1. Bu correction commit'ini ownership manifestiyle mühürlemek ve final exact target local full-tree gate'lerini çalıştırmak.
-2. Exact final target üzerinde WSL/Linux `gpt-5.6-sol + ultra` read-only security re-review.
-3. Aynı target üzerinde fresh-context WSL/Linux cold re-review ve `PASS` verdict'i.
-4. Branch push, PR ve GitHub-hosted CI/CodeQL/dependency-review sonucu.
-5. GitHub ruleset/branch protection ile yalnız merge-commit politikasının doğrulanması.
+1. Ownership seal sırası: önce bu evidence commit'i; hemen ardından manifest-only commit, `52a8a23..5886a97` remediation aralığını ve `5886a97..<evidence commit>` aralığını ayrı task'lerle zincirler. JSON at HEAD doğrulandığında bu madde sağlanır; sonra yeni exact target local full-tree gate'leri çalıştırılır.
+2. R-015 harness protokolünü semantic/fail-closed düzeltmek ve adversarial statik + no-model doğrulamadan geçirmek.
+3. Exact remediation target üzerinde WSL/Linux `gpt-5.6-sol + ultra` read-only security re-review ve `PASS` verdict'i.
+4. Aynı target üzerinde fresh-context WSL/Linux cold re-review ve `PASS` verdict'i.
+5. Branch push ve PR quality CI'ı yeni exact head için yenilemek; CodeQL/dependency-review/branch-protection `BLOCKED_EXTERNAL` çözüm yolunu owner ile seçmek.
 6. Two-parent merge commit sonrası final `main` merge-wrapper + full-tree push gate'i ve state/ledger kapanışı.
 7. Final WSL review'lerden sonra yalnız doğrulanmış geçici runtime yollarının temizlenmesi ve yokluk kanıtı.
