@@ -67,17 +67,20 @@ REVIEWER_DISABLED_FEATURES = {
     "tool_call_mcp_elicitation",
 }
 REVIEWER_EXCLUDED_TOOL_NAMESPACES = ["image_gen", "mcp__codex_app", "web"]
-REVIEWER_DENIED_CREDENTIAL_PATHS = {
-    "~/.aws",
-    "~/.codex",
-    "~/.config/gh",
-    "~/.docker",
-    "~/.kube",
-    "~/.ssh",
+REVIEWER_DENIED_CREDENTIAL_GLOBS = {
+    "~/.aws/**",
+    "~/.codex/**",
+    "~/.config/gh/**",
+    "~/.docker/**",
+    "~/.kube/**",
+    "~/.ssh/**",
 }
 REVIEWER_PERMISSION_PROFILE = {
     "extends": ":read-only",
-    "filesystem": {path: "deny" for path in REVIEWER_DENIED_CREDENTIAL_PATHS},
+    "filesystem": {
+        "glob_scan_max_depth": 8,
+        **{pattern: "deny" for pattern in REVIEWER_DENIED_CREDENTIAL_GLOBS},
+    },
     "network": {"enabled": False},
 }
 

@@ -17,7 +17,7 @@ Bu paket Markdown-only kalır. Codex'in gerçek custom-agent katmanı TOML gerek
 - `.codex/agents/cold-reviewer.toml`
 - `.codex/agents/legal-policy-drafter.toml`
 
-Her custom agent en az `name`, `description`, `developer_instructions` taşır. Read-only roller `default_permissions = "reviewer-readonly"` ve `approval_policy = "never"` olur. `reviewer-readonly`, Codex `:read-only` profilini genişletir; command network'ünü kapatır ve credential taşıyan kullanıcı dizinlerini okumayı reddeder. Writer roller parent permissions/approvals katmanını miras alır; production full-access tanımlanmaz. Legal/policy ajanının her çıktısı `DRAFT_NOT_FOR_PRODUCTION` olarak kalır ve owner kararı olmadan aktive edilmez.
+Her custom agent en az `name`, `description`, `developer_instructions` taşır. Read-only roller `default_permissions = "reviewer-readonly"` ve `approval_policy = "never"` olur. `reviewer-readonly`, Codex `:read-only` profilini genişletir; command network'ünü kapatır ve credential taşıyan kullanıcı dizinlerinin içeriklerini bounded deny glob'larıyla okumayı reddeder. Glob kullanımı, credential dizini bulunmayan veya bozuk symlink taşıyan hostlarda sandbox başlangıcının exact-path mount hatasıyla durmasını önler; `glob_scan_max_depth = 8` davranışı schema validator ve WSL executable probe ile kilitlenir. Writer roller parent permissions/approvals katmanını miras alır; production full-access tanımlanmaz. Legal/policy ajanının her çıktısı `DRAFT_NOT_FOR_PRODUCTION` olarak kalır ve owner kararı olmadan aktive edilmez.
 
 ## Model
 

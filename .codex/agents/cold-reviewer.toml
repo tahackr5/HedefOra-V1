@@ -12,12 +12,13 @@ web_search = "disabled"
 extends = ":read-only"
 
 [permissions.reviewer-readonly.filesystem]
-"~/.aws" = "deny"
-"~/.codex" = "deny"
-"~/.config/gh" = "deny"
-"~/.docker" = "deny"
-"~/.kube" = "deny"
-"~/.ssh" = "deny"
+glob_scan_max_depth = 8
+"~/.aws/**" = "deny"
+"~/.codex/**" = "deny"
+"~/.config/gh/**" = "deny"
+"~/.docker/**" = "deny"
+"~/.kube/**" = "deny"
+"~/.ssh/**" = "deny"
 
 [permissions.reviewer-readonly.network]
 enabled = false

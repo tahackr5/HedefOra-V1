@@ -40,7 +40,9 @@ class ValidateTomlTests(unittest.TestCase):
             "[permissions.project-edit.network]\nenabled = false",
             "[permissions.project-edit.network]\nenabled = true",
         )
-        document = document.replace('"~/.ssh" = "deny"', '"~/.ssh" = "read"')
+        document = document.replace(
+            '"~/.ssh/**" = "deny"', '"~/.ssh/**" = "read"'
+        )
         target.write_text(document, encoding="utf-8")
 
         errors = validate_toml.validate(self.root)
@@ -81,8 +83,14 @@ class ValidateTomlTests(unittest.TestCase):
             ),
             (
                 "credential path",
-                '"~/.ssh" = "deny"',
-                '"~/.ssh" = "read"',
+                '"~/.ssh/**" = "deny"',
+                '"~/.ssh/**" = "read"',
+                "reviewer permission profile differs",
+            ),
+            (
+                "credential glob scan bound",
+                "glob_scan_max_depth = 8",
+                "glob_scan_max_depth = 1",
                 "reviewer permission profile differs",
             ),
             (
