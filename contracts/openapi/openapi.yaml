@@ -1,0 +1,9 @@
+openapi: 3.1.0
+info:
+  title: HedefOra API
+  version: 0.0.0
+  description: >-
+    W000 no-feature contract scaffold. Runtime operations begin in W001 after
+    their producers, consumers, errors and compatibility behavior are defined.
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+paths: {}

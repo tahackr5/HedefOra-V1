@@ -24,6 +24,9 @@ Bu dosya yalnız kabul edilmiş, repository çapında etkili kararların kısa k
 | DEC-018 | Ödeme, native mobile, sosyal/messaging, leaderboard, izinsiz scraping ve media download MVP dışıdır. | ACCEPTED |
 | DEC-019 | Production dependency eklemek risk/lisans/alternatif değerlendirmesi ister. | ACCEPTED |
 | DEC-020 | Ana model GPT-5.6 Sol + Ultra'dır; runtime'ın gerçek ayarı kanıta yazılır, sessiz downgrade yapılmaz. | ACCEPTED |
+| DEC-021 | W000 yalnız build/test edilebilir no-feature scaffolding, toolchain ve repository validator kodu üretebilir; W001 platform/runtime davranışı W000 exit öncesi uygulanmaz. | ACCEPTED |
+| DEC-022 | Gate'ler aktif wave kapsamına göre uygulanır; kanıtlı `NOT_APPLICABLE` PASS değildir ve mevcut artifact/acceptance için kullanılamaz. | ACCEPTED |
+| DEC-023 | `PACKAGE-MANIFEST.md` ilk Markdown teslim paketinin değişmez provenance kaydıdır; yaşayan repository manifesti değildir. | ACCEPTED |
 
 ## Değiştirme kuralı
 

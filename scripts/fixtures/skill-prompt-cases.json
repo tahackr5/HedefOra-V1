@@ -1,0 +1,32 @@
+[
+  {
+    "id": "feature-positive",
+    "prompt": "HedefOra için acceptance criteria'dan başlayarak yeni bir özellik geliştir ve test et.",
+    "expectedSkill": "hedefora-feature-delivery"
+  },
+  {
+    "id": "contract-positive",
+    "prompt": "OpenAPI sözleşmesine geriye uyumlu bir alan ekle ve generated drift'i doğrula.",
+    "expectedSkill": "hedefora-contract-change"
+  },
+  {
+    "id": "security-positive",
+    "prompt": "Bu değişikliği salt okunur güvenlik incelemesinden geçir.",
+    "expectedSkill": "hedefora-security-review"
+  },
+  {
+    "id": "cold-review-positive",
+    "prompt": "Wave çıkışında fresh-context bağımsız cold review yap.",
+    "expectedSkill": "hedefora-cold-review"
+  },
+  {
+    "id": "release-positive",
+    "prompt": "Staging promotion öncesi release readiness kapılarını doğrula.",
+    "expectedSkill": "hedefora-release-readiness"
+  },
+  {
+    "id": "incident-positive",
+    "prompt": "Staging hata oranı yükseldi; olayı salt okunur triage et.",
+    "expectedSkill": "hedefora-incident-triage"
+  }
+]

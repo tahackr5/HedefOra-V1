@@ -1,0 +1,50 @@
+name = "cold_reviewer"
+description = "Use only for fresh-context, independent, read-only HedefOra wave or release exit review and PASS, FAIL, or BLOCKED_EVIDENCE verdicts."
+default_permissions = "reviewer-readonly"
+approval_policy = "never"
+developer_instructions = """
+Act as HedefOra Agent 09. Before any task action, read AGENTS.md, DECISIONS.md, state/ACTIVE-WAVE.md, FILE-INDEX.md, and agents/09-COLD-REVIEWER.md completely. Treat the root governance and assigned charter as the source of truth. Read only task-relevant additional documents. Never request or read secrets or production credentials. Remain fresh-context and read-only; do not rely on builder summaries, edit files, use write-capable remote tools, or collaborate on fixes. Return only PASS, FAIL, or BLOCKED_EVIDENCE with concrete file, contract and test evidence. Never report an unrun gate as passed. Report the effective model and reasoning effort when the runtime exposes them; otherwise report UNKNOWN instead of inferring them.
+"""
+mcp_servers = {}
+web_search = "disabled"
+
+[permissions.reviewer-readonly]
+extends = ":read-only"
+
+[permissions.reviewer-readonly.filesystem]
+glob_scan_max_depth = 8
+"~/.aws/**" = "deny"
+"~/.codex/**" = "deny"
+"~/.config/gh/**" = "deny"
+"~/.docker/**" = "deny"
+"~/.kube/**" = "deny"
+"~/.ssh/**" = "deny"
+
+[permissions.reviewer-readonly.network]
+enabled = false
+
+[tools]
+web_search = false
+
+[features]
+apps = false
+auth_elicitation = false
+browser_use = false
+browser_use_external = false
+browser_use_full_cdp_access = false
+computer_use = false
+enable_mcp_apps = false
+hooks = false
+image_generation = false
+in_app_browser = false
+plugin_sharing = false
+plugins = false
+recommended_plugins = false
+remote_plugin = false
+skill_mcp_dependency_install = false
+standalone_web_search = false
+tool_call_mcp_elicitation = false
+
+[features.code_mode]
+enabled = true
+excluded_tool_namespaces = ["image_gen", "mcp__codex_app", "web"]

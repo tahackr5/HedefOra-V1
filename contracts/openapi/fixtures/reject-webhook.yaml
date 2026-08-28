@@ -1,0 +1,14 @@
+openapi: 3.1.0
+info:
+  title: W000 negative webhook fixture
+  version: 0.0.0
+  description: This fixture must fail the W000 no-operation Spectral rule.
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+paths: {}
+webhooks:
+  unexpectedEvent:
+    post:
+      operationId: rejectUnexpectedWebhook
+      responses:
+        "204":
+          description: This operation is forbidden during W000.

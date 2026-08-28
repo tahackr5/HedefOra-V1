@@ -1,6 +1,6 @@
 # Plugin Kurulum Kontrol Listesi
 
-## Zaten kurulu — açık kalsın
+## Kurulu/bağlı olması beklenenler — yalnız tetiklendiğinde etkinleştir
 
 - [ ] GitHub bağlı ve doğru private repo erişimi var
 - [ ] Context7

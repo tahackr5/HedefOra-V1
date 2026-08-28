@@ -1,0 +1,81 @@
+name: CodeQL
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  GOFLAGS: -mod=readonly
+  GOTOOLCHAIN: local
+
+jobs:
+  analyze:
+    name: Analyze current W000 source (${{ matrix.language }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: go
+            build-mode: autobuild
+          - language: javascript-typescript
+            build-mode: none
+    steps:
+      - name: Checkout synthetic PR merge or pushed commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Pull requests analyze GitHub's synthetic merge commit; pushes analyze github.sha.
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.merge_commit_sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify CodeQL source identity
+        shell: bash
+        env:
+          EXPECTED_ANALYSIS_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.merge_commit_sha || github.sha }}
+        run: |
+          set -euo pipefail
+          actual_analysis_sha="$(git rev-parse HEAD)"
+          if [[ "${actual_analysis_sha}" != "${EXPECTED_ANALYSIS_SHA}" ]]; then
+            echo "::error::CodeQL checkout ${actual_analysis_sha} does not match expected ${EXPECTED_ANALYSIS_SHA}."
+            exit 1
+          fi
+          {
+            echo "### W000 CodeQL source identity"
+            echo "- Analyzed SHA: ${actual_analysis_sha}"
+            if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+              echo "- Reviewed PR head SHA: ${{ github.event.pull_request.head.sha }}"
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Set up Go from go.mod
+        if: matrix.language == 'go'
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          cache: false
+          check-latest: false
+          go-version-file: go.mod
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          build-mode: ${{ matrix.build-mode }}
+          languages: ${{ matrix.language }}
+
+      - name: Analyze current source
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          category: /language:${{ matrix.language }}

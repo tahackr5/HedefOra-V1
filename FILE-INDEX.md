@@ -15,6 +15,13 @@
 - `product/ACCEPTANCE-CRITERIA.md`
 - `agents/01-PRODUCT-UX-CONTENT.md`
 
+## Legal, privacy ve policy taslakları
+
+- `architecture/AUTH-SECURITY-PRIVACY.md`
+- `product/INFORMATION-ARCHITECTURE-AND-CONTENT.md`
+- `agents/10-LEGAL-POLICY-DRAFTER.md`
+- Her ajan çıktısı `DRAFT_NOT_FOR_PRODUCTION`; aktivasyon owner gate'idir.
+
 ## Planner/curriculum/AI
 
 - `product/PLANNING-ENGINE.md`
@@ -58,6 +65,10 @@
 
 - `MASTER-TRIGGER.md`
 - `delivery/CODEX-RUNTIME-GENERATION-SPEC.md`
+- `delivery/TOOLCHAIN-LOCK.md`
+- `state/W000-OWNERSHIP.md` (yalnız W000 boyunca aktif yazma sahipliği)
+- `state/W000-OWNERSHIP.json` (W000 commit aralığı ve path allowlist kanıtı)
+- `state/W000-EVIDENCE.md` (W000 gate, security, risk ve exit kanıt paketi)
 - `agents/**`
 - `.agents/skills/**/SKILL.md`
 - `plugins/**`

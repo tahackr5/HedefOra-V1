@@ -2,9 +2,11 @@
 
 - Package: HedefOra-Codex-Markdown-Blueprint-v0.1.0
 - Generated: 2026-08-27
+- Baseline commit: `2efca6c8b65e3342ad5309076b7cd0dedf816943`
 - File count excluding this manifest: 76
 - Algorithm: SHA-256
-- Scope: all regular files except `PACKAGE-MANIFEST.md`
+- Scope: baseline commit'teki Markdown teslim paketinin `PACKAGE-MANIFEST.md` dışındaki tüm regular file'ları
+- Lifecycle: immutable provenance record; Wave 000 ve sonraki repository değişikliklerinde yeniden üretilmez
 
 | Path | Bytes | SHA-256 |
 |---|---:|---|

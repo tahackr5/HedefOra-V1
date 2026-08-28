@@ -1,0 +1,11 @@
+openapi: 3.1.0
+info:
+  title: HedefOra W000 path rejection fixture
+  version: 0.0.0
+paths:
+  /health:
+    get:
+      operationId: rejectHealthOperation
+      responses:
+        "204":
+          description: This valid operation must remain forbidden in W000.
