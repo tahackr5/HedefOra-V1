@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "d857b5731258a16caab48900b6cf635aa617f066",
+  "verifiedThrough": "37543b1c6bb928d09618cb31924a7fead534e448",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -154,6 +154,19 @@
         "scripts/supply-chain/contracts.mjs",
         "scripts/supply-chain/contracts.test.mjs",
         "scripts/supply-chain/policy.mjs"
+      ]
+    },
+    "W001-T02-semgrep-evidence-path-order-seal": {
+      "base": "d857b5731258a16caab48900b6cf635aa617f066",
+      "head": "7e866ce96658fd297692257a1630df6dcc2b85fe",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-go-process-environment-contract": {
+      "base": "7e866ce96658fd297692257a1630df6dcc2b85fe",
+      "head": "37543b1c6bb928d09618cb31924a7fead534e448",
+      "allowedPaths": [
+        "scripts/supply-chain/contracts.mjs",
+        "scripts/supply-chain/contracts.test.mjs"
       ]
     }
   }
