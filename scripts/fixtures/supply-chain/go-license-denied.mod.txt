@@ -1,0 +1,5 @@
+module example.com/hedefora/r016-go-license-canary
+
+go 1.20
+
+require github.com/MichaelMure/git-bug v0.8.0

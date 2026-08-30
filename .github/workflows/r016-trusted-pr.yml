@@ -1,0 +1,157 @@
+name: R-016 trusted PR gate
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r016-trusted-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  supply-chain:
+    name: R-016 trusted-base supply-chain gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout immutable trusted control plane
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: control
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Checkout exact untrusted pull-request source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: target
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify control and target identities
+        shell: bash
+        env:
+          EXPECTED_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          EXPECTED_CHECKOUT_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          [[ "$(/usr/bin/git -C control rev-parse HEAD)" == "${EXPECTED_BASE_SHA}" ]]
+          [[ "$(/usr/bin/git -C target rev-parse HEAD)" == "${EXPECTED_CHECKOUT_SHA}" ]]
+          [[ -f control/scripts/supply-chain/run.mjs ]]
+          [[ ! -e target/artifacts/r016 ]]
+
+      - name: Set up exact trusted Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 24.20.0
+          check-latest: false
+          package-manager-cache: false
+
+      - name: Run trusted control code against exact PR source
+        id: r016
+        shell: bash
+        env:
+          CONTROL_ROOT: ${{ github.workspace }}/control
+          CONTROL_RUNNER: ${{ github.workspace }}/control/scripts/supply-chain/run.mjs
+          EXPECTED_CHECKOUT_SHA: ${{ github.event.pull_request.head.sha }}
+          EXPECTED_CONTROL_SHA: ${{ github.event.pull_request.base.sha }}
+          TARGET_ROOT: ${{ github.workspace }}/target
+        run: |
+          set -euo pipefail
+          control_root_real="$(realpath -e -- "${CONTROL_ROOT}")"
+          [[ "${control_root_real}" == "${CONTROL_ROOT}" ]]
+          trusted_control_modules=(
+            scripts/supply-chain/contracts.mjs
+            scripts/supply-chain/database.mjs
+            scripts/supply-chain/inventory.mjs
+            scripts/supply-chain/policy.mjs
+            scripts/supply-chain/process.mjs
+            scripts/supply-chain/run.mjs
+          )
+          for module_path in "${trusted_control_modules[@]}"; do
+            module_record="$(
+              /usr/bin/git -C "${CONTROL_ROOT}" ls-files --stage -- "${module_path}"
+            )"
+            IFS=$'\t' read -r module_metadata recorded_path <<< "${module_record}"
+            read -r module_mode module_object_id module_stage <<< "${module_metadata}"
+            [[ "${recorded_path}" == "${module_path}" ]]
+            [[ "${module_mode}" == "100644" ]]
+            [[ "${module_stage}" == "0" ]]
+            [[ "${module_object_id}" =~ ^[0-9a-f]{40}([0-9a-f]{24})?$ ]]
+            [[ "$(/usr/bin/git -C "${CONTROL_ROOT}" cat-file -t "${module_object_id}")" == "blob" ]]
+            module_absolute="${control_root_real}/${module_path}"
+            [[ -f "${module_absolute}" && ! -L "${module_absolute}" ]]
+            [[ "$(realpath -e -- "${module_absolute}")" == "${module_absolute}" ]]
+            [[ "$(/usr/bin/git -C "${CONTROL_ROOT}" hash-object -- "${module_path}")" == "${module_object_id}" ]]
+          done
+          [[ "$(realpath -e -- "${CONTROL_RUNNER}")" == "${control_root_real}/scripts/supply-chain/run.mjs" ]]
+          trusted_tool_cache="$(realpath "${RUNNER_TOOL_CACHE}")"
+          node_entry="$(command -v node)"
+          node_binary="$(realpath "${node_entry}")"
+          [[ "${node_binary}" == "${trusted_tool_cache}/"* ]]
+          [[ -f "${node_binary}" && -x "${node_binary}" ]]
+          [[ "$("${node_binary}" --version)" == "v24.20.0" ]]
+          [[ -x /usr/bin/git ]]
+          [[ -x /usr/bin/docker ]]
+          set +e
+          gate_output="$("${node_binary}" --input-type=module --eval '
+            import { pathToFileURL } from "node:url";
+            const control = await import(pathToFileURL(process.env.CONTROL_RUNNER).href);
+            const result = await control.executeSupplyChainGate({
+              controlRoot: process.env.CONTROL_ROOT,
+              expectedCheckoutSha: process.env.EXPECTED_CHECKOUT_SHA,
+              expectedControlSha: process.env.EXPECTED_CONTROL_SHA,
+              repositoryRoot: process.env.TARGET_ROOT,
+            });
+            if (result.evidence.status === "FAIL") {
+              process.stderr.write(
+                control.failureSummaryForConsole(result.evidence) + "\n",
+              );
+            }
+            process.stdout.write(
+              result.evidence.status + " R-016 (" + result.exitCode +
+                "); evidence: " + result.artifactRoot + "\n",
+            );
+            process.exitCode = result.exitCode;
+          ' 2>&1)"
+          gate_exit=$?
+          set -e
+          printf '%s\n' "${gate_output}"
+          mapfile -d '' artifact_directories < <(
+            find target/artifacts/r016 -mindepth 1 -maxdepth 1 -type d -print0
+          )
+          [[ "${#artifact_directories[@]}" -eq 1 ]]
+          artifact_path="$(realpath "${artifact_directories[0]}")"
+          target_path="$(realpath target)"
+          [[ "${artifact_path}" == "${target_path}/artifacts/r016/"* ]]
+          evidence_count=0
+          for evidence_name in evidence.json evidence-finalization-failure.json; do
+            evidence_path="${artifact_path}/${evidence_name}"
+            if [[ -e "${evidence_path}" || -L "${evidence_path}" ]]; then
+              [[ -f "${evidence_path}" && ! -L "${evidence_path}" ]]
+              evidence_count=$((evidence_count + 1))
+            fi
+          done
+          [[ "${evidence_count}" -eq 1 ]]
+          if find "${artifact_path}" -type l -print -quit | grep -q .; then
+            echo "::error::R-016 artifact directory contains a symbolic link."
+            exit 1
+          fi
+          artifact_relative="target/artifacts/r016/$(basename "${artifact_path}")"
+          printf 'artifact_path=%s\n' "${artifact_relative}" >> "${GITHUB_OUTPUT}"
+          exit "${gate_exit}"
+
+      - name: Upload exact R-016 evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: r016-${{ github.event.pull_request.head.sha }}
+          path: ${{ steps.r016.outputs.artifact_path }}
+          if-no-files-found: error
+          retention-days: 7

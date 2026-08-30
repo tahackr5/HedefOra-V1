@@ -36,18 +36,22 @@ const allowedW000FrontendSourceFiles = new Set([
   "apps/web/src/vite-env.d.ts",
   "apps/web/vite.config.ts",
 ]);
+const allowedW001SupplyChainToolSourceFiles = new Set([
+  "tools/osvdbcheck/cmd/osvdbcheck/main.go",
+  "tools/osvdbcheck/cmd/osvdbcheck/main_test.go",
+]);
 if (path.resolve(process.argv[1] ?? "") === path.resolve(scriptPath)) {
   const findings = await findGeneratedArtifacts(repositoryRoot);
   if (findings.length > 0) {
     for (const finding of findings) {
       console.error(
-        `ERROR: unexpected W000 runtime/generated artifact: ${finding}`,
+        `ERROR: unexpected pre-runtime/generated artifact: ${finding}`,
       );
     }
     process.exitCode = 1;
   } else {
     console.log(
-      "PASS: W000 has no unexpected runtime source paths, generated directories, filenames or source markers.",
+      "PASS: the pre-runtime boundary has no unexpected source paths, generated directories, filenames or source markers.",
     );
   }
 }
@@ -102,7 +106,7 @@ export async function findGeneratedArtifacts(root) {
     }
     if (
       executableSourceExtensions.has(extension) &&
-      !isAllowedW000Source(normalized)
+      !isAllowedPreRuntimeSource(normalized)
     ) {
       findings.push(`${normalized}#unexpected-source`);
     }
@@ -110,10 +114,11 @@ export async function findGeneratedArtifacts(root) {
   return [...new Set(findings)].sort();
 }
 
-function isAllowedW000Source(relativePath) {
+export function isAllowedPreRuntimeSource(relativePath) {
   return (
     relativePath.startsWith("scripts/") ||
     relativePath.startsWith("tools/repolint/") ||
+    allowedW001SupplyChainToolSourceFiles.has(relativePath) ||
     allowedW000FrontendSourceFiles.has(relativePath)
   );
 }

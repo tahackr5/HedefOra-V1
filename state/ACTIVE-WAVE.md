@@ -9,34 +9,37 @@
 - Integration branch: `codex/w001-supply-chain-gates`
 - Worktree: external W001 worktree (OneDrive dışında)
 - Started at: `2026-08-28T21:50:57+03:00` (`2026-08-28T18:50:57Z`)
-- Last checkpoint: W000 post-exit closure PR #2 exact reviewed head `22dbd435c151cf51cb4fd47e29bdba16f4d2d658` ile two-parent/content-identical `bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b` merge'üne ulaştı. Final `main` quality job `98945933590` `PASS`; hosted CodeQL/Dependency Review/branch protection `BLOCKED_EXTERNAL` kalır.
+- Last checkpoint: R-016, trusted base kontrol kökü ile taranan target kökünü ayıracak; protected control-plane path/mode/stage/OID parity'sini, ayrı source seal'lerini, absolute Git/Docker executable kimliğini, Go advisory/denied-license canary'lerini ve canonical evidence yazılamadığında fail-closed fallback artifact'ını zorlayacak biçimde sertleştirildi. Exact Node `24.20.0` ile repository Node suite `110/110`, bunun içindeki supply-chain suite `98/98` geçti; pinned Go/Python/actionlint, frontend ve pre-commit secret scan kapıları da temizdir. Canlı exact-target scanner gate'i hâlâ `NOT_RUN`.
 - Current objective: R-016 kapsamında W001 runtime davranışından önce pinned OSS SAST ve pnpm/Go all-scope vulnerability/license telafi kapısını fail-closed kurmak
 
 ## Active tasks
 
-| Task | Agent | Branch/worktree | Owned paths | Status | Depends on |
-|---|---|---|---|---|---|
-| W001-T00 Wave open ve immutable ownership | orchestrator | `codex/w001-supply-chain-gates` / W001 worktree | `FILE-INDEX.md`, `state/ACTIVE-WAVE.md`, `state/RELEASE-LEDGER.md`, `state/W001-*` | IN_PROGRESS | W000 closure merge `bde560f` |
-| W001-T01 R-016 contract/research/test design | architecture, quality, security ve infra read-only ajanları | aynı exact base, read-only | none | IN_PROGRESS | W001-T00 |
-| W001-T02 R-016 gate implementation | orchestrator | W001 worktree | exact allowlist `state/W001-OWNERSHIP.md` içinde | NOT_RUN | W001-T01 |
-| W001-T03 Exact-target quality/security/cold review | read-only reviewers | sealed W001 target | none | NOT_RUN | W001-T02 |
-| W001-T04 Platform/DB/contract runtime foundation | atanmadı | immutable-base task worktree'leri | henüz atanmadı | BLOCKED | R-016 `PASS` |
+| Task                                               | Agent                                                       | Branch/worktree                                 | Owned paths                                                                        | Status      | Depends on                   |
+| -------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------- | ----------- | ---------------------------- |
+| W001-T00 Wave open ve immutable ownership          | orchestrator                                                | `codex/w001-supply-chain-gates` / W001 worktree | `FILE-INDEX.md`, `state/ACTIVE-WAVE.md`, `state/RELEASE-LEDGER.md`, `state/W001-*` | COMPLETED   | W000 closure merge `bde560f` |
+| W001-T00B Ownership validator manifest adaptation  | orchestrator                                                | W001 worktree                                   | `tools/repolint/cmd/repolint/main.go`, `tools/repolint/cmd/repolint/main_test.go`  | COMPLETED   | W001-T00                     |
+| W001-T01 R-016 contract/research/test design       | architecture, quality, security ve infra read-only ajanları | aynı exact base, read-only                      | none                                                                               | COMPLETED   | W001-T00                     |
+| W001-T02 R-016 gate implementation                 | orchestrator                                                | W001 worktree                                   | exact allowlist `state/W001-OWNERSHIP.md` içinde                                   | IN_PROGRESS | W001-T01                     |
+| W001-T03 Exact-target quality/security/cold review | read-only reviewers                                         | sealed W001 target                              | none                                                                               | NOT_RUN     | W001-T02                     |
+| W001-T04 Platform/DB/contract runtime foundation   | atanmadı                                                    | immutable-base task worktree'leri               | henüz atanmadı                                                                     | BLOCKED     | R-016 `PASS`                 |
 
 ## Gate status
 
-| Gate | Status | Evidence |
-|---|---|---|
-| W000 exact closure baseline | PASS | `bde560f` / tree `7a2ae76`; GitHub quality job `98945933590`; local clean-clone/full-tree PASS |
-| Hosted security/enforcement | BLOCKED_EXTERNAL | CodeQL upload/integration, Dependency Review ve private-plan branch/ruleset protection; DEC-024 telafisi sonucu yeniden adlandırmaz |
-| Pinned OSS SAST | NOT_RUN | Semgrep scanner/ruleset identity ve fail-closed wrapper uygulanacak |
-| pnpm + Go all-scope vulnerability/license | NOT_RUN | OSV advisory DB identity, multi-document lock coverage ve license allow/deny uygulanacak |
-| R-016 negative fixtures | NOT_RUN | dev/unknown vulnerability, disallowed/unknown license, missing/stale DB, parse/timeout/internal/network error |
-| W001 runtime behavior | NOT_RUN | R-016 PASS olmadan başlatılamaz |
+| Gate                                      | Status           | Evidence                                                                                                                                                                  |
+| ----------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| W000 exact closure baseline               | PASS             | `bde560f` / tree `7a2ae76`; GitHub quality job `98945933590`; local clean-clone/full-tree PASS                                                                            |
+| Hosted security/enforcement               | BLOCKED_EXTERNAL | CodeQL upload/integration, Dependency Review ve private-plan branch/ruleset protection; DEC-024 telafisi sonucu yeniden adlandırmaz                                       |
+| Pinned OSS SAST                           | NOT_RUN          | Semgrep CE 1.175.0 nonroot digest + `--oss-only`, exact rule commit/tree/hash ve wrapper kodlandı; real clean-target koşum bekleniyor                                     |
+| pnpm + Go all-scope vulnerability/license | NOT_RUN          | two-document strict inventory/parity ve fresh DB seal kodlandı; real clean-target OSV/license koşumu bekleniyor                                                           |
+| R-016 negative fixtures                   | IN_PROGRESS      | Go advisory ve Go denied-license dahil fixture sözleşmeleri exact Node `24.20.0` supply-chain suite içinde `98/98` geçti; live pinned SAST/OSV/ZIP doğrulaması bekleniyor |
+| R-016 trusted-base PR gate                | NOT_RUN          | Wave-start base trusted workflow/runner taşımıyor; ilk control-plane bootstrap owner onayıyla iki aşamalı yapılacak, bu PR için hosted trusted `PASS` iddia edilmeyecek   |
+| W001 runtime behavior                     | NOT_RUN          | R-016 PASS olmadan başlatılamaz                                                                                                                                           |
 
 ## Owner kararları ve sınırlar
 
 - Primary remote `https://github.com/tahackr5/HedefOra-V1.git`; repository-local identity `tahackr5 <cak.ihsantaha@gmail.com>`.
 - Private/current GitHub planı ve DEC-024 exact-SHA telafisi owner tarafından onaylandı; hosted eksikler `BLOCKED_EXTERNAL` kalır.
+- R-016 ilk control-plane bootstrap'ı yalnız clean exact-target/full-tree ve fresh security/cold review kanıtından sonra owner onayıyla birleşebilir. Base bu kontrolü taşıdıktan sonraki ayrı target/runtime PR'ı trusted-base gate'inden `PASS` almadan ilerleyemez; protected kontrol değişiklikleri aynı iki aşamalı owner gate'ini tekrarlar.
 - Repository backup/recovery W007 ve en geç ilk gerçek kullanıcı/public launch/production promotion öncesi hard gate'tir; W001 başlangıcını engellemez.
 - Mevcut 2 GB/30 GB Ubuntu VPS yalnız staging adayıdır; gerçek kullanıcı/production verisi alamaz. W007/action-specific owner gate öncesi VPS, SSH, Cloudflare veya DNS mutation yapılmaz.
 - Password, private key, token, MFA/recovery code ve gerçek `.env` istenmez, okunmaz veya kaydedilmez.

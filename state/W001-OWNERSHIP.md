@@ -19,29 +19,38 @@ Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERS
 - Scope: current official scanner/rule/advisory DB identity; multi-document pnpm lock coverage; Go module coverage; fail-closed error/timeout/network/DB behavior; negative-fixture matrix.
 - Output: structured proposal only; repository mutation yasaktır.
 
-## W001-T02 — R-016 supply-chain gates
+## W001-T00B — Ownership validator manifest adaptation
 
 - Writer: orchestrator.
-- Owned paths: `.github/workflows/ci.yml`, `.gitignore`, `package.json`, `security/**`, `scripts/supply-chain/**`, `scripts/fixtures/supply-chain/**`, `delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md`, `delivery/TOOLCHAIN-LOCK.md`, `state/ACTIVE-WAVE.md`, `state/RISK-REGISTER.md`, `state/W001-EVIDENCE.md`, `state/W001-OWNERSHIP.md`, `state/W001-OWNERSHIP.json`.
+- Owned paths: `tools/repolint/cmd/repolint/main.go`, `tools/repolint/cmd/repolint/main_test.go`.
+- Scope: W001 ve sonraki wave manifest adını aktif wave state'inden dinamik seçmek; W000 exact historical doğrulamasını değiştirmemek.
+- Expected gates: pinned Go format/test/vet/race/build, immutable W000 range ve W001 manifest-only seal doğrulaması.
+
+## W001-T02 — R-016 supply-chain gates
+
+- Writer/merge/stage sahibi: orchestrator. Bounded writers yalnız `scripts/supply-chain/inventory.mjs` + `inventory.test.mjs`, `scripts/supply-chain/policy.mjs` + `policy.test.mjs`, `scripts/supply-chain/process.mjs` + `process.test.mjs` ve `tools/osvdbcheck/**` üzerinde çalışabilir; shared state/merge/stage sahibi değildir.
+- Owned paths: `.github/workflows/ci.yml`, `.github/workflows/r016-trusted-pr.yml`, `.gitignore`, `package.json`, `security/**`, `scripts/check-generated.mjs`, `scripts/check-generated.test.mjs`, `scripts/supply-chain/**`, `scripts/fixtures/supply-chain/**`, `tools/osvdbcheck/**`, `delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md`, `delivery/TOOLCHAIN-LOCK.md`, `state/ACTIVE-WAVE.md`, `state/RISK-REGISTER.md`, `state/W001-EVIDENCE.md`, `state/W001-OWNERSHIP.md`, `state/W001-OWNERSHIP.json`.
 - Read paths: bütün committed dependency manifests/lockfiles, tracked Go/JavaScript/TypeScript source, current CI ve repository validators.
 - Forbidden paths: `apps/**`, `contracts/**`, `infra/**`, database/migration/runtime behavior, `DECISIONS.md`, `architecture/**`, historical `state/W000-*`, secrets ve generated/vendor çıktıları.
-- Expected gates: scanner/policy unit tests; real pinned Semgrep ve OSV integration; vulnerable dev/unknown fixture; disallowed/unknown license; missing/stale/hash-mismatch DB; malformed output, timeout, internal/network error; multi-document inventory parity; existing `pnpm ci:check`, Go, TOML, actionlint, Gitleaks ve ownership gates.
+- Trusted PR boundary: immutable base SHA ayrı kontrol köküdür ve runner/policy/scanner/rules/schema/fixture/validator byte'larını exact Git blob'larından sağlar; PR head ayrı target köküdür ve yalnız taranacak manifest/lock/source Git blob'larını sağlar. Import öncesi transitive runner modülleri stage-0 `100644` blob/hash/regular-file/realpath olarak doğrulanır; split-root'ta iki exact expected SHA zorunludur. Protected control-plane path/mode/stage/OID parity'si scanner başlamadan zorunludur; target script/action çalıştırılmaz.
+- Expected gates: scanner/policy/semantic unit tests; real pinned Semgrep ve OSV integration; npm ile Go advisory canary'leri; disallowed/unknown npm lisansı ile denied Go lisans canary'si; missing/stale/hash-mismatch DB; malformed output, timeout, internal/network/error ve canonical evidence-write fallback; multi-document inventory parity; absolute Git/Docker executable identity; existing `pnpm ci:check`, Go, TOML, actionlint, Gitleaks ve ownership gates.
 
 ## W001-T03 — Exact-target evidence ve review
 
 - State/evidence writer: orchestrator only.
 - Security ve cold reviewer: fresh-context, read-only, exact sealed SHA/tree.
 - Owned paths: `state/ACTIVE-WAVE.md`, `state/RELEASE-LEDGER.md`, `state/RISK-REGISTER.md`, `state/W001-EVIDENCE.md`, `state/W001-OWNERSHIP.md`, `state/W001-OWNERSHIP.json`.
-- R-016 yalnız scanner image/binary, rule tree, policy/config ve npm/Go advisory DB kimlikleriyle; literal commands/exits ve negative fixture kanıtıyla `PASS` olabilir.
+- R-016 yalnız target ve control source seal'leri, protected control-plane parity'si, scanner image/binary, rule tree, policy/config ve npm/Go advisory DB kimlikleriyle; literal commands/exits ve negative fixture kanıtıyla `PASS` olabilir.
 
 ## Merge ve rollback
 
 1. W001 açılış state commit'i.
 2. Manifest-only ownership seal.
-3. R-016 implementation + tests + docs.
+3. R-016 control-plane implementation + tests + docs.
 4. Manifest-only seal ve exact-target full-tree/security/cold review.
-5. Owner-controlled two-parent, content-identical GitHub merge.
-6. Final `main` push active-wave merge-wrapper/full-tree gate.
+5. İlk bootstrap PR'ı için explicit owner approval ve owner-controlled two-parent, content-identical GitHub merge; wave-start base trusted workflow/runner taşımadığı için hosted trusted gate bu PR'da `NOT_RUN` kalır.
+6. Yeni base üzerinde ayrı target/runtime PR'ı; trusted-base gate `PASS` olmadan ilerlemez. Protected control-plane değişikliği gerekiyorsa yine önce control-only owner-approved bootstrap, sonra ayrı target PR yapılır.
+7. Final `main` push active-wave merge-wrapper/full-tree gate.
 
 Squash/rebase/direct push kabul edilmez. Rollback, W001 PR'ını merge etmemek veya exact two-parent merge'i yeni bir reviewed revert PR ile geri almaktır; hosted kontroller çözülene kadar `BLOCKED_EXTERNAL` kalır. VPS/DNS rollback bu task için `NOT_APPLICABLE`, çünkü dış sistem mutation'ı yoktur.
 

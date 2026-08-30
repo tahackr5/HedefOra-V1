@@ -20,7 +20,7 @@ env:
 
 jobs:
   quality:
-    name: W000 quality gates
+    name: W001 quality gates
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -43,7 +43,7 @@ jobs:
             exit 1
           fi
           {
-            echo "### W000 source identity"
+            echo "### W001 source identity"
             echo "- Checked-out SHA: ${actual_checkout_sha}"
             if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
               echo "- Pull request event merge SHA: ${GITHUB_SHA}"
@@ -93,14 +93,34 @@ jobs:
             exit 1
           fi
 
-      - name: Validate immutable ownership ranges
+      - name: Validate immutable W000 history
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code \
+            bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b \
+            HEAD \
+            -- \
+            state/W000-EVIDENCE.md \
+            state/W000-OWNERSHIP.json \
+            state/W000-OWNERSHIP.md
+          historical_args=(
+            -manifest state/W000-OWNERSHIP.json
+            -all
+            -base 2efca6c8b65e3342ad5309076b7cd0dedf816943
+            -head bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b
+            -merge-wrapper
+          )
+          go run ./tools/repolint/cmd/repolint "${historical_args[@]}"
+
+      - name: Validate immutable W001 ownership ranges
         shell: bash
         run: |
           set -euo pipefail
           ownership_args=(
-            -manifest state/W000-OWNERSHIP.json
+            -manifest state/W001-OWNERSHIP.json
             -all
-            -base 2efca6c8b65e3342ad5309076b7cd0dedf816943
+            -base bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b
             -head HEAD
           )
           if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
@@ -119,7 +139,7 @@ jobs:
         run: |
           set -euo pipefail
           {
-            echo "### W000 CI environment"
+            echo "### W001 CI environment"
             echo "- Runner: ${RUNNER_OS}/${RUNNER_ARCH}"
             echo "- Image OS: ${ImageOS:-unknown}"
             echo "- Image version: ${ImageVersion:-unknown}"
@@ -149,6 +169,96 @@ jobs:
 
       - name: Test Go packages
         run: go test ./...
+
+  supply-chain:
+    name: R-016 supply-chain gate
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify checked-out commit identity
+        shell: bash
+        env:
+          EXPECTED_CHECKOUT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          actual_checkout_sha="$(git rev-parse HEAD)"
+          if [[ "${actual_checkout_sha}" != "${EXPECTED_CHECKOUT_SHA}" ]]; then
+            echo "::error::Checked-out SHA ${actual_checkout_sha} does not match expected ${EXPECTED_CHECKOUT_SHA}."
+            exit 1
+          fi
+          echo "### R-016 source: ${actual_checkout_sha}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Set up exact trusted Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 24.20.0
+          check-latest: false
+          package-manager-cache: false
+
+      - name: Run pinned R-016 gate
+        id: r016
+        shell: bash
+        env:
+          EXPECTED_CHECKOUT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          trusted_tool_cache="$(realpath "${RUNNER_TOOL_CACHE}")"
+          node_entry="$(command -v node)"
+          node_binary="$(realpath "${node_entry}")"
+          [[ "${node_binary}" == "${trusted_tool_cache}/"* ]]
+          [[ -f "${node_binary}" && -x "${node_binary}" ]]
+          [[ "$("${node_binary}" --version)" == "v24.20.0" ]]
+          [[ -x /usr/bin/git ]]
+          [[ -x /usr/bin/docker ]]
+          if [[ -e artifacts/r016 ]]; then
+            echo "::error::artifacts/r016 must not exist before the trusted gate starts."
+            exit 1
+          fi
+          set +e
+          gate_output="$("${node_binary}" scripts/supply-chain/run.mjs 2>&1)"
+          gate_exit=$?
+          set -e
+          printf '%s\n' "${gate_output}"
+          mapfile -d '' artifact_directories < <(
+            find artifacts/r016 -mindepth 1 -maxdepth 1 -type d -print0
+          )
+          [[ "${#artifact_directories[@]}" -eq 1 ]]
+          artifact_path="$(realpath "${artifact_directories[0]}")"
+          repository_path="$(realpath .)"
+          [[ "${artifact_path}" == "${repository_path}/artifacts/r016/"* ]]
+          evidence_count=0
+          for evidence_name in evidence.json evidence-finalization-failure.json; do
+            evidence_path="${artifact_path}/${evidence_name}"
+            if [[ -e "${evidence_path}" || -L "${evidence_path}" ]]; then
+              [[ -f "${evidence_path}" && ! -L "${evidence_path}" ]]
+              evidence_count=$((evidence_count + 1))
+            fi
+          done
+          [[ "${evidence_count}" -eq 1 ]]
+          if find "${artifact_path}" -type l -print -quit | grep -q .; then
+            echo "::error::R-016 artifact directory contains a symbolic link."
+            exit 1
+          fi
+          artifact_relative="artifacts/r016/$(basename "${artifact_path}")"
+          printf 'artifact_path=%s\n' "${artifact_relative}" >> "${GITHUB_OUTPUT}"
+          exit "${gate_exit}"
+
+      - name: Upload R-016 evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: r016-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ steps.r016.outputs.artifact_path }}
+          if-no-files-found: error
+          retention-days: 7
 
   dependency-review:
     name: Dependency review

@@ -1,0 +1,3 @@
+const value = new URLSearchParams(location.search).get("value");
+
+eval(value);

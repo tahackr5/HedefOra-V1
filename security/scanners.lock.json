@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "osvScanner": {
+    "version": "2.5.1",
+    "sourceCommit": "c84fa4568f2526d0333e9a914ea8a0a5f74ad68b",
+    "image": "ghcr.io/google/osv-scanner:v2.5.1@sha256:8108ae94eadea5a02c9bec6e646909d5b790b44bd62d7f5b7f0b1d6d0ffc7734",
+    "indexDigest": "sha256:8108ae94eadea5a02c9bec6e646909d5b790b44bd62d7f5b7f0b1d6d0ffc7734",
+    "linuxAmd64Digest": "sha256:1547b7c2783d4f266b24fe86ab4dfc18d058588244c58384ac9f56dddb304511",
+    "linuxAmd64ReleaseAssetSha256": "f9f25499a2c8cc367b3af45df2ea7eeca7fbccceab9c35079968f4b3652194be"
+  },
+  "semgrep": {
+    "version": "1.175.0",
+    "imageSourceRepository": "https://github.com/semgrep/semgrep-proprietary",
+    "imageSourceRevision": "7e8860911435ba7be8ac783df98da39d7f99c702",
+    "image": "semgrep/semgrep:1.175.0-nonroot@sha256:6f6f4c1ea22ae02736b023dd4dcc842a4f50b25bbe1898530ec3bfff388b369b",
+    "indexDigest": "sha256:6f6f4c1ea22ae02736b023dd4dcc842a4f50b25bbe1898530ec3bfff388b369b",
+    "linuxAmd64Digest": "sha256:290df936d4de8897e93953debbec95132cdba878025227258049b06e93aa7c9c",
+    "executionMode": "community-edition-oss-only",
+    "engineLicense": "LGPL-2.1-or-later"
+  },
+  "goToolchainImage": {
+    "version": "1.26.7",
+    "image": "golang@sha256:e8c859f5632dcfde7b32d2012b4351728f6437930887c2f6a91ea242459e5514",
+    "indexDigest": "sha256:e8c859f5632dcfde7b32d2012b4351728f6437930887c2f6a91ea242459e5514",
+    "linuxAmd64Digest": "sha256:659cc38c1a394eeb4dd7e31fff6df128bd33444dcc7afd70e3bed5225749dbc0"
+  },
+  "osvConfiguration": {
+    "path": "security/osv-scanner.toml",
+    "sha256": "b040b8c217aaa0d134fa07216efda6aeec3dd9e4bf4f0c5932a6c85695bdefbe",
+    "usage": "license-scan-only"
+  },
+  "semgrepRules": {
+    "repository": "https://github.com/semgrep/semgrep-rules.git",
+    "commit": "40b8c63f75dc7c22c8a77482d73bfb864b146f7e",
+    "tree": "9b197569a9029ac2731667ef634f119dd61fb7dc",
+    "license": {
+      "path": "LICENSE",
+      "sha256": "1a6466ae5f1c68631bbd13e3f1aa8f380d84219853c08f0456b853fccfacee1d",
+      "name": "Semgrep Rules License v1.0",
+      "usage": "private-internal-ci-only",
+      "publicDistribution": "block-and-review"
+    },
+    "files": [
+      {
+        "path": "go/lang/security/decompression_bomb.yaml",
+        "sha256": "ce6bc2690a9cf9e8a6d418885d165f25a3bdd333aad3b208a541fcbb8f5d9e71"
+      },
+      {
+        "path": "go/lang/security/bad_tmp.yaml",
+        "sha256": "9398dca4c472dcca511fd451b28ae6cacb1706a4a625f30ef99f814daf7ab452"
+      },
+      {
+        "path": "go/lang/security/filepath-clean-misuse.yaml",
+        "sha256": "143efce5cb29cf4d921ddd0a0a37a4a17563af888ebd8bd5d9370bf2797ddbeb"
+      },
+      {
+        "path": "go/lang/security/injection/tainted-sql-string.yaml",
+        "sha256": "f25c4c446be68db1173f441cdadea6884242e993b36f607c97d27d770083d267"
+      },
+      {
+        "path": "go/lang/security/audit/dangerous-exec-command.yaml",
+        "sha256": "dc7714ff3dc2fd69663059c43c940106829235e3a67b3c9f21eafb832dd682a7"
+      },
+      {
+        "path": "go/lang/security/audit/crypto/tls.yaml",
+        "sha256": "1aea5fa930db28315eac1da83b93e2e175d2792facb99c65631f5e9c7f31cd35"
+      },
+      {
+        "path": "go/lang/security/audit/crypto/insecure_ssh.yaml",
+        "sha256": "4d58390ebca805252da97b63064bdd1b68ba66e0cce95b3b3f9dd6fbc98aa425"
+      },
+      {
+        "path": "go/lang/security/audit/sqli/pgx-sqli.yaml",
+        "sha256": "f0fca53b25ebc511a5cc632abdb70ed6d3556d5c9bf93d29af09612d935473df"
+      },
+      {
+        "path": "javascript/lang/security/detect-eval-with-expression.yaml",
+        "sha256": "b4419c38f5852d4772fce899d16259675e315a9b07c930eec0a488ad40820ff1"
+      },
+      {
+        "path": "javascript/lang/security/detect-insecure-websocket.yaml",
+        "sha256": "0d0982202bc8ec3dd682b43c5b7f7e20298843f86623619391d75dfc1d10b0bf"
+      },
+      {
+        "path": "javascript/lang/security/audit/dangerous-spawn-shell.yaml",
+        "sha256": "67e9d47bd23b0b378ff531bc0ebf02a80ebed396436d7b28ed26e31d551e0083"
+      },
+      {
+        "path": "javascript/lang/security/audit/spawn-shell-true.yaml",
+        "sha256": "01f7c2ad22fa80a6bc48ac628b63dd4ffbe9b96c802ddf75b03c5ac90117b5d2"
+      },
+      {
+        "path": "javascript/lang/security/audit/hardcoded-hmac-key.yaml",
+        "sha256": "5e2ff76ee235ef5512aeae0044a9c078ba109acb7e5232476b15be68b770ee6e"
+      },
+      {
+        "path": "javascript/lang/security/audit/sqli/node-postgres-sqli.yaml",
+        "sha256": "4cb4f877cc5ab05b945b92c64f91b0f940b04e616ee89e493228eb0050c0908d"
+      },
+      {
+        "path": "javascript/browser/security/eval-detected.yaml",
+        "sha256": "138c478c249ec00c8c28534a05865c6417718bbc9405c2fadb1a4feee98b51fb"
+      },
+      {
+        "path": "javascript/browser/security/insecure-innerhtml.yaml",
+        "sha256": "2bbb8d64655b0fe8659bcb6c9466309548c7c75e85d2b51eec34a448810f4702"
+      },
+      {
+        "path": "javascript/browser/security/dom-based-xss.yaml",
+        "sha256": "f827042ec558d18849507fd41f378eadc50b9a469f137d8811a15503a95a9d44"
+      },
+      {
+        "path": "typescript/react/security/react-markdown-insecure-html.yaml",
+        "sha256": "de76af5d10d0302389b5065405d4e608f7a4dbf2a4322a955eb694508821deda"
+      },
+      {
+        "path": "typescript/react/security/react-insecure-request.yaml",
+        "sha256": "2a3c5c88308f747e0e25e6d7ae0f870688517595c6112f60838879f3f2c3e7e1"
+      },
+      {
+        "path": "typescript/react/security/audit/react-dangerouslysetinnerhtml.yaml",
+        "sha256": "6ed9fcbcf3e130c89478ee74fdc66a63ec3c753e3eb913364a4facd62ffc08b3"
+      },
+      {
+        "path": "typescript/lang/security/audit/cors-regex-wildcard.yaml",
+        "sha256": "8179d36138e0d74ff3d94b8fb168585bb3f7818039bcc9c0e7f9613bcf293e2f"
+      }
+    ]
+  },
+  "advisoryDatabases": [
+    {
+      "ecosystem": "npm",
+      "url": "https://storage.googleapis.com/osv-vulnerabilities/npm/all.zip",
+      "cachePath": "osv-scalibr/npm/all.zip"
+    },
+    {
+      "ecosystem": "Go",
+      "url": "https://storage.googleapis.com/osv-vulnerabilities/Go/all.zip",
+      "cachePath": "osv-scalibr/Go/all.zip"
+    }
+  ]
+}

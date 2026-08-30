@@ -1,0 +1,17 @@
+lockfileVersion: '9.0'
+
+importers:
+
+  .:
+    devDependencies:
+      lodash:
+        specifier: 4.17.20
+        version: 4.17.20
+
+packages:
+
+  lodash@4.17.20: {}
+
+snapshots:
+
+  lodash@4.17.20: {}
