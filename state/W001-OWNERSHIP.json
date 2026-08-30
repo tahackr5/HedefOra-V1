@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "37543b1c6bb928d09618cb31924a7fead534e448",
+  "verifiedThrough": "37abd4b508151013732014c2dbb9e0b5780b01fc",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -167,6 +167,21 @@
       "allowedPaths": [
         "scripts/supply-chain/contracts.mjs",
         "scripts/supply-chain/contracts.test.mjs"
+      ]
+    },
+    "W001-T02-go-process-environment-contract-seal": {
+      "base": "37543b1c6bb928d09618cb31924a7fead534e448",
+      "head": "9ec363c6515de20eea5bd9c9ffd036dad957da6b",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-local-pass-evidence": {
+      "base": "9ec363c6515de20eea5bd9c9ffd036dad957da6b",
+      "head": "37abd4b508151013732014c2dbb9e0b5780b01fc",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md"
       ]
     }
   }
