@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "dbb06fe482575554ade4c65a47c167cfa755cd78",
+  "verifiedThrough": "7f09a2a607620f625bc11773caec3aed870a9de5",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -107,6 +107,22 @@
         "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
         "scripts/fixtures/supply-chain/vulnerable-development-pnpm-lock.yaml.txt",
         "scripts/fixtures/supply-chain/vulnerable-pnpm-lock.yaml.txt",
+        "scripts/supply-chain/contracts.mjs",
+        "scripts/supply-chain/contracts.test.mjs",
+        "scripts/supply-chain/run.mjs",
+        "scripts/supply-chain/run.test.mjs"
+      ]
+    },
+    "W001-T02-osv-scope-provenance-seal": {
+      "base": "dbb06fe482575554ade4c65a47c167cfa755cd78",
+      "head": "058d2ac2111ade4de7cb077830127aa3cc49d61a",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-semgrep-minified-contract": {
+      "base": "058d2ac2111ade4de7cb077830127aa3cc49d61a",
+      "head": "7f09a2a607620f625bc11773caec3aed870a9de5",
+      "allowedPaths": [
+        "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
         "scripts/supply-chain/contracts.mjs",
         "scripts/supply-chain/contracts.test.mjs",
         "scripts/supply-chain/run.mjs",
