@@ -43,87 +43,87 @@
     "files": [
       {
         "path": "go/lang/security/decompression_bomb.yaml",
-        "sha256": "ce6bc2690a9cf9e8a6d418885d165f25a3bdd333aad3b208a541fcbb8f5d9e71"
+        "sha256": "9c45d9ca144aca25aeba1fd41d23cee10cdc79f455fe7ce5f96dc5c3f5a6a5ef"
       },
       {
         "path": "go/lang/security/bad_tmp.yaml",
-        "sha256": "9398dca4c472dcca511fd451b28ae6cacb1706a4a625f30ef99f814daf7ab452"
+        "sha256": "a8d998c73e097b39d2424ae68df16690643c53d13ea37472c25659ef1ad35d31"
       },
       {
         "path": "go/lang/security/filepath-clean-misuse.yaml",
-        "sha256": "143efce5cb29cf4d921ddd0a0a37a4a17563af888ebd8bd5d9370bf2797ddbeb"
+        "sha256": "465d65cd5aee62fd226c005485f7de8ae85349fc45ef5ef397b1769e3a1ee5a7"
       },
       {
         "path": "go/lang/security/injection/tainted-sql-string.yaml",
-        "sha256": "f25c4c446be68db1173f441cdadea6884242e993b36f607c97d27d770083d267"
+        "sha256": "20c16479184a078e4208c20cee27b364e34cd0949e85d9dfd63e0732f0934053"
       },
       {
         "path": "go/lang/security/audit/dangerous-exec-command.yaml",
-        "sha256": "dc7714ff3dc2fd69663059c43c940106829235e3a67b3c9f21eafb832dd682a7"
+        "sha256": "b6a8f7e4c80d8565e01bfe9566bcf0a611008075fbdbd965933bd657c5a65fb9"
       },
       {
         "path": "go/lang/security/audit/crypto/tls.yaml",
-        "sha256": "1aea5fa930db28315eac1da83b93e2e175d2792facb99c65631f5e9c7f31cd35"
+        "sha256": "473804728d7b03c5011c1535ec42b1c879931b5de4b3b168d37074d5c83199e0"
       },
       {
         "path": "go/lang/security/audit/crypto/insecure_ssh.yaml",
-        "sha256": "4d58390ebca805252da97b63064bdd1b68ba66e0cce95b3b3f9dd6fbc98aa425"
+        "sha256": "fb1a787ba8f3865141eac49ac8a311f0558275a9479f3cd84ae5102efd2d4a58"
       },
       {
         "path": "go/lang/security/audit/sqli/pgx-sqli.yaml",
-        "sha256": "f0fca53b25ebc511a5cc632abdb70ed6d3556d5c9bf93d29af09612d935473df"
+        "sha256": "8101fdc66fd53af2e66d53ec049eeb8007d57864ffefb28aa34fec3d51c72897"
       },
       {
         "path": "javascript/lang/security/detect-eval-with-expression.yaml",
-        "sha256": "b4419c38f5852d4772fce899d16259675e315a9b07c930eec0a488ad40820ff1"
+        "sha256": "3b8fe2524b094c72c34aaa6d21b0408ffdac2471a335125cf726993253777951"
       },
       {
         "path": "javascript/lang/security/detect-insecure-websocket.yaml",
-        "sha256": "0d0982202bc8ec3dd682b43c5b7f7e20298843f86623619391d75dfc1d10b0bf"
+        "sha256": "65935c49d62e264a6b85a496455989137d7e82d4698855d511d173ed08ad3099"
       },
       {
         "path": "javascript/lang/security/audit/dangerous-spawn-shell.yaml",
-        "sha256": "67e9d47bd23b0b378ff531bc0ebf02a80ebed396436d7b28ed26e31d551e0083"
+        "sha256": "1a81f91e9ad9ea4c62a9b0bda4dcf3cf2fc1bb6f2d9e2580ea3effa6bfe9ba74"
       },
       {
         "path": "javascript/lang/security/audit/spawn-shell-true.yaml",
-        "sha256": "01f7c2ad22fa80a6bc48ac628b63dd4ffbe9b96c802ddf75b03c5ac90117b5d2"
+        "sha256": "452fb593301edca721a151ed3c051f428ca1df1fc1af613380d58b076601b5ba"
       },
       {
         "path": "javascript/lang/security/audit/hardcoded-hmac-key.yaml",
-        "sha256": "5e2ff76ee235ef5512aeae0044a9c078ba109acb7e5232476b15be68b770ee6e"
+        "sha256": "fdca07b8fc42fa0d1e24be2a372e719f21b09c060f09716ee7008a1df1dfd52a"
       },
       {
         "path": "javascript/lang/security/audit/sqli/node-postgres-sqli.yaml",
-        "sha256": "4cb4f877cc5ab05b945b92c64f91b0f940b04e616ee89e493228eb0050c0908d"
+        "sha256": "23709e35b9ce213d8306c793a3174320dcf3141043e31297fcdec48735c1bbd8"
       },
       {
         "path": "javascript/browser/security/eval-detected.yaml",
-        "sha256": "138c478c249ec00c8c28534a05865c6417718bbc9405c2fadb1a4feee98b51fb"
+        "sha256": "356589363d16cda8bd2ca1d296ce2b6953105ee4c751ddbbc9bcde5849341811"
       },
       {
         "path": "javascript/browser/security/insecure-innerhtml.yaml",
-        "sha256": "2bbb8d64655b0fe8659bcb6c9466309548c7c75e85d2b51eec34a448810f4702"
+        "sha256": "3f2854f92c3c8a1ba3a107a140a5b31789650851be57586fd21a409e129193e4"
       },
       {
         "path": "javascript/browser/security/dom-based-xss.yaml",
-        "sha256": "f827042ec558d18849507fd41f378eadc50b9a469f137d8811a15503a95a9d44"
+        "sha256": "d34055a348ee0d5e6f5587825bd14c9546997550e624e3966e5ef8438f86381d"
       },
       {
         "path": "typescript/react/security/react-markdown-insecure-html.yaml",
-        "sha256": "de76af5d10d0302389b5065405d4e608f7a4dbf2a4322a955eb694508821deda"
+        "sha256": "e464c0f72c8a89ae325524b738c7c2024be1258e7a060a6365b487a0aa284434"
       },
       {
         "path": "typescript/react/security/react-insecure-request.yaml",
-        "sha256": "2a3c5c88308f747e0e25e6d7ae0f870688517595c6112f60838879f3f2c3e7e1"
+        "sha256": "4869905cc60559b8ca0ed0ac62c5abe9a26b2ee0e3bbdc0d1baf47271ee70376"
       },
       {
         "path": "typescript/react/security/audit/react-dangerouslysetinnerhtml.yaml",
-        "sha256": "6ed9fcbcf3e130c89478ee74fdc66a63ec3c753e3eb913364a4facd62ffc08b3"
+        "sha256": "794094512be7f7dcaa49a4b1edf621dbdf1f984b4f29ab09a23538c0e59c2136"
       },
       {
         "path": "typescript/lang/security/audit/cors-regex-wildcard.yaml",
-        "sha256": "8179d36138e0d74ff3d94b8fb168585bb3f7818039bcc9c0e7f9613bcf293e2f"
+        "sha256": "fc271110d672f2093bf1e949ab413e6117f7483ad6e285ef093096d77fb33821"
       }
     ]
   },
