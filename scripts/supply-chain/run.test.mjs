@@ -21,6 +21,7 @@ import {
   assertOsvMissingDatabaseFailure,
   assertOsvExtractionCoverage,
   applyTemporaryCleanupFailure,
+  buildSemgrepMinifiedLargeFixture,
   expectedCheckoutShaIsRequired,
   failureSummaryForConsole,
   goModuleEnvironment,
@@ -1023,7 +1024,7 @@ test("Go license canary requires the exact fixture, package, and denied license"
   }
 });
 
-test("Semgrep arguments disable target-discovery bypass filters", () => {
+test("Semgrep arguments disable supported target-discovery bypass filters", () => {
   const args = semgrepArguments(
     { policy },
     { lock: { files: [{ path: "javascript/rule.yaml" }] } },
@@ -1032,16 +1033,41 @@ test("Semgrep arguments disable target-discovery bypass filters", () => {
     "--no-git-ignore",
     "--x-ignore-semgrepignore-files",
     "--no-exclude-binary-files",
-    "--no-exclude-minified-files",
   ]) {
     assert.ok(args.includes(flag), `${flag} must be present`);
   }
+  assert.equal(args.includes("--exclude-minified-files"), false);
+  assert.equal(args.includes("--no-exclude-minified-files"), false);
   assert.deepEqual(
     args.slice(
       args.indexOf("--max-target-bytes"),
       args.indexOf("--max-target-bytes") + 2,
     ),
     ["--max-target-bytes", "0"],
+  );
+});
+
+test("Semgrep large bypass fixture is both over-limit and minified", async () => {
+  const blockingFixture = await readFile(
+    path.join(
+      repositoryRoot,
+      "scripts",
+      "fixtures",
+      "supply-chain",
+      "sast-typescript-blocking.ts.txt",
+    ),
+  );
+  const fixture = buildSemgrepMinifiedLargeFixture(blockingFixture);
+  assert.equal(fixture.bytes.length, 1_050_108);
+  assert.equal(fixture.lineCount, 4);
+  assert.equal(fixture.averageBytesPerLine, 262_527);
+  assert.equal(
+    sha256Hex(fixture.bytes),
+    "a62cb7a2da7169d4a075a92fcb05251685b068ad1d3379501c01b09a035fbec3",
+  );
+  assert.equal(
+    fixture.bytes.subarray(-blockingFixture.length).equals(blockingFixture),
+    true,
   );
 });
 

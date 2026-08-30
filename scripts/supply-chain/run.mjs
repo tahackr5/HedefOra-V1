@@ -3517,18 +3517,19 @@ async function runSemgrepGates(context, configuration, rules, sourceInventory) {
     fixtureBytes["sast-typescript-blocking.ts"],
     { flag: "wx", mode: 0o444 },
   );
-  const largeFixture = Buffer.concat([
-    Buffer.from("// bounded-size bypass fixture\n".repeat(45_000), "utf8"),
+  const largeFixture = buildSemgrepMinifiedLargeFixture(
     fixtureBytes["sast-typescript-blocking.ts"],
-  ]);
-  if (largeFixture.length <= 1_000_000) {
-    throw new ContractError("Semgrep size-bypass fixture is not over 1 MB");
-  }
-  await writeFile(path.join(fixtureRoot, "sast-over-limit.ts"), largeFixture, {
-    flag: "wx",
-    mode: 0o444,
-  });
+  );
+  await writeFile(
+    path.join(fixtureRoot, "sast-over-limit.ts"),
+    largeFixture.bytes,
+    {
+      flag: "wx",
+      mode: 0o444,
+    },
+  );
   const expectedFixturePaths = [
+    ".semgrepignore",
     "ignored/sast-semgrepignore.ts",
     "sast-go-blocking.go",
     "sast-over-limit.ts",
@@ -3593,9 +3594,38 @@ async function runSemgrepGates(context, configuration, rules, sourceInventory) {
     findingCount: fixtureVerdict.findings.length,
     coverage: fixtureVerdict.evidence.coverage,
     exactSourceParity: fixtureParity,
-    largeFixtureSha256: sha256Hex(largeFixture),
+    largeFixtureAverageBytesPerLine: largeFixture.averageBytesPerLine,
+    largeFixtureLineCount: largeFixture.lineCount,
+    largeFixtureSha256: sha256Hex(largeFixture.bytes),
+    largeFixtureSize: largeFixture.bytes.length,
     ...processEvidenceReference(context, "semgrep-blocking-fixtures"),
   });
+}
+
+export function buildSemgrepMinifiedLargeFixture(blockingFixture) {
+  if (!Buffer.isBuffer(blockingFixture) || blockingFixture.length === 0) {
+    throw new ContractError(
+      "Semgrep minified large fixture requires non-empty blocking source bytes",
+    );
+  }
+  const bytes = Buffer.concat([
+    Buffer.from(
+      `const r016MinifiedPadding="${"x".repeat(1_050_000)}";`,
+      "utf8",
+    ),
+    blockingFixture,
+  ]);
+  const lineCount = bytes.reduce(
+    (count, byte) => count + (byte === 0x0a ? 1 : 0),
+    1,
+  );
+  const averageBytesPerLine = Math.floor(bytes.length / lineCount);
+  if (bytes.length <= 1_000_000 || averageBytesPerLine <= 1_000) {
+    throw new ContractError(
+      "Semgrep bypass fixture must exceed 1 MB and the minified average-line threshold",
+    );
+  }
+  return { averageBytesPerLine, bytes, lineCount };
 }
 
 export function semgrepArguments(configuration, rules) {
@@ -3623,7 +3653,6 @@ export function semgrepArguments(configuration, rules) {
     "--max-target-bytes",
     "0",
     "--no-exclude-binary-files",
-    "--no-exclude-minified-files",
   ];
   for (const rule of rules.lock.files)
     args.push("--config", `/rules/${rule.path}`);

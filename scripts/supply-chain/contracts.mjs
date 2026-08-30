@@ -1798,7 +1798,6 @@ function expectedDockerRunContract(id, evidence, configuration, temporaryRoot) {
     "--max-target-bytes",
     "0",
     "--no-exclude-binary-files",
-    "--no-exclude-minified-files",
     ...scanners.semgrepRules.files.flatMap(({ path: rulePath }) => [
       "--config",
       `/rules/${rulePath}`,
@@ -3915,6 +3914,7 @@ function validateTerminalSemantics(
 
   const sastNegative = terminalById.get("R016-SAST-NEGATIVE");
   const negativePaths = [
+    ".semgrepignore",
     "ignored/sast-semgrepignore.ts",
     "sast-go-blocking.go",
     "sast-over-limit.ts",
@@ -3931,8 +3931,11 @@ function validateTerminalSemantics(
         pathCount: negativePaths.length,
         pathsSha256: sha256Hex(canonicalJson(negativePaths)),
       }) ||
+    sastNegative.largeFixtureAverageBytesPerLine !== 262_527 ||
+    sastNegative.largeFixtureLineCount !== 4 ||
     sastNegative.largeFixtureSha256 !==
-      "63f4ebd42b8f3abd4c60b85cc3cc0614c595f8dbb27b350132f1eadc577e2832"
+      "a62cb7a2da7169d4a075a92fcb05251685b068ad1d3379501c01b09a035fbec3" ||
+    sastNegative.largeFixtureSize !== 1_050_108
   ) {
     throw new ContractError(
       "PASS evidence SAST negative terminal verdict is inconsistent",
@@ -4033,7 +4036,10 @@ function validateExactTerminalShapes(evidence, terminalById) {
       "findingCount",
       "coverage",
       "exactSourceParity",
+      "largeFixtureAverageBytesPerLine",
+      "largeFixtureLineCount",
       "largeFixtureSha256",
+      "largeFixtureSize",
     ),
     "R016-SOURCE-SEAL": [...base, "head", "tree"],
     "R016-GATE": [...base, "detail"],

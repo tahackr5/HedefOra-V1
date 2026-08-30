@@ -581,7 +581,6 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     "--max-target-bytes",
     "0",
     "--no-exclude-binary-files",
-    "--no-exclude-minified-files",
     ...scanners.semgrepRules.files.flatMap(({ path: rulePath }) => [
       "--config",
       `/rules/${rulePath}`,
@@ -1616,6 +1615,7 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     ),
   });
   const negativePaths = [
+    ".semgrepignore",
     "ignored/sast-semgrepignore.ts",
     "sast-go-blocking.go",
     "sast-over-limit.ts",
@@ -1628,8 +1628,11 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
       pathsSha256: sha256Hex(canonicalJson(negativePaths)),
     },
     findingCount: 4,
+    largeFixtureAverageBytesPerLine: 262_527,
+    largeFixtureLineCount: 4,
     largeFixtureSha256:
-      "63f4ebd42b8f3abd4c60b85cc3cc0614c595f8dbb27b350132f1eadc577e2832",
+      "a62cb7a2da7169d4a075a92fcb05251685b068ad1d3379501c01b09a035fbec3",
+    largeFixtureSize: 1_050_108,
   });
   const terminalProcesses = {
     "R016-OSV-MISSING-DB-NEGATIVE": "PROCESS-OSV-MISSING-DATABASE-NEGATIVE",
