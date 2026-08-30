@@ -1376,6 +1376,9 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
       "semgrep-ce": tool("semgrep-ce", scanners.semgrep),
     },
   };
+  if (activeRunner.GITHUB_ACTIONS === "true") {
+    golden.source.expectedCheckoutSha = golden.source.head;
+  }
   golden.controlSource = structuredClone(golden.source);
   for (const check of golden.checks) {
     if (check.command === "git") check.command = trustedGitPath;
@@ -2506,6 +2509,9 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
   assert.throws(() => validate(weakenedOsvCommand), /trusted process seal/u);
   const reboundSource = structuredClone(golden);
   reboundSource.source.head = "4".repeat(40);
+  if (reboundSource.source.expectedCheckoutSha !== null) {
+    reboundSource.source.expectedCheckoutSha = reboundSource.source.head;
+  }
   reboundSource.databaseSeal.sha256 = sha256Hex(
     `${canonicalJson({
       schemaVersion: 1,

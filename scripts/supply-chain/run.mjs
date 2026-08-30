@@ -3785,9 +3785,6 @@ export function trustedExecutable(command, context = {}) {
   if (normalized !== "git" && normalized !== "docker") {
     throw new ContractError(`unsupported trusted executable ${command}`);
   }
-  if (process.platform === "linux" && process.env.GITHUB_ACTIONS === "true") {
-    return normalized === "git" ? "/usr/bin/git" : "/usr/bin/docker";
-  }
   const environmentName =
     normalized === "git" ? "R016 Git binary" : "R016 Docker binary";
   const configured = context.trustedExecutables?.[normalized];
@@ -3797,7 +3794,7 @@ export function trustedExecutable(command, context = {}) {
     path.normalize(configured) !== configured
   ) {
     throw new ContractError(
-      `${environmentName} must name a canonical absolute executable path outside GitHub Actions`,
+      `${environmentName} must name a canonical absolute executable path`,
     );
   }
   const basename = path.basename(configured).toLowerCase();

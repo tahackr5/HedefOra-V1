@@ -495,35 +495,27 @@ test("local executable routing requires canonical absolute Git and Docker paths"
     trustedExecutable("git", {
       trustedExecutables: { git: trustedGitBinary },
     }),
-    process.platform === "linux" && process.env.GITHUB_ACTIONS === "true"
-      ? "/usr/bin/git"
-      : trustedGitBinary,
+    trustedGitBinary,
   );
   assert.equal(
     trustedExecutable("docker", {
       trustedExecutables: { docker: trustedDockerBinary },
     }),
-    process.platform === "linux" && process.env.GITHUB_ACTIONS === "true"
-      ? "/usr/bin/docker"
-      : trustedDockerBinary,
+    trustedDockerBinary,
   );
-  if (!(
-    process.platform === "linux" && process.env.GITHUB_ACTIONS === "true"
-  )) {
-    assert.throws(
-      () => trustedExecutable("git", { trustedExecutables: {} }),
-      /R016 Git binary.*absolute executable path/u,
-    );
-    assert.throws(
-      () =>
-        trustedExecutable("docker", {
-          trustedExecutables: {
-            docker: path.resolve(repositoryRoot, "attacker.exe"),
-          },
-        }),
-      /invalid executable name/u,
-    );
-  }
+  assert.throws(
+    () => trustedExecutable("git", { trustedExecutables: {} }),
+    /R016 Git binary.*absolute executable path/u,
+  );
+  assert.throws(
+    () =>
+      trustedExecutable("docker", {
+        trustedExecutables: {
+          docker: path.resolve(repositoryRoot, "attacker.exe"),
+        },
+      }),
+    /invalid executable name/u,
+  );
 });
 
 test("trusted executable CLI input is explicit and repository-local binaries fail", async () => {
