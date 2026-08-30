@@ -1,10 +1,8 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "4d958a2f1d1e31667ca6a4db5336098f8bf90ec0",
-  "trailingAllowedPaths": [
-    "state/W001-OWNERSHIP.json"
-  ],
+  "verifiedThrough": "7d77f1b10bd159f895c49e53623dec18e70aed7d",
+  "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
       "base": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
@@ -23,6 +21,32 @@
       "allowedPaths": [
         "tools/repolint/cmd/repolint/main.go",
         "tools/repolint/cmd/repolint/main_test.go"
+      ]
+    },
+    "W001-T01-ownership-seal": {
+      "base": "4d958a2f1d1e31667ca6a4db5336098f8bf90ec0",
+      "head": "02caed4b933ec64bd93044ad6719878ef1618ebf",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-supply-chain": {
+      "base": "02caed4b933ec64bd93044ad6719878ef1618ebf",
+      "head": "7d77f1b10bd159f895c49e53623dec18e70aed7d",
+      "allowedPaths": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/r016-trusted-pr.yml",
+        "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
+        "delivery/TOOLCHAIN-LOCK.md",
+        "package.json",
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "scripts/fixtures/supply-chain/**",
+        "scripts/supply-chain/**",
+        "security/**",
+        "state/ACTIVE-WAVE.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md",
+        "tools/osvdbcheck/**"
       ]
     }
   }
