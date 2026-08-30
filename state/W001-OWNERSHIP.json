@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "5d60c01c92cd3cfa2f12e47da79e0a283f5e99c2",
+  "verifiedThrough": "a378a98fcfe0715dfcf45e500d87e056c5928718",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -193,6 +193,20 @@
       "base": "955c7769662c5153c351fd74e8fb8eb64c8f6e6a",
       "head": "5d60c01c92cd3cfa2f12e47da79e0a283f5e99c2",
       "allowedPaths": ["state/RELEASE-LEDGER.md"]
+    },
+    "W001-T02-release-ledger-byte-preservation-seal": {
+      "base": "5d60c01c92cd3cfa2f12e47da79e0a283f5e99c2",
+      "head": "452b8f219c470609b0fc56502a2dd99c5adb6561",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-linux-ci-portability": {
+      "base": "452b8f219c470609b0fc56502a2dd99c5adb6561",
+      "head": "a378a98fcfe0715dfcf45e500d87e056c5928718",
+      "allowedPaths": [
+        "scripts/supply-chain/contracts.test.mjs",
+        "scripts/supply-chain/run.mjs",
+        "scripts/supply-chain/run.test.mjs"
+      ]
     }
   }
 }
