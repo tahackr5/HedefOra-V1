@@ -26,7 +26,7 @@ const (
 
 // productionLimits bound all work performed on an untrusted advisory database.
 var productionLimits = validationLimits{
-	MaxEntries:                  200_000,
+	MaxEntries:                  300_000,
 	MaxEntryPathBytes:           4 << 10,
 	MaxEntryUncompressedBytes:   128 << 20,
 	MaxArchiveUncompressedBytes: 8 << 30,

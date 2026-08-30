@@ -78,6 +78,12 @@ const CONTROL_PROTECTED_PREFIXES = Object.freeze([
   "tools/osvdbcheck/",
 ]);
 const CONTROL_ONLY_INPUT_PATHS = Object.freeze(["go.mod"]);
+const DATABASE_ARCHIVE_VALIDATION_LIMITS = Object.freeze({
+  max_entries: 300_000,
+  max_entry_path_bytes: 4_096,
+  max_entry_uncompressed_bytes: 134_217_728,
+  max_archive_uncompressed_bytes: 8_589_934_592,
+});
 
 export function goModuleEnvironment() {
   return {
@@ -2863,37 +2869,7 @@ async function validateDatabaseArchives(context, configuration, databases) {
   );
   requireRawExit(result, [0], "OSV database ZIP validation");
   const report = parseStrictJson(result.stdout, "osvdbcheck JSON");
-  if (
-    report?.schema_version !== 1 ||
-    !Array.isArray(report.archives) ||
-    report.archives.length !== databases.length
-  ) {
-    throw gateFailure(
-      EXIT_CODES.CONTRACT,
-      "database-zip-validation",
-      "osvdbcheck report schema/archive count is invalid",
-    );
-  }
-  for (const [index, archive] of report.archives.entries()) {
-    if (
-      archive?.argument_index !== index ||
-      !Number.isSafeInteger(archive.entry_count) ||
-      archive.entry_count <= 0 ||
-      !Number.isSafeInteger(archive.uncompressed_bytes) ||
-      archive.uncompressed_bytes <= 0
-    ) {
-      throw gateFailure(
-        EXIT_CODES.CONTRACT,
-        "database-zip-validation",
-        `osvdbcheck archive ${index} inventory is invalid`,
-      );
-    }
-    validateHexDigest(
-      archive.manifest_sha256,
-      64,
-      `osvdbcheck archive ${index} manifest SHA-256`,
-    );
-  }
+  validateDatabaseArchiveReport(report, databases.length);
   context.evidence.databaseArchiveValidation = {
     ...report,
     validatorSources: validatorSource.evidence,
@@ -2908,6 +2884,78 @@ async function validateDatabaseArchives(context, configuration, databases) {
     archiveCount: report.archives.length,
     ...processEvidenceReference(context, "osv-database-zip-validation"),
   });
+}
+
+export function validateDatabaseArchiveReport(report, expectedArchiveCount) {
+  const fail = (detail) => {
+    throw gateFailure(EXIT_CODES.CONTRACT, "database-zip-validation", detail);
+  };
+  const hasExactKeys = (value, expected) => {
+    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+      return false;
+    }
+    const actual = Object.keys(value).sort();
+    const required = [...expected].sort();
+    return (
+      actual.length === required.length &&
+      actual.every((key, index) => key === required[index])
+    );
+  };
+
+  if (
+    !Number.isSafeInteger(expectedArchiveCount) ||
+    expectedArchiveCount <= 0
+  ) {
+    fail("osvdbcheck expected archive count is invalid");
+  }
+  if (
+    !hasExactKeys(report, ["archives", "limits", "schema_version"]) ||
+    report.schema_version !== 1 ||
+    !Array.isArray(report.archives)
+  ) {
+    fail("osvdbcheck report schema is invalid");
+  }
+
+  const expectedLimitKeys = Object.keys(DATABASE_ARCHIVE_VALIDATION_LIMITS);
+  if (
+    !hasExactKeys(report.limits, expectedLimitKeys) ||
+    expectedLimitKeys.some(
+      (key) => report.limits[key] !== DATABASE_ARCHIVE_VALIDATION_LIMITS[key],
+    )
+  ) {
+    fail("osvdbcheck report limits differ from the exact production limits");
+  }
+  if (report.archives.length !== expectedArchiveCount) {
+    fail("osvdbcheck report archive count differs from expected input count");
+  }
+
+  for (const [index, archive] of report.archives.entries()) {
+    if (
+      !hasExactKeys(archive, [
+        "argument_index",
+        "entry_count",
+        "manifest_sha256",
+        "uncompressed_bytes",
+      ]) ||
+      archive.argument_index !== index ||
+      !Number.isSafeInteger(archive.entry_count) ||
+      archive.entry_count <= 0 ||
+      archive.entry_count > DATABASE_ARCHIVE_VALIDATION_LIMITS.max_entries ||
+      !Number.isSafeInteger(archive.uncompressed_bytes) ||
+      archive.uncompressed_bytes <= 0 ||
+      archive.uncompressed_bytes >
+        DATABASE_ARCHIVE_VALIDATION_LIMITS.max_archive_uncompressed_bytes
+    ) {
+      fail(`osvdbcheck archive ${index} inventory is invalid`);
+    }
+    if (
+      typeof archive.manifest_sha256 !== "string" ||
+      !/^[0-9a-f]{64}$/u.test(archive.manifest_sha256)
+    ) {
+      fail(`osvdbcheck archive ${index} manifest SHA-256 is invalid`);
+    }
+  }
+  return true;
 }
 
 async function stageDatabaseValidatorSources(context) {

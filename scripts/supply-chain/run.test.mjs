@@ -44,6 +44,7 @@ import {
   validateConfiguration,
   validateControlModuleRoot,
   validateControlRootSeparation,
+  validateDatabaseArchiveReport,
   validateDockerMountSources,
   validateDeclaredRepositoryRealPath,
   validateExpectedCheckoutSha,
@@ -1315,6 +1316,111 @@ test("OSV extraction logs must prove every split document and Go manifest", () =
         inventory,
       ),
     /extraction count/u,
+  );
+});
+
+function databaseArchiveReportFixture() {
+  return {
+    schema_version: 1,
+    limits: {
+      max_entries: 300_000,
+      max_entry_path_bytes: 4_096,
+      max_entry_uncompressed_bytes: 134_217_728,
+      max_archive_uncompressed_bytes: 8_589_934_592,
+    },
+    archives: [0, 1].map((argument_index) => ({
+      argument_index,
+      entry_count: 1,
+      uncompressed_bytes: 1,
+      manifest_sha256: "a".repeat(64),
+    })),
+  };
+}
+
+function assertDatabaseArchiveReportFailure(report, expectedCount, pattern) {
+  assert.throws(
+    () => validateDatabaseArchiveReport(report, expectedCount),
+    (error) => {
+      assert.equal(error?.name, "GateFailure");
+      assert.equal(error?.exitCode, 20);
+      assert.equal(error?.stage, "database-zip-validation");
+      assert.match(error.message, pattern);
+      return true;
+    },
+  );
+}
+
+test("database archive report accepts the exact production contract", () => {
+  assert.equal(
+    validateDatabaseArchiveReport(databaseArchiveReportFixture(), 2),
+    true,
+  );
+});
+
+test("database archive report rejects wrong, missing, or extra limits", () => {
+  const wrong = databaseArchiveReportFixture();
+  wrong.limits.max_entries = 300_001;
+  assertDatabaseArchiveReportFailure(wrong, 2, /exact production limits/u);
+
+  const missing = databaseArchiveReportFixture();
+  delete missing.limits.max_entry_path_bytes;
+  assertDatabaseArchiveReportFailure(missing, 2, /exact production limits/u);
+
+  const extra = databaseArchiveReportFixture();
+  extra.limits.attacker_limit = 1;
+  assertDatabaseArchiveReportFailure(extra, 2, /exact production limits/u);
+});
+
+test("database archive report enforces the exact entry-count boundary", () => {
+  const exact = databaseArchiveReportFixture();
+  exact.archives[0].entry_count = 300_000;
+  assert.equal(validateDatabaseArchiveReport(exact, 2), true);
+
+  const over = databaseArchiveReportFixture();
+  over.archives[0].entry_count = 300_001;
+  assertDatabaseArchiveReportFailure(over, 2, /archive 0 inventory/u);
+});
+
+test("database archive report enforces the exact uncompressed-size boundary", () => {
+  const exact = databaseArchiveReportFixture();
+  exact.archives[0].uncompressed_bytes = 8_589_934_592;
+  assert.equal(validateDatabaseArchiveReport(exact, 2), true);
+
+  const over = databaseArchiveReportFixture();
+  over.archives[0].uncompressed_bytes = 8_589_934_593;
+  assertDatabaseArchiveReportFailure(over, 2, /archive 0 inventory/u);
+});
+
+test("database archive report rejects malformed manifests and counts", () => {
+  for (const manifest of [undefined, "A".repeat(64), "a".repeat(63), 42]) {
+    const malformed = databaseArchiveReportFixture();
+    malformed.archives[0].manifest_sha256 = manifest;
+    assertDatabaseArchiveReportFailure(malformed, 2, /manifest SHA-256/u);
+  }
+
+  for (const count of [undefined, 0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
+    const malformed = databaseArchiveReportFixture();
+    malformed.archives[0].entry_count = count;
+    assertDatabaseArchiveReportFailure(malformed, 2, /archive 0 inventory/u);
+  }
+
+  const wrongArgumentIndex = databaseArchiveReportFixture();
+  wrongArgumentIndex.archives[1].argument_index = 0;
+  assertDatabaseArchiveReportFailure(
+    wrongArgumentIndex,
+    2,
+    /archive 1 inventory/u,
+  );
+
+  assertDatabaseArchiveReportFailure(
+    databaseArchiveReportFixture(),
+    3,
+    /archive count differs/u,
+  );
+  assertDatabaseArchiveReportFailure(
+    databaseArchiveReportFixture(),
+    1.5,
+    /expected archive count is invalid/u,
   );
 });
 

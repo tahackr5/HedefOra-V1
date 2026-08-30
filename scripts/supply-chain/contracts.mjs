@@ -121,7 +121,7 @@ const IMAGE_INDEX_MEDIA_TYPES = Object.freeze({
     "application/vnd.oci.image.manifest.v1+json",
 });
 const DATABASE_VALIDATION_LIMITS = Object.freeze({
-  max_entries: 200_000,
+  max_entries: 300_000,
   max_entry_path_bytes: 4_096,
   max_entry_uncompressed_bytes: 134_217_728,
   max_archive_uncompressed_bytes: 8_589_934_592,
@@ -2714,8 +2714,10 @@ function validateDatabaseArchiveEvidence(report, evidence, configuration) {
       archive.argument_index !== index ||
       !Number.isSafeInteger(archive.entry_count) ||
       archive.entry_count <= 0 ||
+      archive.entry_count > report.limits.max_entries ||
       !Number.isSafeInteger(archive.uncompressed_bytes) ||
-      archive.uncompressed_bytes <= 0
+      archive.uncompressed_bytes <= 0 ||
+      archive.uncompressed_bytes > report.limits.max_archive_uncompressed_bytes
     ) {
       throw new ContractError(`evidence database archive ${index} is invalid`);
     }

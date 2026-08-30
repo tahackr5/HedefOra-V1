@@ -623,8 +623,12 @@
       ],
       "properties": {
         "argument_index": { "type": "integer", "minimum": 0 },
-        "entry_count": { "type": "integer", "minimum": 1 },
-        "uncompressed_bytes": { "type": "integer", "minimum": 1 },
+        "entry_count": { "type": "integer", "minimum": 1, "maximum": 300000 },
+        "uncompressed_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8589934592
+        },
         "manifest_sha256": { "$ref": "#/$defs/sha256" }
       },
       "additionalProperties": false
@@ -638,7 +642,7 @@
         "max_archive_uncompressed_bytes"
       ],
       "properties": {
-        "max_entries": { "const": 200000 },
+        "max_entries": { "const": 300000 },
         "max_entry_path_bytes": { "const": 4096 },
         "max_entry_uncompressed_bytes": { "const": 134217728 },
         "max_archive_uncompressed_bytes": { "const": 8589934592 }

@@ -152,6 +152,23 @@ func TestValidateArchiveEnforcesBounds(t *testing.T) {
 		{name: "second.json", content: "56", method: zip.Store},
 	})
 
+	exactEntryCountLimits := productionLimits
+	exactEntryCountLimits.MaxEntries = 2
+	if _, err := validateArchive(archive, exactEntryCountLimits); err != nil {
+		t.Fatalf("validate archive at exact entry limit: %v", err)
+	}
+	exactEntrySizeLimits := productionLimits
+	exactEntrySizeLimits.MaxEntryUncompressedBytes = 4
+	if _, err := validateArchive(archive, exactEntrySizeLimits); err != nil {
+		t.Fatalf("validate archive at exact entry-size limit: %v", err)
+	}
+	exactArchiveSizeLimits := productionLimits
+	exactArchiveSizeLimits.MaxEntryUncompressedBytes = 6
+	exactArchiveSizeLimits.MaxArchiveUncompressedBytes = 6
+	if _, err := validateArchive(archive, exactArchiveSizeLimits); err != nil {
+		t.Fatalf("validate archive at exact total-size limit: %v", err)
+	}
+
 	entryCountLimits := productionLimits
 	entryCountLimits.MaxEntries = 1
 	assertValidationCode(t, archive, entryCountLimits, "entry_count_limit")
@@ -164,6 +181,80 @@ func TestValidateArchiveEnforcesBounds(t *testing.T) {
 	archiveSizeLimits.MaxArchiveUncompressedBytes = 5
 	archiveSizeLimits.MaxEntryUncompressedBytes = 5
 	assertValidationCode(t, archive, archiveSizeLimits, "archive_size_limit")
+}
+
+func TestValidateArchiveEnforcesUncompressedBoundsForHighRatioDeflate(t *testing.T) {
+	t.Parallel()
+
+	content := strings.Repeat("A", 128<<10)
+	archive := writeTestZIP(t, "high-ratio.zip", []testEntry{
+		{name: "first.json", content: content, method: zip.Deflate},
+		{name: "second.json", content: content, method: zip.Deflate},
+	})
+	reader, err := zip.OpenReader(archive)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(reader.File) != 2 || reader.File[0].CompressedSize64 == 0 {
+		_ = reader.Close()
+		t.Fatalf("unexpected compressed fixture metadata")
+	}
+	ratio := uint64(len(content)) / reader.File[0].CompressedSize64
+	if err := reader.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if ratio <= 100 {
+		t.Fatalf("compression ratio = %dx, want >100x", ratio)
+	}
+
+	exactLimits := productionLimits
+	exactLimits.MaxEntryUncompressedBytes = uint64(len(content))
+	exactLimits.MaxArchiveUncompressedBytes = uint64(2 * len(content))
+	if _, err := validateArchive(archive, exactLimits); err != nil {
+		t.Fatalf("validate high-ratio archive at exact uncompressed limits: %v", err)
+	}
+
+	entryLimits := exactLimits
+	entryLimits.MaxEntryUncompressedBytes--
+	assertValidationCode(t, archive, entryLimits, "entry_size_limit")
+
+	archiveLimits := exactLimits
+	archiveLimits.MaxArchiveUncompressedBytes--
+	assertValidationCode(t, archive, archiveLimits, "archive_size_limit")
+}
+
+func TestValidateArchiveEnforcesProductionPathBoundary(t *testing.T) {
+	t.Parallel()
+
+	exact := writeTestZIP(t, "exact-path.zip", []testEntry{{
+		name:    strings.Repeat("a", 4<<10),
+		content: "{}",
+		method:  zip.Store,
+	}})
+	if _, err := validateArchive(exact, productionLimits); err != nil {
+		t.Fatalf("validate archive at exact path limit: %v", err)
+	}
+
+	over := writeTestZIP(t, "over-path.zip", []testEntry{{
+		name:    strings.Repeat("a", (4<<10)+1),
+		content: "{}",
+		method:  zip.Store,
+	}})
+	assertValidationCode(t, over, productionLimits, "entry_path_limit")
+}
+
+func TestProductionLimitsRemainExact(t *testing.T) {
+	t.Parallel()
+
+	want := validationLimits{
+		MaxEntries:                  300_000,
+		MaxEntryPathBytes:           4 << 10,
+		MaxEntryUncompressedBytes:   128 << 20,
+		MaxArchiveUncompressedBytes: 8 << 30,
+	}
+	if productionLimits != want {
+		t.Fatalf("production limits = %+v, want %+v", productionLimits, want)
+	}
 }
 
 func TestRunRequiresAllArchivesAndEmitsSafeError(t *testing.T) {

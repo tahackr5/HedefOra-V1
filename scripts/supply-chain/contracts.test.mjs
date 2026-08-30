@@ -1283,7 +1283,7 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
         uncompressed_bytes: 64,
       })),
       limits: {
-        max_entries: 200_000,
+        max_entries: 300_000,
         max_entry_path_bytes: 4_096,
         max_entry_uncompressed_bytes: 134_217_728,
         max_archive_uncompressed_bytes: 8_589_934_592,
@@ -2185,6 +2185,34 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
   assert.throws(
     () => validateCoSealed(missingArchiveLimit),
     /database archive|limits|schema/u,
+  );
+
+  const wrongArchiveLimit = structuredClone(golden);
+  wrongArchiveLimit.databaseArchiveValidation.limits.max_entries = 300_001;
+  assert.throws(
+    () => validateCoSealed(wrongArchiveLimit),
+    /database archive|limits|schema/u,
+  );
+
+  const staleArchiveLimit = structuredClone(golden);
+  staleArchiveLimit.databaseArchiveValidation.limits.max_entries = 200_000;
+  assert.throws(
+    () => validateCoSealed(staleArchiveLimit),
+    /database archive|limits|schema/u,
+  );
+
+  const excessiveArchiveEntries = structuredClone(golden);
+  excessiveArchiveEntries.databaseArchiveValidation.archives[0].entry_count = 300_001;
+  assert.throws(
+    () => validateCoSealed(excessiveArchiveEntries),
+    /database archive|schema/u,
+  );
+
+  const excessiveArchiveBytes = structuredClone(golden);
+  excessiveArchiveBytes.databaseArchiveValidation.archives[0].uncompressed_bytes = 8_589_934_593;
+  assert.throws(
+    () => validateCoSealed(excessiveArchiveBytes),
+    /database archive|schema/u,
   );
 
   const coSealedArchiveDigest = structuredClone(golden);
