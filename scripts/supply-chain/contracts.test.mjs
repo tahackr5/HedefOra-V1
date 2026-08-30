@@ -146,12 +146,22 @@ test("go.mod edit inventory rejects unused local and remote replace directives",
 });
 
 test("Semgrep parity rejects ignore, size, and extra-target omissions", () => {
-  const expected = ["apps/web/App.tsx", "cmd/api/main.go"];
+  const expected = [
+    "apps/web/App.tsx",
+    "cmd/api/main.go",
+    "tools/osvdbcheck/cmd/osvdbcheck/main.go",
+    "tools/osvdbcheck/cmd/osvdbcheck/main_test.go",
+  ];
   const complete = {
     paths: { scanned: expected.map((entry) => `/src/${entry}`) },
     results: [{ check_id: "fixture", path: "/src/apps/web/App.tsx" }],
   };
-  assert.equal(assertSemgrepSourceParity(complete, expected).pathCount, 2);
+  const parity = assertSemgrepSourceParity(complete, expected);
+  const canonicalExpected = [...expected].sort((left, right) =>
+    left.localeCompare(right, "en"),
+  );
+  assert.equal(parity.pathCount, 4);
+  assert.equal(parity.pathsSha256, sha256Hex(canonicalJson(canonicalExpected)));
   assert.throws(
     () =>
       assertSemgrepSourceParity(
@@ -1601,7 +1611,7 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
   });
   const repositorySourcePaths = semgrepSourceFiles
     .map(({ path: repositoryPath }) => repositoryPath)
-    .sort();
+    .sort((left, right) => left.localeCompare(right, "en"));
   setTerminal("R016-SAST", {
     coverage: { go: 1, "javascript-typescript": 1 },
     engine: "Semgrep Community Edition --oss-only",

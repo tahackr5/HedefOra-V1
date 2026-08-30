@@ -458,7 +458,7 @@ export function evaluateSemgrep({ document, rawExit, requiredLanguages }) {
       scannedPathCount: scanned.length,
       scannedPathsSha256: sha256Hex(
         canonicalJson(
-          [...scanned].sort((left, right) => left.localeCompare(right)),
+          [...scanned].sort((left, right) => left.localeCompare(right, "en")),
         ),
       ),
     };

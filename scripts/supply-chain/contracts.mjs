@@ -356,7 +356,7 @@ export function selectTrackedSourceFiles(entries, requiredLanguageGroups) {
       );
     }
   }
-  selected.sort((left, right) => left.path.localeCompare(right.path));
+  selected.sort((left, right) => left.path.localeCompare(right.path, "en"));
   return { files: selected, groupCounts };
 }
 
@@ -405,13 +405,18 @@ export function assertSemgrepSourceParity(
     semgrepRepositoryPath(entry, containerRoot, index),
   );
   const actualSet = exactPathSet(actual, "actual Semgrep");
+  const sortedPaths = (paths) =>
+    [...paths].sort((left, right) => left.localeCompare(right, "en"));
   if (
-    canonicalJson([...actualSet].sort()) !== canonicalJson([...expected].sort())
+    canonicalJson(sortedPaths(actualSet)) !==
+    canonicalJson(sortedPaths(expected))
   ) {
-    const missing = [...expected]
-      .filter((entry) => !actualSet.has(entry))
-      .sort();
-    const extra = [...actualSet].filter((entry) => !expected.has(entry)).sort();
+    const missing = sortedPaths(
+      [...expected].filter((entry) => !actualSet.has(entry)),
+    );
+    const extra = sortedPaths(
+      [...actualSet].filter((entry) => !expected.has(entry)),
+    );
     throw new ContractError(
       `Semgrep source parity failed: missing=${canonicalJson(missing)} extra=${canonicalJson(extra)}`,
     );
@@ -431,7 +436,7 @@ export function assertSemgrepSourceParity(
   }
   return {
     pathCount: actual.length,
-    pathsSha256: sha256Hex(canonicalJson([...actualSet].sort())),
+    pathsSha256: sha256Hex(canonicalJson(sortedPaths(actualSet))),
   };
 }
 
@@ -3889,7 +3894,7 @@ function validateTerminalSemantics(
   const sast = terminalById.get("R016-SAST");
   const repositoryPaths = evidence.inputs.semgrepSources.files
     .map(({ path: repositoryPath }) => repositoryPath)
-    .sort((left, right) => left.localeCompare(right));
+    .sort((left, right) => left.localeCompare(right, "en"));
   const expectedParity = {
     pathCount: repositoryPaths.length,
     pathsSha256: sha256Hex(canonicalJson(repositoryPaths)),
