@@ -40,6 +40,12 @@ const scanners = parseStrictJson(
   await readFile(path.join(repositoryRoot, "security", "scanners.lock.json")),
   "test scanner lock",
 );
+const OCI_INDEX_MEDIA_TYPE = "application/vnd.oci.image.index.v1+json";
+const OCI_MANIFEST_MEDIA_TYPE = "application/vnd.oci.image.manifest.v1+json";
+const DOCKER_LIST_MEDIA_TYPE =
+  "application/vnd.docker.distribution.manifest.list.v2+json";
+const DOCKER_MANIFEST_MEDIA_TYPE =
+  "application/vnd.docker.distribution.manifest.v2+json";
 
 test("OSV config permits only the exact bounded license override", () => {
   assert.match(
@@ -273,7 +279,6 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     "PROCESS-GIT-INDEX",
     "PROCESS-GIT-INDEX-FLAGS",
     "PROCESS-DOCKER-VERSION",
-    "PROCESS-DOCKER-BUILDX-VERSION",
     "PROCESS-OSV-SCANNER-PULL",
     "PROCESS-OSV-SCANNER-INSPECT",
     "PROCESS-OSV-SCANNER-INDEX",
@@ -788,14 +793,13 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     if (id === "PROCESS-DOCKER-VERSION") {
       return ["version", "--format", "{{json .}}"];
     }
-    if (id === "PROCESS-DOCKER-BUILDX-VERSION") return ["buildx", "version"];
     const image = processImage(id);
     if (id.endsWith("-PULL")) {
       return ["pull", "--platform", "linux/amd64", image];
     }
     if (id.endsWith("-INSPECT")) return ["image", "inspect", image];
     if (id.endsWith("-INDEX")) {
-      return ["buildx", "imagetools", "inspect", image, "--raw"];
+      return ["manifest", "inspect", image];
     }
     const osvEnvironment = {
       HOME: "/tmp/home",
@@ -1157,10 +1161,32 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
       },
     ];
     const indexDocument = {
+      schemaVersion: 2,
+      mediaType: OCI_INDEX_MEDIA_TYPE,
       manifests: [
         {
           digest: lock.linuxAmd64Digest,
+          mediaType: OCI_MANIFEST_MEDIA_TYPE,
           platform: { architecture: "amd64", os: "linux" },
+          size: 2_048,
+        },
+        {
+          digest: `sha256:${"a".repeat(64)}`,
+          mediaType: OCI_MANIFEST_MEDIA_TYPE,
+          platform: { architecture: "unknown", os: "unknown" },
+          size: 512,
+        },
+        {
+          digest: `sha256:${"b".repeat(64)}`,
+          mediaType: OCI_MANIFEST_MEDIA_TYPE,
+          platform: { architecture: "arm64", os: "linux" },
+          size: 2_049,
+        },
+        {
+          digest: `sha256:${"c".repeat(64)}`,
+          mediaType: OCI_MANIFEST_MEDIA_TYPE,
+          platform: { architecture: "unknown", os: "unknown" },
+          size: 513,
         },
       ],
     };
@@ -1271,7 +1297,6 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     databaseSeal: { path: "db-seal.json", sha256: "9".repeat(64) },
     environment: {
       docker: {
-        buildx: "github.com/docker/buildx v0.30.1",
         clientPlatform: "linux/amd64",
         clientVersion: "29.0.0",
         serverArchitecture: "amd64",
@@ -1434,7 +1459,6 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     ["PROCESS-RULES-COMMIT", `${scanners.semgrepRules.commit}\n`],
     ["PROCESS-RULES-TREE", `${scanners.semgrepRules.tree}\n`],
     ["PROCESS-DOCKER-VERSION", `${JSON.stringify(dockerVersionDocument)}\n`],
-    ["PROCESS-DOCKER-BUILDX-VERSION", `${golden.environment.docker.buildx}\n`],
   ]) {
     setRawArtifactContents(processId, "stdout", contents);
   }
@@ -1740,7 +1764,109 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
       evidenceSchema,
       coSealedContext(document),
     );
+  const baseToolIndexDocument = toolExecutionSeals["semgrep-ce"].indexDocument;
+  const validateWithToolIndex = (indexDocument) => {
+    const document = structuredClone(golden);
+    const indexOutput = `${JSON.stringify(indexDocument)}\n`;
+    const indexSha256 = sha256Hex(indexOutput);
+    const indexSize = Buffer.byteLength(indexOutput);
+    document.tools["semgrep-ce"].indexDocumentSha256 = sha256Hex(
+      canonicalJson(indexDocument),
+    );
+    Object.assign(
+      document.rawArtifacts.find(
+        ({ processId, stream }) =>
+          processId === "PROCESS-SEMGREP-CE-INDEX" && stream === "stdout",
+      ),
+      {
+        rawSha256: indexSha256,
+        rawSize: indexSize,
+        sha256: indexSha256,
+        size: indexSize,
+      },
+    );
+    const context = coSealedContext(document);
+    context.toolExecutionSeals = structuredClone(toolExecutionSeals);
+    Object.assign(context.toolExecutionSeals["semgrep-ce"], {
+      indexDocument: structuredClone(indexDocument),
+      indexStdoutSha256: indexSha256,
+      indexStdoutSize: indexSize,
+    });
+    return validateEvidenceDocument(document, evidenceSchema, context);
+  };
+  const mutatedToolIndex = (mutate) => {
+    const document = structuredClone(baseToolIndexDocument);
+    mutate(document);
+    return document;
+  };
   assert.equal(validate(golden), true);
+
+  const dockerManifestList = structuredClone(baseToolIndexDocument);
+  dockerManifestList.mediaType = DOCKER_LIST_MEDIA_TYPE;
+  for (const descriptor of dockerManifestList.manifests) {
+    descriptor.mediaType = DOCKER_MANIFEST_MEDIA_TYPE;
+  }
+  assert.equal(validateWithToolIndex(dockerManifestList), true);
+
+  for (const [mutate, message] of [
+    [(document) => delete document.schemaVersion, /schemaVersion/u],
+    [(document) => (document.schemaVersion = 1), /schemaVersion/u],
+    [(document) => delete document.mediaType, /mediaType/u],
+    [(document) => (document.mediaType = "application/json"), /mediaType/u],
+    [(document) => delete document.manifests, /manifests/u],
+    [(document) => (document.manifests = {}), /manifests/u],
+    [
+      (document) => (document.manifests[0].mediaType = OCI_INDEX_MEDIA_TYPE),
+      /direct compatible image manifest/u,
+    ],
+    [
+      (document) =>
+        (document.manifests[0].mediaType = DOCKER_MANIFEST_MEDIA_TYPE),
+      /direct compatible image manifest/u,
+    ],
+    [(document) => delete document.manifests[0].size, /size/u],
+    [(document) => (document.manifests[0].size = 0), /size/u],
+    [
+      (document) => (document.manifests[0].size = Number.MAX_SAFE_INTEGER + 1),
+      /size/u,
+    ],
+    [
+      (document) =>
+        (document.manifests[0].digest =
+          document.manifests[0].digest.toUpperCase()),
+      /digest/u,
+    ],
+    [
+      (document) => (document.manifests[0].digest = `sha256:${"d".repeat(64)}`),
+      /linux\/amd64 manifest differs from the scanner lock/u,
+    ],
+    [
+      (document) => (document.manifests[1].digest = `sha256:${"g".repeat(64)}`),
+      /digest/u,
+    ],
+    [(document) => delete document.manifests[0].platform, /platform/u],
+    [(document) => (document.manifests[0].platform.variant = ""), /variant/u],
+    [
+      (document) =>
+        document.manifests.push({
+          ...structuredClone(document.manifests[2]),
+          digest: `sha256:${"e".repeat(64)}`,
+        }),
+      /duplicate concrete platform/u,
+    ],
+  ]) {
+    assert.throws(
+      () => validateWithToolIndex(mutatedToolIndex(mutate)),
+      message,
+    );
+  }
+
+  const nestedDockerManifestList = structuredClone(dockerManifestList);
+  nestedDockerManifestList.manifests[0].mediaType = DOCKER_LIST_MEDIA_TYPE;
+  assert.throws(
+    () => validateWithToolIndex(nestedDockerManifestList),
+    /direct compatible image manifest/u,
+  );
 
   const splitGolden = structuredClone(golden);
   const splitControlRoot = path.resolve(repositoryRoot, "..", "control-root");
@@ -1929,6 +2055,40 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
         unboundSplitContext,
       ),
     /split-root PASS evidence must bind expected checkout SHA|schema/u,
+  );
+
+  const alteredManifestInspect = structuredClone(golden);
+  const alteredManifestInspectProcess = alteredManifestInspect.checks.find(
+    ({ id }) => id === "PROCESS-SEMGREP-CE-INDEX",
+  );
+  alteredManifestInspectProcess.arguments.push("--verbose");
+  alteredManifestInspectProcess.argumentCount =
+    alteredManifestInspectProcess.arguments.length;
+  assert.throws(
+    () => validateCoSealed(alteredManifestInspect),
+    /utility arguments/u,
+  );
+
+  const forgedManifestInspectRaw = structuredClone(golden);
+  const forgedManifestInspectArtifact =
+    forgedManifestInspectRaw.rawArtifacts.find(
+      ({ processId, stream }) =>
+        processId === "PROCESS-SEMGREP-CE-INDEX" && stream === "stdout",
+    );
+  const forgedManifestInspectOutput = `${JSON.stringify({
+    mediaType: OCI_INDEX_MEDIA_TYPE,
+    schemaVersion: 2,
+    manifests: [],
+  })}\n`;
+  Object.assign(forgedManifestInspectArtifact, {
+    rawSha256: sha256Hex(forgedManifestInspectOutput),
+    rawSize: Buffer.byteLength(forgedManifestInspectOutput),
+    sha256: sha256Hex(forgedManifestInspectOutput),
+    size: Buffer.byteLength(forgedManifestInspectOutput),
+  });
+  assert.throws(
+    () => validateCoSealed(forgedManifestInspectRaw),
+    /trusted execution/u,
   );
 
   const networkBypass = structuredClone(golden);
@@ -2144,7 +2304,7 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
   const unredactedRawSplit = structuredClone(golden);
   const rawSplitArtifact = unredactedRawSplit.rawArtifacts.find(
     ({ processId, stream }) =>
-      processId === "PROCESS-DOCKER-BUILDX-VERSION" && stream === "stdout",
+      processId === "PROCESS-DOCKER-VERSION" && stream === "stdout",
   );
   rawSplitArtifact.rawSha256 = "f".repeat(64);
   rawSplitArtifact.rawSize += 1;
@@ -2238,7 +2398,6 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
   bogusEnvironment.environment.runtime.node = "v99.0.0";
   bogusEnvironment.environment.docker.clientVersion = "attacker";
   bogusEnvironment.environment.docker.serverVersion = "attacker";
-  bogusEnvironment.environment.docker.buildx = "attacker";
   assert.throws(() => validate(bogusEnvironment), /trusted seal/u);
   const forgedTerminal = structuredClone(golden);
   const forgedSast = forgedTerminal.checks.find(({ id }) => id === "R016-SAST");

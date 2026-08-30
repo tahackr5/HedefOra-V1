@@ -49,7 +49,6 @@ const PASS_REQUIRED_PROCESS_IDS = [
   "PROCESS-GIT-INDEX",
   "PROCESS-GIT-INDEX-FLAGS",
   "PROCESS-DOCKER-VERSION",
-  "PROCESS-DOCKER-BUILDX-VERSION",
   "PROCESS-OSV-SCANNER-PULL",
   "PROCESS-OSV-SCANNER-INSPECT",
   "PROCESS-OSV-SCANNER-INDEX",
@@ -115,6 +114,12 @@ const PASS_DYNAMIC_PROCESS_PATTERNS = [
 
 const EMPTY_SHA256 = sha256Hex(Buffer.alloc(0));
 const SEMGREP_ENGINE = "Semgrep Community Edition --oss-only";
+const IMAGE_INDEX_MEDIA_TYPES = Object.freeze({
+  "application/vnd.docker.distribution.manifest.list.v2+json":
+    "application/vnd.docker.distribution.manifest.v2+json",
+  "application/vnd.oci.image.index.v1+json":
+    "application/vnd.oci.image.manifest.v1+json",
+});
 const DATABASE_VALIDATION_LIMITS = Object.freeze({
   max_entries: 200_000,
   max_entry_path_bytes: 4_096,
@@ -518,10 +523,6 @@ export function validateEvidenceDocument(
     requireNonemptyString(
       evidence.environment.docker?.serverVersion,
       "evidence.environment.docker.serverVersion",
-    );
-    requireNonemptyString(
-      evidence.environment.docker?.buildx,
-      "evidence.environment.docker.buildx",
     );
     requireRecord(
       evidence.environment.executables,
@@ -1616,7 +1617,6 @@ function expectedDockerUtilityArguments(id, configuration) {
   if (id === "PROCESS-DOCKER-VERSION") {
     return ["version", "--format", "{{json .}}"];
   }
-  if (id === "PROCESS-DOCKER-BUILDX-VERSION") return ["buildx", "version"];
   const match =
     /^PROCESS-(OSV-SCANNER|SEMGREP-CE|GO-TOOLCHAIN)-(PULL|INSPECT|INDEX)$/u.exec(
       id,
@@ -1637,7 +1637,7 @@ function expectedDockerUtilityArguments(id, configuration) {
   ).image;
   if (match[2] === "PULL") return ["pull", "--platform", "linux/amd64", image];
   if (match[2] === "INSPECT") return ["image", "inspect", image];
-  return ["buildx", "imagetools", "inspect", image, "--raw"];
+  return ["manifest", "inspect", image];
 }
 
 function parseDockerRunArguments(check, repositoryRoot) {
@@ -2496,15 +2496,8 @@ function validateToolExecutionEvidence(tool, name, evidence, seal) {
   if (!Array.isArray(seal.inspection) || seal.inspection.length !== 1) {
     throw new ContractError(`trusted ${name} image inspection is invalid`);
   }
-  requireRecord(seal.indexDocument, `trusted ${name} OCI index document`);
+  validateTrustedImageIndex(seal.indexDocument, tool, name);
   const image = seal.inspection[0];
-  const linuxAmd64 = Array.isArray(seal.indexDocument.manifests)
-    ? seal.indexDocument.manifests.filter(
-        (manifest) =>
-          manifest?.platform?.architecture === "amd64" &&
-          manifest?.platform?.os === "linux",
-      )
-    : [];
   const expectedRuntimeUser =
     name === "semgrep-ce" ? image?.Config?.User : "65534:65534";
   const expectedSourceRepository =
@@ -2518,8 +2511,6 @@ function validateToolExecutionEvidence(tool, name, evidence, seal) {
     !image.RepoDigests.some((digest) =>
       digest.endsWith(`@${tool.indexDigest}`),
     ) ||
-    linuxAmd64.length !== 1 ||
-    linuxAmd64[0].digest !== tool.linuxAmd64Digest ||
     tool.inspectionSha256 !== sha256Hex(canonicalJson(seal.inspection)) ||
     tool.indexDocumentSha256 !== sha256Hex(canonicalJson(seal.indexDocument)) ||
     tool.runtimeUser !== expectedRuntimeUser ||
@@ -2552,6 +2543,76 @@ function validateToolExecutionEvidence(tool, name, evidence, seal) {
         `PASS evidence tool ${name} ${suffix.toLowerCase()} ${stream} differs from trusted execution`,
       );
     }
+  }
+}
+
+function validateTrustedImageIndex(document, tool, name) {
+  const label = `trusted ${name} image index`;
+  requireRecord(document, label);
+  if (document.schemaVersion !== 2) {
+    throw new ContractError(`${label} schemaVersion must be exactly 2`);
+  }
+  const childMediaType = IMAGE_INDEX_MEDIA_TYPES[document.mediaType];
+  if (!childMediaType) {
+    throw new ContractError(`${label} mediaType is invalid`);
+  }
+  if (!Array.isArray(document.manifests)) {
+    throw new ContractError(`${label} manifests must be an array`);
+  }
+
+  const concretePlatforms = new Set();
+  const linuxAmd64 = [];
+  for (const [index, descriptor] of document.manifests.entries()) {
+    const descriptorLabel = `${label} descriptor ${index}`;
+    requireRecord(descriptor, descriptorLabel);
+    if (descriptor.mediaType !== childMediaType) {
+      throw new ContractError(
+        `${descriptorLabel} mediaType is not a direct compatible image manifest`,
+      );
+    }
+    if (!/^sha256:[0-9a-f]{64}$/u.test(descriptor.digest)) {
+      throw new ContractError(`${descriptorLabel} digest is invalid`);
+    }
+    if (!Number.isSafeInteger(descriptor.size) || descriptor.size <= 0) {
+      throw new ContractError(`${descriptorLabel} size is invalid`);
+    }
+    requireRecord(descriptor.platform, `${descriptorLabel} platform`);
+    const architecture = requireNonemptyString(
+      descriptor.platform.architecture,
+      `${descriptorLabel} platform architecture`,
+    );
+    const os = requireNonemptyString(
+      descriptor.platform.os,
+      `${descriptorLabel} platform OS`,
+    );
+    const variant = descriptor.platform.variant;
+    if (variant !== undefined) {
+      requireNonemptyString(variant, `${descriptorLabel} platform variant`);
+    }
+
+    const isUnknownAttestation =
+      os === "unknown" && architecture === "unknown" && variant === undefined;
+    if (!isUnknownAttestation) {
+      const platformKey = canonicalJson([os, architecture, variant ?? null]);
+      if (concretePlatforms.has(platformKey)) {
+        throw new ContractError(
+          `${label} contains a duplicate concrete platform`,
+        );
+      }
+      concretePlatforms.add(platformKey);
+    }
+    if (os === "linux" && architecture === "amd64") {
+      linuxAmd64.push(descriptor);
+    }
+  }
+
+  if (
+    linuxAmd64.length !== 1 ||
+    linuxAmd64[0].digest !== tool.linuxAmd64Digest
+  ) {
+    throw new ContractError(
+      `${label} linux/amd64 manifest differs from the scanner lock`,
+    );
   }
 }
 
@@ -4017,7 +4078,6 @@ function validateExecutionEnvironmentSemantics(evidence, processById, trusted) {
     !/^v?[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$/u.test(
       docker.serverVersion,
     ) ||
-    !/\bv?[0-9]+\.[0-9]+\.[0-9]+\b/u.test(docker.buildx) ||
     ![docker.clientPlatform, docker.serverOs, docker.serverArchitecture].every(
       (value) => value === null || (typeof value === "string" && value !== ""),
     ) ||
@@ -4035,12 +4095,6 @@ function validateExecutionEnvironmentSemantics(evidence, processById, trusted) {
   validateSha256(
     docker.versionDocumentSha256,
     "PASS evidence Docker version document",
-  );
-  validateUnredactedProcessStdout(
-    processById.get("PROCESS-DOCKER-BUILDX-VERSION"),
-    `${docker.buildx}\n`,
-    evidence.rawArtifacts,
-    "PROCESS-DOCKER-BUILDX-VERSION",
   );
   const dockerVersionArtifact = evidence.rawArtifacts.find(
     (artifact) =>

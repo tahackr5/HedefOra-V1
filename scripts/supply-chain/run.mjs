@@ -1322,18 +1322,6 @@ async function inspectExecutionEnvironment(context, configuration) {
     docker?.Server?.Version,
     "Docker server version",
   );
-  const buildxResult = await runChecked(
-    context,
-    "docker-buildx-version",
-    "internal",
-    "docker",
-    ["buildx", "version"],
-    { timeoutMs: configuration.policy.timeoutsSeconds.dockerPull * 1_000 },
-  );
-  const buildx = buildxResult.stdout.trim();
-  if (!/\bv?[0-9]+\.[0-9]+\.[0-9]+\b/u.test(buildx)) {
-    throw new ContractError("Docker buildx version identity is invalid");
-  }
   const runner = Object.create(null);
   for (const name of [
     "CI",
@@ -1359,7 +1347,6 @@ async function inspectExecutionEnvironment(context, configuration) {
       clientPlatform: docker.Client?.Platform?.Name ?? null,
       serverOs: docker.Server?.Os ?? null,
       serverArchitecture: docker.Server?.Arch ?? null,
-      buildx,
       versionDocumentSha256: sha256Hex(canonicalJson(docker)),
     },
     executables: structuredClone(context.trustedExecutableSeals),
@@ -1614,7 +1601,10 @@ async function acquireImages(context, configuration) {
       `${name}-index`,
       "acquisition",
       "docker",
-      ["buildx", "imagetools", "inspect", lock.image, "--raw"],
+      ["manifest", "inspect", lock.image],
+      {
+        timeoutMs: configuration.policy.timeoutsSeconds.dockerPull * 1_000,
+      },
     );
     const indexDocument = parseStrictJson(
       indexResult.stdout,
@@ -1732,21 +1722,117 @@ export function validateImageInspection(inspection, lock, label = "image") {
   return true;
 }
 
+const IMAGE_INDEX_CHILD_MEDIA_TYPES = Object.freeze({
+  "application/vnd.docker.distribution.manifest.list.v2+json":
+    "application/vnd.docker.distribution.manifest.v2+json",
+  "application/vnd.oci.image.index.v1+json":
+    "application/vnd.oci.image.manifest.v1+json",
+});
+const LOWERCASE_SHA256_DIGEST = /^sha256:[0-9a-f]{64}$/u;
+
 export function validateImageIndex(document, lock, label = "image") {
-  if (!document || !Array.isArray(document.manifests)) {
-    throw new ContractError(`${label} OCI index has no manifests array`);
+  if (
+    document === null ||
+    typeof document !== "object" ||
+    Array.isArray(document) ||
+    document.schemaVersion !== 2
+  ) {
+    throw new ContractError(
+      `${label} image index schemaVersion must be exactly 2`,
+    );
   }
-  const linuxAmd64 = document.manifests.filter(
-    (manifest) =>
-      manifest?.platform?.architecture === "amd64" &&
-      manifest?.platform?.os === "linux",
-  );
+  const expectedChildMediaType =
+    IMAGE_INDEX_CHILD_MEDIA_TYPES[document.mediaType];
+  if (expectedChildMediaType === undefined) {
+    throw new ContractError(`${label} image index mediaType is invalid`);
+  }
+  if (!Array.isArray(document.manifests)) {
+    throw new ContractError(`${label} image index manifests must be an array`);
+  }
+  const concretePlatforms = new Set();
+  const linuxAmd64 = [];
+  for (const [index, manifest] of document.manifests.entries()) {
+    const descriptorLabel = `${label} image index descriptor ${index}`;
+    if (
+      manifest === null ||
+      typeof manifest !== "object" ||
+      Array.isArray(manifest)
+    ) {
+      throw new ContractError(`${descriptorLabel} must be an object`);
+    }
+    if (manifest.mediaType !== expectedChildMediaType) {
+      throw new ContractError(
+        `${descriptorLabel} mediaType is not a direct compatible image manifest`,
+      );
+    }
+    if (!LOWERCASE_SHA256_DIGEST.test(manifest.digest)) {
+      throw new ContractError(`${descriptorLabel} digest is invalid`);
+    }
+    if (!Number.isSafeInteger(manifest.size) || manifest.size <= 0) {
+      throw new ContractError(`${descriptorLabel} size is invalid`);
+    }
+    if (
+      manifest.platform === null ||
+      typeof manifest.platform !== "object" ||
+      Array.isArray(manifest.platform)
+    ) {
+      throw new ContractError(`${descriptorLabel} platform must be an object`);
+    }
+    if (
+      typeof manifest.platform.architecture !== "string" ||
+      manifest.platform.architecture === ""
+    ) {
+      throw new ContractError(
+        `${descriptorLabel} platform architecture must be a nonempty string`,
+      );
+    }
+    if (
+      typeof manifest.platform.os !== "string" ||
+      manifest.platform.os === ""
+    ) {
+      throw new ContractError(
+        `${descriptorLabel} platform OS must be a nonempty string`,
+      );
+    }
+    if (
+      manifest.platform.variant !== undefined &&
+      (typeof manifest.platform.variant !== "string" ||
+        manifest.platform.variant === "")
+    ) {
+      throw new ContractError(
+        `${descriptorLabel} platform variant must be a nonempty string`,
+      );
+    }
+    const isUnknownPlatformSentinel =
+      manifest.platform.os === "unknown" &&
+      manifest.platform.architecture === "unknown" &&
+      manifest.platform.variant === undefined;
+    if (!isUnknownPlatformSentinel) {
+      const platformKey = canonicalJson([
+        manifest.platform.os,
+        manifest.platform.architecture,
+        manifest.platform.variant ?? null,
+      ]);
+      if (concretePlatforms.has(platformKey)) {
+        throw new ContractError(
+          `${label} image index contains a duplicate concrete platform`,
+        );
+      }
+      concretePlatforms.add(platformKey);
+    }
+    if (
+      manifest.platform.architecture === "amd64" &&
+      manifest.platform.os === "linux"
+    ) {
+      linuxAmd64.push(manifest);
+    }
+  }
   if (
     linuxAmd64.length !== 1 ||
     linuxAmd64[0].digest !== lock.linuxAmd64Digest
   ) {
     throw new ContractError(
-      `${label} OCI index linux/amd64 manifest differs from the lock`,
+      `${label} image index linux/amd64 manifest differs from the scanner lock`,
     );
   }
   return true;

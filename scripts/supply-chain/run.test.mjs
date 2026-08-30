@@ -1110,27 +1110,179 @@ test("final source seal rejects late status, index, and hidden-flag mutation", (
   );
 });
 
-test("OCI index requires the exact locked linux amd64 manifest", () => {
-  const lock = scanners.semgrep;
-  const index = {
+function imageIndexFixture(
+  lock,
+  {
+    childMediaType = "application/vnd.oci.image.manifest.v1+json",
+    rootMediaType = "application/vnd.oci.image.index.v1+json",
+  } = {},
+) {
+  return {
+    mediaType: rootMediaType,
     schemaVersion: 2,
     manifests: [
       {
         digest: lock.linuxAmd64Digest,
+        mediaType: childMediaType,
         platform: { architecture: "amd64", os: "linux" },
+        size: 1_024,
       },
       {
         digest: "sha256:" + "1".repeat(64),
+        mediaType: childMediaType,
         platform: { architecture: "arm64", os: "linux" },
+        size: 2_048,
+      },
+      {
+        digest: "sha256:" + "2".repeat(64),
+        mediaType: childMediaType,
+        platform: { architecture: "unknown", os: "unknown" },
+        size: 3_072,
+      },
+      {
+        digest: "sha256:" + "3".repeat(64),
+        mediaType: childMediaType,
+        platform: { architecture: "unknown", os: "unknown" },
+        size: 4_096,
       },
     ],
   };
-  assert.equal(validateImageIndex(index, lock, "semgrep-ce"), true);
-  index.manifests[0].digest = "sha256:" + "0".repeat(64);
+}
+
+test("image index accepts exact OCI and Docker manifest families", () => {
+  const lock = scanners.semgrep;
+  const ociIndex = imageIndexFixture(lock);
+  assert.equal(validateImageIndex(ociIndex, lock, "semgrep-ce"), true);
+
+  const dockerList = imageIndexFixture(lock, {
+    childMediaType: "application/vnd.docker.distribution.manifest.v2+json",
+    rootMediaType: "application/vnd.docker.distribution.manifest.list.v2+json",
+  });
+  assert.equal(validateImageIndex(dockerList, lock, "semgrep-ce"), true);
+});
+
+test("image index requires exact schema and supported root mediaType", () => {
+  const lock = scanners.semgrep;
+  for (const schemaVersion of [1, "2", null]) {
+    const index = imageIndexFixture(lock);
+    index.schemaVersion = schemaVersion;
+    assert.throws(
+      () => validateImageIndex(index, lock, "semgrep-ce"),
+      /schemaVersion must be exactly 2/u,
+    );
+  }
+
+  const index = imageIndexFixture(lock);
+  index.mediaType = "application/vnd.oci.image.manifest.v1+json";
   assert.throws(
     () => validateImageIndex(index, lock, "semgrep-ce"),
-    /linux\/amd64 manifest differs/u,
+    /image index mediaType is invalid/u,
   );
+
+  for (const manifests of [undefined, null, {}]) {
+    const missingManifests = imageIndexFixture(lock);
+    missingManifests.manifests = manifests;
+    assert.throws(
+      () => validateImageIndex(missingManifests, lock, "semgrep-ce"),
+      /manifests must be an array/u,
+    );
+  }
+});
+
+test("image index rejects mixed and nested child media types", () => {
+  const lock = scanners.semgrep;
+  for (const mediaType of [
+    "application/vnd.docker.distribution.manifest.v2+json",
+    "application/vnd.oci.image.index.v1+json",
+    "application/vnd.docker.distribution.manifest.list.v2+json",
+  ]) {
+    const index = imageIndexFixture(lock);
+    index.manifests[0].mediaType = mediaType;
+    assert.throws(
+      () => validateImageIndex(index, lock, "semgrep-ce"),
+      /direct compatible image manifest/u,
+    );
+  }
+});
+
+test("image index requires positive safe descriptor sizes", () => {
+  const lock = scanners.semgrep;
+  for (const size of [0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1, "1024"]) {
+    const index = imageIndexFixture(lock);
+    index.manifests[0].size = size;
+    assert.throws(
+      () => validateImageIndex(index, lock, "semgrep-ce"),
+      /size is invalid/u,
+    );
+  }
+});
+
+test("image index requires lowercase sha256 descriptor digests", () => {
+  const lock = scanners.semgrep;
+  for (const digest of [
+    lock.linuxAmd64Digest.toUpperCase(),
+    "sha256:" + "g".repeat(64),
+    "sha256:" + "0".repeat(63),
+  ]) {
+    const index = imageIndexFixture(lock);
+    index.manifests[0].digest = digest;
+    assert.throws(
+      () => validateImageIndex(index, lock, "semgrep-ce"),
+      /digest is invalid/u,
+    );
+  }
+
+  const wrongDigest = imageIndexFixture(lock);
+  wrongDigest.manifests[0].digest = "sha256:" + "0".repeat(64);
+  assert.throws(
+    () => validateImageIndex(wrongDigest, lock, "semgrep-ce"),
+    /linux\/amd64 manifest differs from the scanner lock/u,
+  );
+});
+
+test("image index rejects duplicate concrete platform descriptors", () => {
+  const lock = scanners.semgrep;
+  for (const descriptorIndex of [0, 1]) {
+    const index = imageIndexFixture(lock);
+    const duplicate = structuredClone(index.manifests[descriptorIndex]);
+    duplicate.digest = "sha256:" + "4".repeat(64);
+    index.manifests.push(duplicate);
+    assert.throws(
+      () => validateImageIndex(index, lock, "semgrep-ce"),
+      /duplicate concrete platform/u,
+    );
+  }
+});
+
+test("image index requires descriptor platform objects", () => {
+  const lock = scanners.semgrep;
+  for (const platform of [null, [], "linux/amd64"]) {
+    const index = imageIndexFixture(lock);
+    index.manifests[0].platform = platform;
+    assert.throws(
+      () => validateImageIndex(index, lock, "semgrep-ce"),
+      /platform must be an object/u,
+    );
+  }
+});
+
+test("image index validates optional platform variants", () => {
+  const lock = scanners.semgrep;
+  for (const variant of [null, ""]) {
+    const index = imageIndexFixture(lock);
+    index.manifests[1].platform.variant = variant;
+    assert.throws(
+      () => validateImageIndex(index, lock, "semgrep-ce"),
+      /platform variant must be a nonempty string/u,
+    );
+  }
+
+  const distinctVariant = imageIndexFixture(lock);
+  const descriptor = structuredClone(distinctVariant.manifests[1]);
+  descriptor.digest = "sha256:" + "5".repeat(64);
+  descriptor.platform.variant = "v8";
+  distinctVariant.manifests.push(descriptor);
+  assert.equal(validateImageIndex(distinctVariant, lock, "semgrep-ce"), true);
 });
 
 test("OSV extraction logs must prove every split document and Go manifest", () => {

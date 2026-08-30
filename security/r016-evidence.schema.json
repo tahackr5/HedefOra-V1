@@ -463,7 +463,6 @@
         "clientPlatform",
         "serverOs",
         "serverArchitecture",
-        "buildx",
         "versionDocumentSha256"
       ],
       "properties": {
@@ -472,7 +471,6 @@
         "clientPlatform": { "type": ["string", "null"], "minLength": 1 },
         "serverOs": { "type": ["string", "null"], "minLength": 1 },
         "serverArchitecture": { "type": ["string", "null"], "minLength": 1 },
-        "buildx": { "$ref": "#/$defs/nonEmptyString" },
         "versionDocumentSha256": { "$ref": "#/$defs/sha256" }
       },
       "additionalProperties": false
