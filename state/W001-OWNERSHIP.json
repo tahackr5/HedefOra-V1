@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "37abd4b508151013732014c2dbb9e0b5780b01fc",
+  "verifiedThrough": "5d60c01c92cd3cfa2f12e47da79e0a283f5e99c2",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -183,6 +183,16 @@
         "state/RISK-REGISTER.md",
         "state/W001-EVIDENCE.md"
       ]
+    },
+    "W001-T02-local-pass-evidence-seal": {
+      "base": "37abd4b508151013732014c2dbb9e0b5780b01fc",
+      "head": "955c7769662c5153c351fd74e8fb8eb64c8f6e6a",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-release-ledger-byte-preservation": {
+      "base": "955c7769662c5153c351fd74e8fb8eb64c8f6e6a",
+      "head": "5d60c01c92cd3cfa2f12e47da79e0a283f5e99c2",
+      "allowedPaths": ["state/RELEASE-LEDGER.md"]
     }
   }
 }
