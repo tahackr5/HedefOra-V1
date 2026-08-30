@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "6cac36d661bc6d2f679792a430d38c0f3079eacc",
+  "verifiedThrough": "6c086ed18e971fe4b92b12513b77955b7a9c2ae5",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -65,6 +65,16 @@
         "scripts/supply-chain/run.test.mjs",
         "security/r016-evidence.schema.json"
       ]
+    },
+    "W001-T02-manifest-inspection-seal": {
+      "base": "6cac36d661bc6d2f679792a430d38c0f3079eacc",
+      "head": "f631af27dcd00ba6de2c98d08a6ff1effd9d3dfd",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-rule-lock-byte-identity": {
+      "base": "f631af27dcd00ba6de2c98d08a6ff1effd9d3dfd",
+      "head": "6c086ed18e971fe4b92b12513b77955b7a9c2ae5",
+      "allowedPaths": ["security/scanners.lock.json"]
     }
   }
 }
