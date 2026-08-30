@@ -228,7 +228,9 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
   };
   const validatorFiles = [
     registerTrackedFile("go.mod"),
+    // This pair is ordered differently by default sort and localeCompare("en").
     registerTrackedFile("tools/osvdbcheck/cmd/osvdbcheck/main.go"),
+    registerTrackedFile("tools/osvdbcheck/cmd/osvdbcheck/main_test.go"),
   ];
   const terminalRawExits = {
     "R016-OSV-MISSING-DB-NEGATIVE": 127,

@@ -2234,8 +2234,11 @@ function validateControlPlaneEvidence(controlPlane, trusted) {
   );
   if (
     canonicalJson(actualPaths) !== canonicalJson(expectedPaths) ||
-    canonicalJson([...trusted.controlTrackedBlobCache.keys()].sort()) !==
-      canonicalJson(expectedPaths)
+    canonicalJson(
+      [...trusted.controlTrackedBlobCache.keys()].sort((left, right) =>
+        left.localeCompare(right, "en"),
+      ),
+    ) !== canonicalJson(expectedPaths)
   ) {
     throw new ContractError(
       "PASS evidence control-plane file inventory is incomplete or excessive",
