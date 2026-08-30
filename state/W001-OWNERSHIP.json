@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "6c086ed18e971fe4b92b12513b77955b7a9c2ae5",
+  "verifiedThrough": "d9340b6fe72db378546c1a7d342ee1c7802c047e",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -75,6 +75,25 @@
       "base": "f631af27dcd00ba6de2c98d08a6ff1effd9d3dfd",
       "head": "6c086ed18e971fe4b92b12513b77955b7a9c2ae5",
       "allowedPaths": ["security/scanners.lock.json"]
+    },
+    "W001-T02-rule-lock-byte-identity-seal": {
+      "base": "6c086ed18e971fe4b92b12513b77955b7a9c2ae5",
+      "head": "28cdd95686568bc465561f61bff8475fb2016360",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-database-archive-limit": {
+      "base": "28cdd95686568bc465561f61bff8475fb2016360",
+      "head": "d9340b6fe72db378546c1a7d342ee1c7802c047e",
+      "allowedPaths": [
+        "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
+        "scripts/supply-chain/contracts.mjs",
+        "scripts/supply-chain/contracts.test.mjs",
+        "scripts/supply-chain/run.mjs",
+        "scripts/supply-chain/run.test.mjs",
+        "security/r016-evidence.schema.json",
+        "tools/osvdbcheck/cmd/osvdbcheck/main.go",
+        "tools/osvdbcheck/cmd/osvdbcheck/main_test.go"
+      ]
     }
   }
 }
