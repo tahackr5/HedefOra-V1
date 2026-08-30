@@ -18,6 +18,7 @@ import {
   validateOsvConfiguration,
 } from "./contracts.mjs";
 import { canonicalJson, parseStrictJson, sha256Hex } from "./policy.mjs";
+import { goModuleEnvironment } from "./run.mjs";
 
 const repositoryRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -599,19 +600,9 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     ]),
   ];
   const goEnvironment = {
+    ...goModuleEnvironment(),
     GOCACHE: "/gocache",
-    GOENV: "off",
-    GOFLAGS: "-mod=readonly",
-    GOINSECURE: "",
     GOMODCACHE: "/gomodcache",
-    GONOPROXY: "",
-    GONOSUMDB: "",
-    GOPRIVATE: "",
-    GOPROXY: "https://proxy.golang.org",
-    GOSUMDB: "sum.golang.org",
-    GOTOOLCHAIN: "local",
-    GOVCS: "*:off",
-    GOWORK: "off",
   };
   const dockerRun = (
     id,
@@ -2126,6 +2117,26 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     () => validateCoSealed(mountSourceSwap),
     /Docker run contract/u,
   );
+
+  for (const processId of [
+    "PROCESS-GO-MOD-EDIT-GO.MOD",
+    "PROCESS-GO-LIST-GO.MOD",
+    "PROCESS-OSV-DATABASE-ZIP-VALIDATION",
+  ]) {
+    const missingGoHome = structuredClone(golden);
+    const missingGoHomeProcess = missingGoHome.checks.find(
+      ({ id }) => id === processId,
+    );
+    const homeArgumentIndex =
+      missingGoHomeProcess.arguments.indexOf("HOME=/tmp/home");
+    assert.notEqual(homeArgumentIndex, -1);
+    missingGoHomeProcess.arguments.splice(homeArgumentIndex - 1, 2);
+    missingGoHomeProcess.argumentCount = missingGoHomeProcess.arguments.length;
+    assert.throws(
+      () => validateCoSealed(missingGoHome),
+      /Docker run contract/u,
+    );
+  }
 
   const coSealedSast = structuredClone(golden);
   const coSealedSastTerminal = coSealedSast.checks.find(

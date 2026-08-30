@@ -126,6 +126,7 @@ const DATABASE_VALIDATION_LIMITS = Object.freeze({
   max_entry_uncompressed_bytes: 134_217_728,
   max_archive_uncompressed_bytes: 8_589_934_592,
 });
+
 const CONTROL_PROTECTED_EXACT_PATHS = new Set([
   "security/supply-chain-policy.json",
   "security/scanners.lock.json",
@@ -1831,6 +1832,7 @@ function expectedDockerRunContract(id, evidence, configuration, temporaryRoot) {
     GOTOOLCHAIN: "local",
     GOVCS: "*:off",
     GOWORK: "off",
+    HOME: "/tmp/home",
   };
   const contract = ({
     commandArguments,
