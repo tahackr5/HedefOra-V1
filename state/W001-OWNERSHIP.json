@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "84ee9e0fde0dfe312159e3751ddcd801a815c837",
+  "verifiedThrough": "d857b5731258a16caab48900b6cf635aa617f066",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -140,6 +140,20 @@
       "allowedPaths": [
         "scripts/supply-chain/contracts.mjs",
         "scripts/supply-chain/contracts.test.mjs"
+      ]
+    },
+    "W001-T02-control-evidence-path-order-seal": {
+      "base": "84ee9e0fde0dfe312159e3751ddcd801a815c837",
+      "head": "22112f69a36844f0452058fe477fe268ae32a684",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-semgrep-evidence-path-order": {
+      "base": "22112f69a36844f0452058fe477fe268ae32a684",
+      "head": "d857b5731258a16caab48900b6cf635aa617f066",
+      "allowedPaths": [
+        "scripts/supply-chain/contracts.mjs",
+        "scripts/supply-chain/contracts.test.mjs",
+        "scripts/supply-chain/policy.mjs"
       ]
     }
   }
