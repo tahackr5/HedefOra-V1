@@ -143,13 +143,13 @@ const CONTROL_ONLY_INPUT_PATHS = Object.freeze(["go.mod"]);
 const TRACKED_CANARY_FIXTURES = Object.freeze([
   {
     path: "scripts/fixtures/supply-chain/vulnerable-pnpm-lock.yaml.txt",
-    sha256: "eb323623b827f2420712e31776b9973fd250c40dcbbdcbad986f9c31e950d86c",
-    size: 56,
+    sha256: "cd4c80acc334311c3732e510d98dcf8773c0b005c0e1c3f9145ddf2b6de5cccf",
+    size: 227,
   },
   {
     path: "scripts/fixtures/supply-chain/vulnerable-development-pnpm-lock.yaml.txt",
-    sha256: "19a193800b6ca44a10c15000927e16c48ebb25d1f6047d491a748725e06a9cfb",
-    size: 195,
+    sha256: "9271f0ca7b126ab32a6babd7ff7a19add161eaf68cded85b5f9f8883a252bcd6",
+    size: 317,
   },
   {
     path: "scripts/fixtures/supply-chain/vulnerable-go.mod.txt",
@@ -3683,7 +3683,9 @@ function validateTerminalSemantics(
     {
       id: "R016-OSV-VULNERABILITY-CANARY",
       fixture: "scripts/fixtures/supply-chain/vulnerable-pnpm-lock.yaml.txt",
-      expectedScope: "unknown",
+      declaredDirectScopes: [],
+      fixtureScope: "unknown",
+      scannerScope: "unknown",
       inventory: [
         {
           ecosystem: "npm",
@@ -3697,12 +3699,14 @@ function validateTerminalSemantics(
       id: "R016-OSV-VULNERABILITY-DEVELOPMENT-CANARY",
       fixture:
         "scripts/fixtures/supply-chain/vulnerable-development-pnpm-lock.yaml.txt",
-      expectedScope: "development",
+      declaredDirectScopes: ["devDependencies"],
+      fixtureScope: "development",
+      scannerScope: "unknown",
       inventory: [
         {
           ecosystem: "npm",
           name: "lodash",
-          scope: "development",
+          scope: "unknown",
           version: "4.17.20",
         },
       ],
@@ -3712,7 +3716,11 @@ function validateTerminalSemantics(
     const fixture = trackedFixture(specification.fixture);
     if (
       terminal?.rawExit !== 1 ||
-      terminal.expectedScope !== specification.expectedScope ||
+      canonicalJson(terminal.declaredDirectScopes) !==
+        canonicalJson(specification.declaredDirectScopes) ||
+      terminal.fixtureScope !== specification.fixtureScope ||
+      terminal.scannerScope !== specification.scannerScope ||
+      terminal.scannerScopeReported !== false ||
       terminal.fixtureSha256 !== fixture.sha256 ||
       !Number.isSafeInteger(terminal.findingCount) ||
       terminal.findingCount <= 0 ||
@@ -3951,16 +3959,22 @@ function validateExactTerminalShapes(evidence, terminalById) {
     "R016-EXECUTION-ENVIRONMENT": [...base, "runtime", "docker", "executables"],
     "R016-OSV-MISSING-DB-NEGATIVE": processTerminal(),
     "R016-OSV-VULNERABILITY-CANARY": processTerminal(
-      "expectedScope",
+      "declaredDirectScopes",
+      "fixtureScope",
       "fixtureSha256",
       "findingCount",
       "inventorySha256",
+      "scannerScope",
+      "scannerScopeReported",
     ),
     "R016-OSV-VULNERABILITY-DEVELOPMENT-CANARY": processTerminal(
-      "expectedScope",
+      "declaredDirectScopes",
+      "fixtureScope",
       "fixtureSha256",
       "findingCount",
       "inventorySha256",
+      "scannerScope",
+      "scannerScopeReported",
     ),
     "R016-OSV-GO-ADVISORY-CANARY": processTerminal(
       "advisoryId",

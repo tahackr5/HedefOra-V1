@@ -395,13 +395,13 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
   const fixtureDefinitions = [
     [
       "scripts/fixtures/supply-chain/vulnerable-pnpm-lock.yaml.txt",
-      "eb323623b827f2420712e31776b9973fd250c40dcbbdcbad986f9c31e950d86c",
-      56,
+      "cd4c80acc334311c3732e510d98dcf8773c0b005c0e1c3f9145ddf2b6de5cccf",
+      227,
     ],
     [
       "scripts/fixtures/supply-chain/vulnerable-development-pnpm-lock.yaml.txt",
-      "19a193800b6ca44a10c15000927e16c48ebb25d1f6047d491a748725e06a9cfb",
-      195,
+      "9271f0ca7b126ab32a6babd7ff7a19add161eaf68cded85b5f9f8883a252bcd6",
+      317,
     ],
     [
       "scripts/fixtures/supply-chain/vulnerable-go.mod.txt",
@@ -1500,28 +1500,23 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
   const lodashUnknown = [
     { ecosystem: "npm", name: "lodash", scope: "unknown", version: "4.17.20" },
   ];
-  const lodashDevelopment = [
-    {
-      ecosystem: "npm",
-      name: "lodash",
-      scope: "development",
-      version: "4.17.20",
-    },
-  ];
   setTerminal("R016-OSV-VULNERABILITY-CANARY", {
-    expectedScope: "unknown",
+    declaredDirectScopes: [],
+    fixtureScope: "unknown",
     findingCount: 1,
     fixtureSha256: fixtureInputs[0].sha256,
     inventorySha256: inventorySha256("/fixture/pnpm-lock.yaml", lodashUnknown),
+    scannerScope: "unknown",
+    scannerScopeReported: false,
   });
   setTerminal("R016-OSV-VULNERABILITY-DEVELOPMENT-CANARY", {
-    expectedScope: "development",
+    declaredDirectScopes: ["devDependencies"],
+    fixtureScope: "development",
     findingCount: 1,
     fixtureSha256: fixtureInputs[1].sha256,
-    inventorySha256: inventorySha256(
-      "/fixture/pnpm-lock.yaml",
-      lodashDevelopment,
-    ),
+    inventorySha256: inventorySha256("/fixture/pnpm-lock.yaml", lodashUnknown),
+    scannerScope: "unknown",
+    scannerScopeReported: false,
   });
   setTerminal("R016-OSV-GO-ADVISORY-CANARY", {
     advisoryId: "GO-2022-1059",
@@ -2159,6 +2154,42 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
   assert.throws(
     () => validateCoSealed(missingCanaryField),
     /Go advisory canary|schema|terminal R016-OSV-GO-ADVISORY-CANARY/u,
+  );
+
+  const forgedDevelopmentFixtureScope = structuredClone(golden);
+  forgedDevelopmentFixtureScope.checks.find(
+    ({ id }) => id === "R016-OSV-VULNERABILITY-DEVELOPMENT-CANARY",
+  ).fixtureScope = "production";
+  assert.throws(
+    () => validateCoSealed(forgedDevelopmentFixtureScope),
+    /development canary|terminal R016-OSV-VULNERABILITY-DEVELOPMENT-CANARY/u,
+  );
+
+  const forgedDevelopmentScannerScope = structuredClone(golden);
+  forgedDevelopmentScannerScope.checks.find(
+    ({ id }) => id === "R016-OSV-VULNERABILITY-DEVELOPMENT-CANARY",
+  ).scannerScope = "development";
+  assert.throws(
+    () => validateCoSealed(forgedDevelopmentScannerScope),
+    /development canary|terminal R016-OSV-VULNERABILITY-DEVELOPMENT-CANARY/u,
+  );
+
+  const forgedDevelopmentDeclaredScope = structuredClone(golden);
+  forgedDevelopmentDeclaredScope.checks.find(
+    ({ id }) => id === "R016-OSV-VULNERABILITY-DEVELOPMENT-CANARY",
+  ).declaredDirectScopes = ["dependencies"];
+  assert.throws(
+    () => validateCoSealed(forgedDevelopmentDeclaredScope),
+    /development canary|terminal R016-OSV-VULNERABILITY-DEVELOPMENT-CANARY/u,
+  );
+
+  const forgedDevelopmentReportedScope = structuredClone(golden);
+  forgedDevelopmentReportedScope.checks.find(
+    ({ id }) => id === "R016-OSV-VULNERABILITY-DEVELOPMENT-CANARY",
+  ).scannerScopeReported = true;
+  assert.throws(
+    () => validateCoSealed(forgedDevelopmentReportedScope),
+    /development canary|terminal R016-OSV-VULNERABILITY-DEVELOPMENT-CANARY/u,
   );
 
   const missingPnpmDocumentField = structuredClone(golden);

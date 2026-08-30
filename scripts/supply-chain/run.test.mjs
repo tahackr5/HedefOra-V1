@@ -7,7 +7,9 @@ import { fileURLToPath } from "node:url";
 
 import {
   ContractError,
+  EXIT_CODES,
   canonicalJson,
+  evaluateOsvVulnerabilities,
   parseStrictJson,
   sha256Hex,
 } from "./policy.mjs";
@@ -52,6 +54,8 @@ import {
   validateImageIndex,
   validateImageInspection,
   validateNodeRuntimeVersion,
+  validateOsvVulnerabilityCanaryFixture,
+  validateOsvVulnerabilityCanaryScannerIdentity,
   validateProtectedControlPlane,
   validateRepositoryBinding,
   verifyArtifactFilesystemSeals,
@@ -758,6 +762,167 @@ test("OSV config is license-only and vulnerability scans cannot consume ignores"
     ["--config", "/fixture/osv-scanner.toml"],
   );
   assert.ok(licenseCanaryArguments.includes("--data-source"));
+});
+
+test("OSV npm vulnerability canary fixtures have exact package and direct-scope inventories", async () => {
+  const cases = [
+    {
+      declaredDirectScopes: [],
+      fixtureScope: "unknown",
+      source: "scripts/fixtures/supply-chain/vulnerable-pnpm-lock.yaml.txt",
+    },
+    {
+      declaredDirectScopes: ["devDependencies"],
+      fixtureScope: "development",
+      source:
+        "scripts/fixtures/supply-chain/vulnerable-development-pnpm-lock.yaml.txt",
+    },
+  ];
+  for (const expected of cases) {
+    const lockText = await readFile(
+      path.join(repositoryRoot, expected.source),
+      {
+        encoding: "utf8",
+      },
+    );
+    assert.deepEqual(
+      validateOsvVulnerabilityCanaryFixture(lockText, {
+        fixtureScope: expected.fixtureScope,
+        source: expected.source,
+      }),
+      {
+        declaredDirectScopes: expected.declaredDirectScopes,
+        expectedScannerPackage: {
+          ecosystem: "npm",
+          name: "lodash",
+          scope: "unknown",
+          version: "4.17.20",
+        },
+        fixtureScope: expected.fixtureScope,
+        scannerScope: "unknown",
+      },
+    );
+  }
+});
+
+test("OSV npm vulnerability canary fixture validation rejects scope and inventory drift", async () => {
+  const unknown = await readFile(
+    path.join(
+      repositoryRoot,
+      "scripts/fixtures/supply-chain/vulnerable-pnpm-lock.yaml.txt",
+    ),
+    "utf8",
+  );
+  const development = await readFile(
+    path.join(
+      repositoryRoot,
+      "scripts/fixtures/supply-chain/vulnerable-development-pnpm-lock.yaml.txt",
+    ),
+    "utf8",
+  );
+
+  assert.throws(
+    () =>
+      validateOsvVulnerabilityCanaryFixture(unknown, {
+        fixtureScope: "production",
+      }),
+    /scope is unsupported/u,
+  );
+  assert.throws(
+    () =>
+      validateOsvVulnerabilityCanaryFixture(
+        development.replace("devDependencies:", "dependencies:"),
+        { fixtureScope: "development" },
+      ),
+    /direct dependency inventory/u,
+  );
+  assert.throws(
+    () =>
+      validateOsvVulnerabilityCanaryFixture(
+        unknown.replaceAll("lodash@4.17.20", "lodash@4.17.19"),
+        { fixtureScope: "unknown" },
+      ),
+    /contain exactly lodash@4\.17\.20/u,
+  );
+  assert.throws(() =>
+    validateOsvVulnerabilityCanaryFixture(
+      "lockfileVersion: '9.0'\npackages: {}\n",
+      { fixtureScope: "unknown" },
+    ),
+  );
+
+  const extraImporter = development.replace(
+    "packages:\n",
+    "  workspace: {}\n\npackages:\n",
+  );
+  assert.throws(
+    () =>
+      validateOsvVulnerabilityCanaryFixture(extraImporter, {
+        fixtureScope: "development",
+      }),
+    /exact controlled lockfile/u,
+  );
+  const multipleScopes = development.replace(
+    "    devDependencies:\n",
+    "    dependencies:\n      lodash:\n        specifier: 4.17.20\n        version: 4.17.20\n    devDependencies:\n",
+  );
+  assert.throws(
+    () =>
+      validateOsvVulnerabilityCanaryFixture(multipleScopes, {
+        fixtureScope: "development",
+      }),
+    /direct dependency inventory/u,
+  );
+});
+
+test("OSV npm scanner scope remains unknown when JSON omits scope", async () => {
+  const source =
+    "scripts/fixtures/supply-chain/vulnerable-development-pnpm-lock.yaml.txt";
+  const fixture = validateOsvVulnerabilityCanaryFixture(
+    await readFile(path.join(repositoryRoot, source), "utf8"),
+    { fixtureScope: "development", source },
+  );
+  const document = {
+    results: [
+      {
+        packages: [
+          {
+            groups: [{ ids: ["GHSA-canary"], max_severity: 8.1 }],
+            package: {
+              ecosystem: "npm",
+              name: "lodash",
+              version: "4.17.20",
+            },
+            vulnerabilities: [{ id: "GHSA-canary" }],
+          },
+        ],
+        source: { path: "/fixture/pnpm-lock.yaml", type: "lockfile" },
+      },
+    ],
+  };
+  assert.deepEqual(validateOsvVulnerabilityCanaryScannerIdentity(document), {
+    scannerScope: "unknown",
+    scannerScopeReported: false,
+  });
+  const verdict = evaluateOsvVulnerabilities({
+    document: JSON.stringify(document),
+    expectedBySource: {
+      "/fixture/pnpm-lock.yaml": [fixture.expectedScannerPackage],
+    },
+    policy: { blockAtOrAbove: 7 },
+    rawExit: 1,
+  });
+  assert.equal(verdict.exitCode, EXIT_CODES.FINDING);
+  assert.equal(verdict.findings[0].package.scope, "unknown");
+  assert.equal(verdict.findings[0].scope, "unknown");
+  assert.deepEqual(fixture.declaredDirectScopes, ["devDependencies"]);
+
+  const reportedScope = structuredClone(document);
+  reportedScope.results[0].packages[0].package.scope = "development";
+  assert.throws(
+    () => validateOsvVulnerabilityCanaryScannerIdentity(reportedScope),
+    /unexpectedly reports scope/u,
+  );
 });
 
 test("Go advisory canary requires the exact pinned module and GO advisory", () => {

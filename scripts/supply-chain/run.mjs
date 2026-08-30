@@ -2227,6 +2227,183 @@ export function assertOsvMissingDatabaseFailure(result) {
   return true;
 }
 
+const OSV_NPM_CANARY_PACKAGE = Object.freeze({
+  ecosystem: "npm",
+  name: "lodash",
+  version: "4.17.20",
+});
+const OSV_NPM_CANARY_INTEGRITY =
+  "sha512-PlhdFcillOINfeV7Ni6oF1TAEayyZBoZ8bcshTHqOYJYlrqzRK5hagpagky5o4HfCzzd1TRkXPMFq6cKk9rGmA==";
+const OSV_NPM_CANARY_SCANNER_SCOPE = "unknown";
+const OSV_NPM_CANARY_FIXTURES = Object.freeze({
+  development: `lockfileVersion: '9.0'
+
+importers:
+
+  .:
+    devDependencies:
+      lodash:
+        specifier: 4.17.20
+        version: 4.17.20
+
+packages:
+
+  lodash@4.17.20:
+    resolution: {integrity: ${OSV_NPM_CANARY_INTEGRITY}}
+
+snapshots:
+
+  lodash@4.17.20: {}
+`,
+  unknown: `lockfileVersion: '9.0'
+
+importers: {}
+
+packages:
+
+  lodash@4.17.20:
+    resolution: {integrity: ${OSV_NPM_CANARY_INTEGRITY}}
+
+snapshots:
+
+  lodash@4.17.20: {}
+`,
+});
+
+export function validateOsvVulnerabilityCanaryFixture(
+  lockText,
+  { fixtureScope, source = "OSV npm vulnerability canary fixture" } = {},
+) {
+  if (!Object.hasOwn(OSV_NPM_CANARY_FIXTURES, fixtureScope)) {
+    throw new ContractError(
+      `OSV npm vulnerability canary fixture scope is unsupported: ${String(fixtureScope)}`,
+    );
+  }
+  const inventory = parsePnpmLockInventory(lockText, {
+    source,
+    expectedLockfileVersion: "9.0",
+  });
+  if (inventory.documentCount !== 1) {
+    throw new ContractError(
+      `OSV npm ${fixtureScope} vulnerability canary must contain exactly one lockfile document`,
+    );
+  }
+  const packages = inventory.packages.map(({ name, version }) => ({
+    name,
+    version,
+  }));
+  if (
+    packages.length !== 1 ||
+    packages[0].name !== OSV_NPM_CANARY_PACKAGE.name ||
+    packages[0].version !== OSV_NPM_CANARY_PACKAGE.version
+  ) {
+    throw new ContractError(
+      `OSV npm ${fixtureScope} vulnerability canary must contain exactly lodash@4.17.20`,
+    );
+  }
+
+  const expectedDirectDependencies =
+    fixtureScope === "development"
+      ? [
+          {
+            importer: ".",
+            name: "lodash",
+            scope: "devDependencies",
+            section: "devDependencies",
+          },
+        ]
+      : [];
+  const directDependencies = inventory.directDependencies.map(
+    ({ importer, name, scope, section }) => ({
+      importer,
+      name,
+      scope,
+      section,
+    }),
+  );
+  if (
+    canonicalJson(directDependencies) !==
+    canonicalJson(expectedDirectDependencies)
+  ) {
+    throw new ContractError(
+      `OSV npm ${fixtureScope} vulnerability canary direct dependency inventory differs from policy`,
+    );
+  }
+  const expectedScopeCounts = Object.fromEntries(
+    [...DIRECT_SCOPE_NAMES, "unknown"].map((scope) => [
+      scope,
+      fixtureScope === "development" && scope === "devDependencies" ? 1 : 0,
+    ]),
+  );
+  if (
+    canonicalJson(inventory.scopeCounts) !== canonicalJson(expectedScopeCounts)
+  ) {
+    throw new ContractError(
+      `OSV npm ${fixtureScope} vulnerability canary direct scopes differ from policy`,
+    );
+  }
+  if (inventory.documents[0].text !== OSV_NPM_CANARY_FIXTURES[fixtureScope]) {
+    throw new ContractError(
+      `OSV npm ${fixtureScope} vulnerability canary must match its exact controlled lockfile`,
+    );
+  }
+
+  return {
+    declaredDirectScopes: [
+      ...new Set(directDependencies.map(({ section }) => section)),
+    ].sort((left, right) => left.localeCompare(right)),
+    expectedScannerPackage: {
+      ...OSV_NPM_CANARY_PACKAGE,
+      scope: OSV_NPM_CANARY_SCANNER_SCOPE,
+    },
+    fixtureScope,
+    scannerScope: OSV_NPM_CANARY_SCANNER_SCOPE,
+  };
+}
+
+export function validateOsvVulnerabilityCanaryScannerIdentity(document) {
+  if (!document || typeof document !== "object" || Array.isArray(document)) {
+    throw new ContractError(
+      "OSV npm vulnerability canary output root is invalid",
+    );
+  }
+  if (!Array.isArray(document.results) || document.results.length !== 1) {
+    throw new ContractError(
+      "OSV npm vulnerability canary output must contain exactly one source result",
+    );
+  }
+  const [result] = document.results;
+  if (
+    result?.source?.path !== "/fixture/pnpm-lock.yaml" ||
+    result.source.type !== "lockfile" ||
+    !Array.isArray(result.packages) ||
+    result.packages.length !== 1
+  ) {
+    throw new ContractError(
+      "OSV npm vulnerability canary source result is invalid",
+    );
+  }
+  const [item] = result.packages;
+  if (
+    item?.package?.ecosystem !== OSV_NPM_CANARY_PACKAGE.ecosystem ||
+    item.package.name !== OSV_NPM_CANARY_PACKAGE.name ||
+    item.package.version !== OSV_NPM_CANARY_PACKAGE.version
+  ) {
+    throw new ContractError(
+      "OSV npm vulnerability canary scanner identity must be exact lodash@4.17.20",
+    );
+  }
+  if (Object.hasOwn(item, "scope") || Object.hasOwn(item.package, "scope")) {
+    throw new ContractError(
+      "OSV npm vulnerability canary scanner identity unexpectedly reports scope",
+    );
+  }
+  return {
+    scannerScope: OSV_NPM_CANARY_SCANNER_SCOPE,
+    scannerScopeReported: false,
+  };
+}
+
 async function runOsvVulnerabilityCanaries(context, configuration, databases) {
   const cacheRoot = databases[0].cacheRoot;
   for (const canary of [
@@ -2235,14 +2412,14 @@ async function runOsvVulnerabilityCanaries(context, configuration, databases) {
       checkId: "R016-OSV-VULNERABILITY-CANARY",
       fixtureSource:
         "scripts/fixtures/supply-chain/vulnerable-pnpm-lock.yaml.txt",
-      scope: "unknown",
+      fixtureScope: "unknown",
     },
     {
       artifactName: "osv-vulnerability-development-canary",
       checkId: "R016-OSV-VULNERABILITY-DEVELOPMENT-CANARY",
       fixtureSource:
         "scripts/fixtures/supply-chain/vulnerable-development-pnpm-lock.yaml.txt",
-      scope: "development",
+      fixtureScope: "development",
     },
   ]) {
     const fixtureRoot = path.join(context.temporaryRoot, canary.artifactName);
@@ -2251,6 +2428,13 @@ async function runOsvVulnerabilityCanaries(context, configuration, databases) {
       context,
       canary.fixtureSource,
       canary.artifactName,
+    );
+    const fixture = validateOsvVulnerabilityCanaryFixture(
+      fixtureBytes.toString("utf8"),
+      {
+        fixtureScope: canary.fixtureScope,
+        source: canary.fixtureSource,
+      },
     );
     await writeFile(path.join(fixtureRoot, "pnpm-lock.yaml"), fixtureBytes, {
       flag: "wx",
@@ -2277,20 +2461,18 @@ async function runOsvVulnerabilityCanaries(context, configuration, databases) {
       },
     );
     requireRawExit(result, [1], canary.artifactName);
-    parseStrictJson(result.stdout, `${canary.artifactName} output`);
+    const document = parseStrictJson(
+      result.stdout,
+      `${canary.artifactName} output`,
+    );
+    const scannerIdentity =
+      validateOsvVulnerabilityCanaryScannerIdentity(document);
     assertExtractionCount(result.stderr, "/fixture/pnpm-lock.yaml", 1);
     const verdict = evaluateOsvVulnerabilities({
       document: result.stdout,
       rawExit: result.exitCode,
       expectedBySource: {
-        "/fixture/pnpm-lock.yaml": [
-          {
-            ecosystem: "npm",
-            name: "lodash",
-            version: "4.17.20",
-            scope: canary.scope,
-          },
-        ],
+        "/fixture/pnpm-lock.yaml": [fixture.expectedScannerPackage],
       },
       policy: {
         blockAtOrAbove:
@@ -2302,7 +2484,8 @@ async function runOsvVulnerabilityCanaries(context, configuration, databases) {
       !verdict.findings?.some(
         (finding) =>
           finding.package?.name === "lodash" &&
-          finding.package?.scope === canary.scope &&
+          finding.package?.scope === scannerIdentity.scannerScope &&
+          finding.scope === scannerIdentity.scannerScope &&
           finding.maximumSeverity >=
             configuration.policy.vulnerabilities.minimumBlockingCvss,
       )
@@ -2310,14 +2493,17 @@ async function runOsvVulnerabilityCanaries(context, configuration, databases) {
       throw gateFailure(
         EXIT_CODES.CONTRACT,
         canary.artifactName,
-        `exact pinned offline OSV canary did not block ${canary.scope} scope`,
+        `exact pinned offline OSV ${canary.fixtureScope} fixture canary did not block ${scannerIdentity.scannerScope} scanner scope`,
       );
     }
     recordTerminalCheck(context, {
       id: canary.checkId,
       status: "PASS",
       rawExit: result.exitCode,
-      expectedScope: canary.scope,
+      fixtureScope: fixture.fixtureScope,
+      scannerScope: scannerIdentity.scannerScope,
+      scannerScopeReported: scannerIdentity.scannerScopeReported,
+      declaredDirectScopes: fixture.declaredDirectScopes,
       fixtureSha256: sha256Hex(fixtureBytes),
       findingCount: verdict.findings.length,
       inventorySha256: verdict.evidence.inventorySha256,
