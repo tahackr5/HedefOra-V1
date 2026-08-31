@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "8c25694be0ba16d8167527347e5d186110937cdd",
+  "verifiedThrough": "361f0a2d9605d224293d5b6e3c162dd22f29ea58",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -238,6 +238,20 @@
         "state/RISK-REGISTER.md",
         "state/W001-EVIDENCE.md",
         "state/W001-OWNERSHIP.md"
+      ]
+    },
+    "W001-T02-public-repository-boundary-seal": {
+      "base": "8c25694be0ba16d8167527347e5d186110937cdd",
+      "head": "64817bf4168c7a75df0eb2d2d6485e2408c7755e",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-public-hosted-marker-fix": {
+      "base": "64817bf4168c7a75df0eb2d2d6485e2408c7755e",
+      "head": "361f0a2d9605d224293d5b6e3c162dd22f29ea58",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/W001-EVIDENCE.md"
       ]
     }
   }
