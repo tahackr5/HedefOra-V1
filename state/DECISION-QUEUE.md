@@ -94,7 +94,7 @@
 - Blocking wave/gate: W001-T04B dependency admission, T04C generated Go parity ve ona bağımlı T04D public runtime.
 - Owner decision: `GHSA-9c2f-gr95-7wqw zafiyeti ve upstream yamanın belirsizliği nedeniyle ... güvenlik-kritik yerel generator / alternatif güvenli kod üretim stratejisinin geliştirilmesini ve değerlendirilmesini onaylıyorum.` — 2026-08-31.
 - Resolution: DEC-027 / ADR-0017, exact-health-only ve sıfır-bağımlılıklı sealed renderer yolunu kabul eder. `oapi-codegen`, runtime ve middleware dependency/tool olarak reddedilmeye devam eder; kapsam genişlemesi ayrı owner/security gate'idir.
-- Closed commit: PENDING — bu kararın implementation-range ilk commit'iyle mühürlenecek.
+- Closed commit: `1bc42bcc9ca8f44cdf35a29856ef69eb60872e51`
 
 ## Item template
 

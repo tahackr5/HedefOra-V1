@@ -5,7 +5,7 @@ import { listRepositoryFiles } from "./list-repository-files.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const repositoryRoot = path.resolve(path.dirname(scriptPath), "..");
-const forbiddenRuntimeRoots = ["cmd", "internal", "db/migrations"];
+const forbiddenRuntimeRoots = ["cmd", "db/migrations"];
 const generatedMarker = /(?:Code generated .* DO NOT EDIT|@generated)/i;
 const generatedFilename = /\.(?:gen|generated)(?:\.[^/]+)?$/i;
 const forbiddenHtmlBehavior =
@@ -40,6 +40,15 @@ const allowedW001SupplyChainToolSourceFiles = new Set([
   "tools/osvdbcheck/cmd/osvdbcheck/main.go",
   "tools/osvdbcheck/cmd/osvdbcheck/main_test.go",
 ]);
+export const allowedW001GeneratedSourceFiles = new Set([
+  "internal/generated/openapi/openapi.gen.go",
+]);
+const generatedMarkerDefinitionFiles = new Set([
+  "scripts/check-generated.mjs",
+  "scripts/check-generated.test.mjs",
+  "scripts/generate-openapi.mjs",
+  "scripts/generate-openapi.test.mjs",
+]);
 if (path.resolve(process.argv[1] ?? "") === path.resolve(scriptPath)) {
   const findings = await findGeneratedArtifacts(repositoryRoot);
   if (findings.length > 0) {
@@ -51,7 +60,7 @@ if (path.resolve(process.argv[1] ?? "") === path.resolve(scriptPath)) {
     process.exitCode = 1;
   } else {
     console.log(
-      "PASS: the pre-runtime boundary has no unexpected source paths, generated directories, filenames or source markers.",
+      "PASS: the W001 runtime boundary contains only allowlisted source paths and the exact generated OpenAPI artifact.",
     );
   }
 }
@@ -73,21 +82,24 @@ export async function findGeneratedArtifacts(root) {
       continue;
     }
     if (!fileStats.isFile()) continue;
+    const isAllowedGeneratedSource =
+      allowedW001GeneratedSourceFiles.has(normalized);
+    if (normalized.startsWith("internal/") && !isAllowedGeneratedSource) {
+      findings.push(`${normalized}#unexpected-runtime-source`);
+      continue;
+    }
     const pathParts = normalized.split("/");
     const generatedDirectoryIndex = pathParts.findIndex(
       (part) => part.toLowerCase() === "generated",
     );
-    if (generatedDirectoryIndex >= 0) {
+    if (generatedDirectoryIndex >= 0 && !isAllowedGeneratedSource) {
       findings.push(pathParts.slice(0, generatedDirectoryIndex + 1).join("/"));
       continue;
     }
-    if (
-      normalized === "scripts/check-generated.mjs" ||
-      normalized === "scripts/check-generated.test.mjs"
-    ) {
+    if (generatedMarkerDefinitionFiles.has(normalized)) {
       continue;
     }
-    if (generatedFilename.test(normalized)) {
+    if (generatedFilename.test(normalized) && !isAllowedGeneratedSource) {
       findings.push(normalized);
       continue;
     }
@@ -95,7 +107,7 @@ export async function findGeneratedArtifacts(root) {
     const document = await readFile(path.join(root, relativePath));
     if (!document.includes(0)) {
       const contents = document.toString("utf8");
-      if (generatedMarker.test(contents)) {
+      if (generatedMarker.test(contents) && !isAllowedGeneratedSource) {
         findings.push(`${normalized}#generated-marker`);
         continue;
       }
@@ -119,6 +131,7 @@ export function isAllowedPreRuntimeSource(relativePath) {
     relativePath.startsWith("scripts/") ||
     relativePath.startsWith("tools/repolint/") ||
     allowedW001SupplyChainToolSourceFiles.has(relativePath) ||
+    allowedW001GeneratedSourceFiles.has(relativePath) ||
     allowedW000FrontendSourceFiles.has(relativePath)
   );
 }
