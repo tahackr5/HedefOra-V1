@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "77524d802239650f4437a4779e849bfccda9b183",
+  "verifiedThrough": "10ce2312cc62f1e96eb3ca7262da3982f738628b",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -373,6 +373,27 @@
         "state/RELEASE-LEDGER.md",
         "state/RISK-REGISTER.md",
         "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md"
+      ]
+    },
+    "W001-T04C-contract-security-preflight": {
+      "base": "77524d802239650f4437a4779e849bfccda9b183",
+      "head": "10ce2312cc62f1e96eb3ca7262da3982f738628b",
+      "allowedPaths": [
+        ".spectral.yaml",
+        "contracts/README.md",
+        "contracts/openapi/fixtures/reject-path-operation.yaml",
+        "contracts/openapi/fixtures/reject-webhook.yaml",
+        "contracts/openapi/openapi.yaml",
+        "delivery/TOOLCHAIN-LOCK.md",
+        "scripts/fixtures/openapi-negative-mutations.mjs",
+        "scripts/validate-contracts.mjs",
+        "scripts/validate-contracts.test.mjs",
+        "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.json",
         "state/W001-OWNERSHIP.md"
       ]
     }
