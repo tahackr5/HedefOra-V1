@@ -1,0 +1,7 @@
+[[PackageOverrides]]
+name = "reserved"
+version = "0.1.2"
+ecosystem = "npm"
+license.override = ["MIT"]
+effectiveUntil = 2027-08-28
+reason = "Exact npm registry metadata and the package LICENSE-MIT identify reserved@0.1.2 as MIT; deps.dev currently reports UNKNOWN."

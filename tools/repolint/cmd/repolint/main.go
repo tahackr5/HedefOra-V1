@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -83,7 +84,11 @@ func main() {
 }
 
 func validateManifest(repository, manifestPath, taskID string, all bool, expectedWaveStart, currentHead string, mergeWrapper bool) error {
-	document, err := os.ReadFile(manifestPath)
+	resolvedManifestPath, repositoryManifestPath, err := resolveManifestPath(repository, manifestPath)
+	if err != nil {
+		return err
+	}
+	document, err := os.ReadFile(resolvedManifestPath)
 	if err != nil {
 		return fmt.Errorf("read ownership manifest: %w", err)
 	}
@@ -96,6 +101,9 @@ func validateManifest(repository, manifestPath, taskID string, all bool, expecte
 	}
 	if len(manifest.Tasks) == 0 {
 		return errors.New("ownership manifest has no tasks")
+	}
+	if len(manifest.TrailingAllowedPaths) != 1 || manifest.TrailingAllowedPaths[0] != repositoryManifestPath {
+		return fmt.Errorf("trailingAllowedPaths must be exactly [%q]", repositoryManifestPath)
 	}
 
 	if all {
@@ -245,10 +253,6 @@ func validateCoverage(repository string, manifest ownershipManifest, expectedWav
 	if err := validateFullCommitID("manifest verifiedThrough", manifest.VerifiedThrough); err != nil {
 		return err
 	}
-	if len(manifest.TrailingAllowedPaths) != 1 || manifest.TrailingAllowedPaths[0] != "state/W000-OWNERSHIP.json" {
-		return errors.New("trailingAllowedPaths must be exactly [\"state/W000-OWNERSHIP.json\"]")
-	}
-
 	byBase := make(map[string]string, len(manifest.Tasks))
 	for id, spec := range manifest.Tasks {
 		if err := validateFullCommitID("task "+id+" base", spec.Base); err != nil {
@@ -322,6 +326,51 @@ func validateCoverage(repository string, manifest ownershipManifest, expectedWav
 		resolvedHead,
 	)
 	return nil
+}
+
+func resolveManifestPath(repository, manifestPath string) (string, string, error) {
+	if manifestPath == "" {
+		return "", "", errors.New("ownership manifest path is empty")
+	}
+	repositoryAbsolute, err := filepath.Abs(repository)
+	if err != nil {
+		return "", "", fmt.Errorf("resolve repository path: %w", err)
+	}
+	manifestAbsolute := manifestPath
+	if !filepath.IsAbs(manifestAbsolute) {
+		manifestAbsolute = filepath.Join(repositoryAbsolute, filepath.FromSlash(manifestPath))
+	}
+	manifestAbsolute, err = filepath.Abs(manifestAbsolute)
+	if err != nil {
+		return "", "", fmt.Errorf("resolve ownership manifest path: %w", err)
+	}
+	relative, err := filepath.Rel(repositoryAbsolute, manifestAbsolute)
+	if err != nil {
+		return "", "", fmt.Errorf("make ownership manifest repository-relative: %w", err)
+	}
+	repositoryPath, err := repolint.NormalizeRepositoryPath(filepath.ToSlash(relative))
+	if err != nil {
+		return "", "", fmt.Errorf("ownership manifest must be inside the repository: %w", err)
+	}
+
+	resolvedRepository, err := filepath.EvalSymlinks(repositoryAbsolute)
+	if err != nil {
+		return "", "", fmt.Errorf("resolve repository symlinks: %w", err)
+	}
+	resolvedManifest, err := filepath.EvalSymlinks(manifestAbsolute)
+	if err != nil {
+		return "", "", fmt.Errorf("resolve ownership manifest symlinks: %w", err)
+	}
+	resolvedRelative, err := filepath.Rel(resolvedRepository, resolvedManifest)
+	if err != nil {
+		return "", "", fmt.Errorf("validate ownership manifest symlink target: %w", err)
+	}
+	resolvedRepositoryPath, err := repolint.NormalizeRepositoryPath(filepath.ToSlash(resolvedRelative))
+	if err != nil || resolvedRepositoryPath != repositoryPath {
+		return "", "", errors.New("ownership manifest path resolves outside or through a repository symlink")
+	}
+
+	return manifestAbsolute, repositoryPath, nil
 }
 
 func validateFullCommitID(label, value string) error {

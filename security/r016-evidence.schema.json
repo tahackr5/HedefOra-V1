@@ -1,0 +1,844 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hedefora.com/schemas/security/r016-evidence.schema.json",
+  "title": "HedefOra R-016 supply-chain evidence",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "gateId",
+    "runId",
+    "status",
+    "startedAt",
+    "finishedAt",
+    "exitCode",
+    "source",
+    "controlSource",
+    "inputs",
+    "environment",
+    "tools",
+    "advisoryDatabases",
+    "checks",
+    "rawArtifacts"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 2 },
+    "gateId": { "const": "R-016" },
+    "runId": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["PASS", "FAIL"] },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "finishedAt": { "type": "string", "format": "date-time" },
+    "exitCode": { "type": "integer" },
+    "source": { "type": "object" },
+    "controlSource": { "type": "object" },
+    "inputs": { "type": "object" },
+    "environment": { "type": "object" },
+    "tools": { "type": "object" },
+    "advisoryDatabases": { "type": "array" },
+    "databaseArchiveValidation": {
+      "$ref": "#/$defs/databaseArchiveValidation"
+    },
+    "databaseSeal": { "$ref": "#/$defs/databaseSeal" },
+    "checks": { "type": "array" },
+    "rawArtifacts": { "type": "array" },
+    "failure": { "$ref": "#/$defs/failure" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "PASS" } },
+        "required": ["status"]
+      },
+      "then": {
+        "required": ["databaseArchiveValidation", "databaseSeal"],
+        "not": { "required": ["failure"] },
+        "properties": {
+          "exitCode": { "const": 0 },
+          "source": { "$ref": "#/$defs/passSource" },
+          "controlSource": { "$ref": "#/$defs/passSource" },
+          "inputs": { "$ref": "#/$defs/passInputs" },
+          "environment": { "$ref": "#/$defs/passEnvironment" },
+          "tools": { "$ref": "#/$defs/passTools" },
+          "advisoryDatabases": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": { "$ref": "#/$defs/advisoryDatabase" }
+          },
+          "checks": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/$defs/passCheck" }
+          },
+          "rawArtifacts": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/$defs/rawArtifact" }
+          }
+        }
+      },
+      "else": {
+        "required": ["failure"],
+        "properties": { "exitCode": { "not": { "const": 0 } } }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": { "const": "PASS" },
+          "inputs": {
+            "type": "object",
+            "required": ["controlPlane"],
+            "properties": {
+              "controlPlane": {
+                "type": "object",
+                "required": ["mode"],
+                "properties": { "mode": { "const": "split-root" } }
+              }
+            }
+          }
+        },
+        "required": ["status", "inputs"]
+      },
+      "then": {
+        "properties": {
+          "source": {
+            "required": ["expectedCheckoutSha"],
+            "properties": {
+              "expectedCheckoutSha": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              }
+            }
+          },
+          "controlSource": {
+            "required": ["expectedCheckoutSha"],
+            "properties": {
+              "expectedCheckoutSha": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "gitObjectId": {
+      "type": "string",
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+    },
+    "inputIdentity": {
+      "type": "object",
+      "required": ["path", "sha256", "size"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonEmptyString" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "size": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "controlInputIdentity": {
+      "type": "object",
+      "required": ["path", "gitObjectId", "sha256", "size"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonEmptyString" },
+        "gitObjectId": { "$ref": "#/$defs/gitObjectId" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "size": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "controlPlaneInput": {
+      "type": "object",
+      "required": ["mode", "files", "inventorySha256", "protectedParitySha256"],
+      "properties": {
+        "mode": { "enum": ["same-root", "split-root"] },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/controlInputIdentity" }
+        },
+        "inventorySha256": { "$ref": "#/$defs/sha256" },
+        "protectedParitySha256": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "passSource": {
+      "type": "object",
+      "minProperties": 8,
+      "required": [
+        "gitDirectory",
+        "topLevel",
+        "head",
+        "tree",
+        "branch",
+        "trackedFileCount",
+        "trackedIndexSha256",
+        "expectedCheckoutSha"
+      ],
+      "properties": {
+        "gitDirectory": { "$ref": "#/$defs/nonEmptyString" },
+        "topLevel": { "$ref": "#/$defs/nonEmptyString" },
+        "head": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "tree": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "branch": { "$ref": "#/$defs/nonEmptyString" },
+        "trackedFileCount": { "type": "integer", "minimum": 1 },
+        "trackedIndexSha256": { "$ref": "#/$defs/sha256" },
+        "expectedCheckoutSha": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "configurationInputs": {
+      "type": "object",
+      "minProperties": 4,
+      "required": ["policy", "scanners", "osvConfig", "evidenceSchema"],
+      "properties": {
+        "policy": { "$ref": "#/$defs/inputIdentity" },
+        "scanners": { "$ref": "#/$defs/inputIdentity" },
+        "osvConfig": { "$ref": "#/$defs/inputIdentity" },
+        "evidenceSchema": { "$ref": "#/$defs/inputIdentity" }
+      },
+      "additionalProperties": false
+    },
+    "pnpmScopeCounts": {
+      "type": "object",
+      "minProperties": 7,
+      "required": [
+        "dependencies",
+        "devDependencies",
+        "optionalDependencies",
+        "peerDependencies",
+        "configDependencies",
+        "packageManagerDependencies",
+        "unknown"
+      ],
+      "properties": {
+        "dependencies": { "type": "integer", "minimum": 0 },
+        "devDependencies": { "type": "integer", "minimum": 0 },
+        "optionalDependencies": { "type": "integer", "minimum": 0 },
+        "peerDependencies": { "type": "integer", "minimum": 0 },
+        "configDependencies": { "type": "integer", "minimum": 0 },
+        "packageManagerDependencies": { "type": "integer", "minimum": 0 },
+        "unknown": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "pnpmDocument": {
+      "type": "object",
+      "required": ["documentNumber", "source", "packageCount", "sha256"],
+      "properties": {
+        "documentNumber": { "type": "integer", "minimum": 1 },
+        "source": { "$ref": "#/$defs/nonEmptyString" },
+        "packageCount": { "type": "integer", "minimum": 0 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "pnpmInput": {
+      "type": "object",
+      "minProperties": 6,
+      "required": [
+        "source",
+        "documentCount",
+        "packageCount",
+        "directDependencyCount",
+        "scopeCounts",
+        "documents"
+      ],
+      "properties": {
+        "source": { "$ref": "#/$defs/inputIdentity" },
+        "documentCount": { "type": "integer", "minimum": 1 },
+        "packageCount": { "type": "integer", "minimum": 0 },
+        "directDependencyCount": { "type": "integer", "minimum": 0 },
+        "scopeCounts": { "$ref": "#/$defs/pnpmScopeCounts" },
+        "documents": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/pnpmDocument" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "goEditIdentity": {
+      "type": "object",
+      "required": ["modulePath", "replaceCount"],
+      "properties": {
+        "modulePath": { "$ref": "#/$defs/nonEmptyString" },
+        "replaceCount": { "const": 0 }
+      },
+      "additionalProperties": false
+    },
+    "goInput": {
+      "type": "object",
+      "minProperties": 9,
+      "required": [
+        "manifest",
+        "source",
+        "mainModule",
+        "discoveredModuleCount",
+        "thirdPartyModuleCount",
+        "goModSha256",
+        "goSumSha256",
+        "editIdentity",
+        "inventorySha256"
+      ],
+      "properties": {
+        "manifest": { "$ref": "#/$defs/nonEmptyString" },
+        "source": { "$ref": "#/$defs/nonEmptyString" },
+        "mainModule": { "$ref": "#/$defs/nonEmptyString" },
+        "discoveredModuleCount": { "type": "integer", "minimum": 1 },
+        "thirdPartyModuleCount": { "type": "integer", "minimum": 0 },
+        "goModSha256": { "$ref": "#/$defs/sha256" },
+        "goSumSha256": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/sha256" }]
+        },
+        "editIdentity": { "$ref": "#/$defs/goEditIdentity" },
+        "inventorySha256": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "semgrepSourceFile": {
+      "type": "object",
+      "required": ["path", "languageGroup", "gitObjectId", "sha256", "size"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonEmptyString" },
+        "languageGroup": { "enum": ["go", "javascript-typescript"] },
+        "gitObjectId": { "$ref": "#/$defs/gitObjectId" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "size": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "semgrepSources": {
+      "type": "object",
+      "minProperties": 4,
+      "required": ["fileCount", "groupCounts", "inventorySha256", "files"],
+      "properties": {
+        "fileCount": { "type": "integer", "minimum": 1 },
+        "groupCounts": {
+          "type": "object",
+          "minProperties": 2,
+          "required": ["go", "javascript-typescript"],
+          "properties": {
+            "go": { "type": "integer", "minimum": 1 },
+            "javascript-typescript": { "type": "integer", "minimum": 1 }
+          },
+          "additionalProperties": false
+        },
+        "inventorySha256": { "$ref": "#/$defs/sha256" },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/semgrepSourceFile" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "semgrepRuleLicense": {
+      "type": "object",
+      "required": ["path", "sha256", "name", "usage", "publicDistribution"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonEmptyString" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "name": { "const": "Semgrep Rules License v1.0" },
+        "usage": { "const": "owner-controlled-internal-ci" },
+        "publicDistribution": { "const": "prohibited" }
+      },
+      "additionalProperties": false
+    },
+    "semgrepRuleFile": {
+      "type": "object",
+      "required": ["path", "sha256", "size"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonEmptyString" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "size": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "semgrepRules": {
+      "type": "object",
+      "minProperties": 6,
+      "required": [
+        "repository",
+        "commit",
+        "tree",
+        "license",
+        "files",
+        "manifestSha256"
+      ],
+      "properties": {
+        "repository": { "type": "string", "format": "uri" },
+        "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "tree": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "license": { "$ref": "#/$defs/semgrepRuleLicense" },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/semgrepRuleFile" }
+        },
+        "manifestSha256": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "repositoryUseBase": {
+      "type": "object",
+      "required": ["repositoryId", "repositoryFullName", "visibility"],
+      "properties": {
+        "repositoryId": { "const": 1349011765 },
+        "repositoryFullName": { "const": "tahackr5/HedefOra-V1" },
+        "visibility": { "enum": ["private", "public"] }
+      },
+      "additionalProperties": false
+    },
+    "repositoryUseTarget": {
+      "type": "object",
+      "required": ["repositoryId", "repositoryFullName", "visibility", "fork"],
+      "properties": {
+        "repositoryId": { "const": 1349011765 },
+        "repositoryFullName": { "const": "tahackr5/HedefOra-V1" },
+        "visibility": { "enum": ["private", "public"] },
+        "fork": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "repositoryUse": {
+      "type": "object",
+      "required": [
+        "authority",
+        "visibilityProof",
+        "eventName",
+        "base",
+        "target",
+        "relation"
+      ],
+      "properties": {
+        "authority": { "enum": ["github-context-claim", "local-declaration"] },
+        "visibilityProof": { "type": "boolean" },
+        "eventName": { "enum": ["push", "pull_request_target", "local"] },
+        "base": { "$ref": "#/$defs/repositoryUseBase" },
+        "target": { "$ref": "#/$defs/repositoryUseTarget" },
+        "relation": { "const": "same-repository" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "authority": { "const": "github-context-claim" } },
+            "required": ["authority"]
+          },
+          "then": {
+            "properties": {
+              "visibilityProof": { "const": false },
+              "eventName": { "enum": ["push", "pull_request_target"] }
+            }
+          },
+          "else": {
+            "properties": {
+              "visibilityProof": { "const": false },
+              "eventName": { "const": "local" }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "passInputs": {
+      "type": "object",
+      "minProperties": 7,
+      "required": [
+        "controlPlane",
+        "configuration",
+        "repositoryUse",
+        "pnpm",
+        "go",
+        "semgrepSources",
+        "semgrepRules"
+      ],
+      "properties": {
+        "controlPlane": { "$ref": "#/$defs/controlPlaneInput" },
+        "configuration": { "$ref": "#/$defs/configurationInputs" },
+        "repositoryUse": { "$ref": "#/$defs/repositoryUse" },
+        "pnpm": { "$ref": "#/$defs/pnpmInput" },
+        "go": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/goInput" }
+        },
+        "semgrepSources": { "$ref": "#/$defs/semgrepSources" },
+        "semgrepRules": { "$ref": "#/$defs/semgrepRules" }
+      },
+      "additionalProperties": false
+    },
+    "runtimeEnvironment": {
+      "type": "object",
+      "required": ["node", "platform", "architecture"],
+      "properties": {
+        "node": { "$ref": "#/$defs/nonEmptyString" },
+        "platform": { "$ref": "#/$defs/nonEmptyString" },
+        "architecture": { "$ref": "#/$defs/nonEmptyString" }
+      },
+      "additionalProperties": false
+    },
+    "runnerEnvironment": {
+      "type": "object",
+      "properties": {
+        "CI": { "$ref": "#/$defs/nonEmptyString" },
+        "GITHUB_ACTIONS": { "$ref": "#/$defs/nonEmptyString" },
+        "ImageOS": { "$ref": "#/$defs/nonEmptyString" },
+        "ImageVersion": { "$ref": "#/$defs/nonEmptyString" },
+        "RUNNER_ARCH": { "$ref": "#/$defs/nonEmptyString" },
+        "RUNNER_OS": { "$ref": "#/$defs/nonEmptyString" }
+      },
+      "additionalProperties": false
+    },
+    "executableIdentity": {
+      "type": "object",
+      "required": ["path", "sha256", "size"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonEmptyString" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "size": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "executableEnvironment": {
+      "type": "object",
+      "required": ["git", "docker"],
+      "properties": {
+        "git": { "$ref": "#/$defs/executableIdentity" },
+        "docker": { "$ref": "#/$defs/executableIdentity" }
+      },
+      "additionalProperties": false
+    },
+    "dockerEnvironment": {
+      "type": "object",
+      "required": [
+        "clientVersion",
+        "serverVersion",
+        "clientPlatform",
+        "serverOs",
+        "serverArchitecture",
+        "versionDocumentSha256"
+      ],
+      "properties": {
+        "clientVersion": { "$ref": "#/$defs/nonEmptyString" },
+        "serverVersion": { "$ref": "#/$defs/nonEmptyString" },
+        "clientPlatform": { "type": ["string", "null"], "minLength": 1 },
+        "serverOs": { "type": ["string", "null"], "minLength": 1 },
+        "serverArchitecture": { "type": ["string", "null"], "minLength": 1 },
+        "versionDocumentSha256": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "passEnvironment": {
+      "type": "object",
+      "minProperties": 4,
+      "required": ["runtime", "runner", "docker", "executables"],
+      "properties": {
+        "runtime": { "$ref": "#/$defs/runtimeEnvironment" },
+        "runner": { "$ref": "#/$defs/runnerEnvironment" },
+        "docker": { "$ref": "#/$defs/dockerEnvironment" },
+        "executables": { "$ref": "#/$defs/executableEnvironment" }
+      },
+      "additionalProperties": false
+    },
+    "tool": {
+      "type": "object",
+      "minProperties": 9,
+      "required": [
+        "image",
+        "indexDigest",
+        "linuxAmd64Digest",
+        "runtimeVersion",
+        "runtimeUser",
+        "sourceRepository",
+        "sourceRevision",
+        "inspectionSha256",
+        "indexDocumentSha256"
+      ],
+      "properties": {
+        "image": {
+          "type": "string",
+          "pattern": "^[^\\s]+@sha256:[0-9a-f]{64}$"
+        },
+        "indexDigest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "linuxAmd64Digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "runtimeVersion": { "$ref": "#/$defs/nonEmptyString" },
+        "runtimeUser": { "$ref": "#/$defs/nonEmptyString" },
+        "sourceRepository": { "type": ["string", "null"], "minLength": 1 },
+        "sourceRevision": { "type": ["string", "null"], "minLength": 1 },
+        "inspectionSha256": { "$ref": "#/$defs/sha256" },
+        "indexDocumentSha256": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "passTools": {
+      "type": "object",
+      "minProperties": 3,
+      "required": ["osv-scanner", "semgrep-ce", "go-toolchain"],
+      "properties": {
+        "osv-scanner": { "$ref": "#/$defs/tool" },
+        "semgrep-ce": { "$ref": "#/$defs/tool" },
+        "go-toolchain": { "$ref": "#/$defs/tool" }
+      },
+      "additionalProperties": false
+    },
+    "databaseHeaders": {
+      "type": "object",
+      "minProperties": 5,
+      "required": [
+        "content-length",
+        "etag",
+        "last-modified",
+        "x-goog-generation",
+        "x-goog-hash"
+      ],
+      "properties": {
+        "content-length": { "$ref": "#/$defs/nonEmptyString" },
+        "etag": { "$ref": "#/$defs/nonEmptyString" },
+        "last-modified": { "$ref": "#/$defs/nonEmptyString" },
+        "x-goog-generation": { "$ref": "#/$defs/nonEmptyString" },
+        "x-goog-hash": { "$ref": "#/$defs/nonEmptyString" }
+      },
+      "additionalProperties": false
+    },
+    "databaseIdentity": {
+      "type": "object",
+      "minProperties": 8,
+      "required": [
+        "contentLength",
+        "ecosystem",
+        "etag",
+        "file",
+        "generation",
+        "lastModified",
+        "md5",
+        "sha256"
+      ],
+      "properties": {
+        "contentLength": { "type": "integer", "minimum": 1 },
+        "ecosystem": { "enum": ["npm", "Go"] },
+        "etag": { "$ref": "#/$defs/nonEmptyString" },
+        "file": { "$ref": "#/$defs/nonEmptyString" },
+        "generation": { "$ref": "#/$defs/nonEmptyString" },
+        "lastModified": { "type": "string", "format": "date-time" },
+        "md5": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "advisoryDatabase": {
+      "type": "object",
+      "minProperties": 5,
+      "required": ["ecosystem", "url", "headers", "identity", "identitySha256"],
+      "properties": {
+        "ecosystem": { "enum": ["npm", "Go"] },
+        "url": { "type": "string", "format": "uri" },
+        "headers": { "$ref": "#/$defs/databaseHeaders" },
+        "identity": { "$ref": "#/$defs/databaseIdentity" },
+        "identitySha256": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "validatorSource": {
+      "type": "object",
+      "required": ["path", "gitObjectId", "sha256", "size"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonEmptyString" },
+        "gitObjectId": { "$ref": "#/$defs/gitObjectId" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "size": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "validatorSources": {
+      "type": "object",
+      "minProperties": 2,
+      "required": ["files", "inventorySha256"],
+      "properties": {
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/validatorSource" }
+        },
+        "inventorySha256": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "databaseArchive": {
+      "type": "object",
+      "required": [
+        "argument_index",
+        "entry_count",
+        "uncompressed_bytes",
+        "manifest_sha256"
+      ],
+      "properties": {
+        "argument_index": { "type": "integer", "minimum": 0 },
+        "entry_count": { "type": "integer", "minimum": 1, "maximum": 300000 },
+        "uncompressed_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8589934592
+        },
+        "manifest_sha256": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "databaseArchiveLimits": {
+      "type": "object",
+      "required": [
+        "max_entries",
+        "max_entry_path_bytes",
+        "max_entry_uncompressed_bytes",
+        "max_archive_uncompressed_bytes"
+      ],
+      "properties": {
+        "max_entries": { "const": 300000 },
+        "max_entry_path_bytes": { "const": 4096 },
+        "max_entry_uncompressed_bytes": { "const": 134217728 },
+        "max_archive_uncompressed_bytes": { "const": 8589934592 }
+      },
+      "additionalProperties": false
+    },
+    "databaseArchiveValidation": {
+      "type": "object",
+      "minProperties": 4,
+      "required": ["schema_version", "limits", "archives", "validatorSources"],
+      "properties": {
+        "schema_version": { "const": 1 },
+        "limits": { "$ref": "#/$defs/databaseArchiveLimits" },
+        "archives": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "$ref": "#/$defs/databaseArchive" }
+        },
+        "validatorSources": { "$ref": "#/$defs/validatorSources" }
+      },
+      "additionalProperties": false
+    },
+    "databaseSeal": {
+      "type": "object",
+      "minProperties": 2,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "const": "db-seal.json" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    },
+    "processCheck": {
+      "type": "object",
+      "minProperties": 11,
+      "required": [
+        "id",
+        "status",
+        "command",
+        "arguments",
+        "argumentCount",
+        "durationMs",
+        "rawExit",
+        "signal",
+        "timedOut",
+        "outputLimitExceeded",
+        "artifacts"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^PROCESS-" },
+        "status": { "const": "RECORDED" },
+        "command": { "$ref": "#/$defs/nonEmptyString" },
+        "arguments": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "argumentCount": { "type": "integer", "minimum": 1 },
+        "durationMs": { "type": "integer", "minimum": 0 },
+        "rawExit": { "type": ["integer", "null"] },
+        "signal": { "type": ["string", "null"] },
+        "timedOut": { "const": false },
+        "outputLimitExceeded": { "const": false },
+        "artifacts": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "terminalCheck": {
+      "type": "object",
+      "minProperties": 2,
+      "required": ["id", "status"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^R016-" },
+        "status": { "const": "PASS" }
+      },
+      "additionalProperties": true
+    },
+    "passCheck": {
+      "oneOf": [
+        { "$ref": "#/$defs/processCheck" },
+        { "$ref": "#/$defs/terminalCheck" }
+      ]
+    },
+    "rawArtifact": {
+      "type": "object",
+      "minProperties": 8,
+      "required": [
+        "path",
+        "processId",
+        "rawSha256",
+        "rawSize",
+        "redacted",
+        "sha256",
+        "size",
+        "stream"
+      ],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonEmptyString" },
+        "processId": { "type": "string", "pattern": "^PROCESS-" },
+        "rawSha256": { "$ref": "#/$defs/sha256" },
+        "rawSize": { "type": "integer", "minimum": 0 },
+        "redacted": { "type": "boolean" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "size": { "type": "integer", "minimum": 0 },
+        "stream": { "enum": ["stdout", "stderr"] }
+      },
+      "additionalProperties": false
+    },
+    "failure": {
+      "type": "object",
+      "minProperties": 2,
+      "required": ["message", "type"],
+      "properties": {
+        "message": { "$ref": "#/$defs/nonEmptyString" },
+        "type": { "$ref": "#/$defs/nonEmptyString" },
+        "exitCode": { "type": "integer" },
+        "stage": { "$ref": "#/$defs/nonEmptyString" },
+        "causes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": { "$ref": "#/$defs/failure" }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

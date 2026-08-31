@@ -1,0 +1,304 @@
+{
+  "schemaVersion": 2,
+  "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
+  "verifiedThrough": "43d7c02bdf718704dd64aab22cdfa3a23ca5a10a",
+  "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
+  "tasks": {
+    "W001-T00-wave-open": {
+      "base": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
+      "head": "c9fcb16b8556115b2df5fe971e3c1090f093a312",
+      "allowedPaths": [
+        "FILE-INDEX.md",
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md"
+      ]
+    },
+    "W001-T01-ownership-runtime": {
+      "base": "c9fcb16b8556115b2df5fe971e3c1090f093a312",
+      "head": "4d958a2f1d1e31667ca6a4db5336098f8bf90ec0",
+      "allowedPaths": [
+        "tools/repolint/cmd/repolint/main.go",
+        "tools/repolint/cmd/repolint/main_test.go"
+      ]
+    },
+    "W001-T01-ownership-seal": {
+      "base": "4d958a2f1d1e31667ca6a4db5336098f8bf90ec0",
+      "head": "02caed4b933ec64bd93044ad6719878ef1618ebf",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-supply-chain": {
+      "base": "02caed4b933ec64bd93044ad6719878ef1618ebf",
+      "head": "7d77f1b10bd159f895c49e53623dec18e70aed7d",
+      "allowedPaths": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/r016-trusted-pr.yml",
+        "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
+        "delivery/TOOLCHAIN-LOCK.md",
+        "package.json",
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "scripts/fixtures/supply-chain/**",
+        "scripts/supply-chain/**",
+        "security/**",
+        "state/ACTIVE-WAVE.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md",
+        "tools/osvdbcheck/**"
+      ]
+    },
+    "W001-T02-ownership-seal": {
+      "base": "7d77f1b10bd159f895c49e53623dec18e70aed7d",
+      "head": "1d171e726e9d36d8c2e6ffc8b93a36605b5beaf5",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-manifest-inspection": {
+      "base": "1d171e726e9d36d8c2e6ffc8b93a36605b5beaf5",
+      "head": "6cac36d661bc6d2f679792a430d38c0f3079eacc",
+      "allowedPaths": [
+        "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
+        "scripts/supply-chain/contracts.mjs",
+        "scripts/supply-chain/contracts.test.mjs",
+        "scripts/supply-chain/run.mjs",
+        "scripts/supply-chain/run.test.mjs",
+        "security/r016-evidence.schema.json"
+      ]
+    },
+    "W001-T02-manifest-inspection-seal": {
+      "base": "6cac36d661bc6d2f679792a430d38c0f3079eacc",
+      "head": "f631af27dcd00ba6de2c98d08a6ff1effd9d3dfd",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-rule-lock-byte-identity": {
+      "base": "f631af27dcd00ba6de2c98d08a6ff1effd9d3dfd",
+      "head": "6c086ed18e971fe4b92b12513b77955b7a9c2ae5",
+      "allowedPaths": ["security/scanners.lock.json"]
+    },
+    "W001-T02-rule-lock-byte-identity-seal": {
+      "base": "6c086ed18e971fe4b92b12513b77955b7a9c2ae5",
+      "head": "28cdd95686568bc465561f61bff8475fb2016360",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-database-archive-limit": {
+      "base": "28cdd95686568bc465561f61bff8475fb2016360",
+      "head": "d9340b6fe72db378546c1a7d342ee1c7802c047e",
+      "allowedPaths": [
+        "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
+        "scripts/supply-chain/contracts.mjs",
+        "scripts/supply-chain/contracts.test.mjs",
+        "scripts/supply-chain/run.mjs",
+        "scripts/supply-chain/run.test.mjs",
+        "security/r016-evidence.schema.json",
+        "tools/osvdbcheck/cmd/osvdbcheck/main.go",
+        "tools/osvdbcheck/cmd/osvdbcheck/main_test.go"
+      ]
+    },
+    "W001-T02-database-archive-limit-seal": {
+      "base": "d9340b6fe72db378546c1a7d342ee1c7802c047e",
+      "head": "9ba25b2932316ba381ec543b7663dd16b959d00a",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-osv-scope-provenance": {
+      "base": "9ba25b2932316ba381ec543b7663dd16b959d00a",
+      "head": "dbb06fe482575554ade4c65a47c167cfa755cd78",
+      "allowedPaths": [
+        "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
+        "scripts/fixtures/supply-chain/vulnerable-development-pnpm-lock.yaml.txt",
+        "scripts/fixtures/supply-chain/vulnerable-pnpm-lock.yaml.txt",
+        "scripts/supply-chain/contracts.mjs",
+        "scripts/supply-chain/contracts.test.mjs",
+        "scripts/supply-chain/run.mjs",
+        "scripts/supply-chain/run.test.mjs"
+      ]
+    },
+    "W001-T02-osv-scope-provenance-seal": {
+      "base": "dbb06fe482575554ade4c65a47c167cfa755cd78",
+      "head": "058d2ac2111ade4de7cb077830127aa3cc49d61a",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-semgrep-minified-contract": {
+      "base": "058d2ac2111ade4de7cb077830127aa3cc49d61a",
+      "head": "7f09a2a607620f625bc11773caec3aed870a9de5",
+      "allowedPaths": [
+        "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
+        "scripts/supply-chain/contracts.mjs",
+        "scripts/supply-chain/contracts.test.mjs",
+        "scripts/supply-chain/run.mjs",
+        "scripts/supply-chain/run.test.mjs"
+      ]
+    },
+    "W001-T02-semgrep-minified-contract-seal": {
+      "base": "7f09a2a607620f625bc11773caec3aed870a9de5",
+      "head": "adba09573bbe8ec12e7af21371d67e327ff271b8",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-control-evidence-path-order": {
+      "base": "adba09573bbe8ec12e7af21371d67e327ff271b8",
+      "head": "84ee9e0fde0dfe312159e3751ddcd801a815c837",
+      "allowedPaths": [
+        "scripts/supply-chain/contracts.mjs",
+        "scripts/supply-chain/contracts.test.mjs"
+      ]
+    },
+    "W001-T02-control-evidence-path-order-seal": {
+      "base": "84ee9e0fde0dfe312159e3751ddcd801a815c837",
+      "head": "22112f69a36844f0452058fe477fe268ae32a684",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-semgrep-evidence-path-order": {
+      "base": "22112f69a36844f0452058fe477fe268ae32a684",
+      "head": "d857b5731258a16caab48900b6cf635aa617f066",
+      "allowedPaths": [
+        "scripts/supply-chain/contracts.mjs",
+        "scripts/supply-chain/contracts.test.mjs",
+        "scripts/supply-chain/policy.mjs"
+      ]
+    },
+    "W001-T02-semgrep-evidence-path-order-seal": {
+      "base": "d857b5731258a16caab48900b6cf635aa617f066",
+      "head": "7e866ce96658fd297692257a1630df6dcc2b85fe",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-go-process-environment-contract": {
+      "base": "7e866ce96658fd297692257a1630df6dcc2b85fe",
+      "head": "37543b1c6bb928d09618cb31924a7fead534e448",
+      "allowedPaths": [
+        "scripts/supply-chain/contracts.mjs",
+        "scripts/supply-chain/contracts.test.mjs"
+      ]
+    },
+    "W001-T02-go-process-environment-contract-seal": {
+      "base": "37543b1c6bb928d09618cb31924a7fead534e448",
+      "head": "9ec363c6515de20eea5bd9c9ffd036dad957da6b",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-local-pass-evidence": {
+      "base": "9ec363c6515de20eea5bd9c9ffd036dad957da6b",
+      "head": "37abd4b508151013732014c2dbb9e0b5780b01fc",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md"
+      ]
+    },
+    "W001-T02-local-pass-evidence-seal": {
+      "base": "37abd4b508151013732014c2dbb9e0b5780b01fc",
+      "head": "955c7769662c5153c351fd74e8fb8eb64c8f6e6a",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-release-ledger-byte-preservation": {
+      "base": "955c7769662c5153c351fd74e8fb8eb64c8f6e6a",
+      "head": "5d60c01c92cd3cfa2f12e47da79e0a283f5e99c2",
+      "allowedPaths": ["state/RELEASE-LEDGER.md"]
+    },
+    "W001-T02-release-ledger-byte-preservation-seal": {
+      "base": "5d60c01c92cd3cfa2f12e47da79e0a283f5e99c2",
+      "head": "452b8f219c470609b0fc56502a2dd99c5adb6561",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-linux-ci-portability": {
+      "base": "452b8f219c470609b0fc56502a2dd99c5adb6561",
+      "head": "a378a98fcfe0715dfcf45e500d87e056c5928718",
+      "allowedPaths": [
+        "scripts/supply-chain/contracts.test.mjs",
+        "scripts/supply-chain/run.mjs",
+        "scripts/supply-chain/run.test.mjs"
+      ]
+    },
+    "W001-T02-linux-ci-portability-seal": {
+      "base": "a378a98fcfe0715dfcf45e500d87e056c5928718",
+      "head": "e3ca17d9ed000f7758cdb43d28dd22862b20cdd3",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-public-repository-boundary": {
+      "base": "e3ca17d9ed000f7758cdb43d28dd22862b20cdd3",
+      "head": "8c25694be0ba16d8167527347e5d186110937cdd",
+      "allowedPaths": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/codeql.yml",
+        ".github/workflows/r016-trusted-pr.yml",
+        "DECISIONS.md",
+        "architecture/ADR-REGISTER.md",
+        "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
+        "delivery/WORKTREE-OWNERSHIP-AND-MERGE.md",
+        "operations/REPOSITORY-BACKUP-POLICY.md",
+        "scripts/supply-chain/contracts.mjs",
+        "scripts/supply-chain/contracts.test.mjs",
+        "scripts/supply-chain/run.mjs",
+        "scripts/supply-chain/run.test.mjs",
+        "security/r016-evidence.schema.json",
+        "security/scanners.lock.json",
+        "security/supply-chain-policy.json",
+        "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md"
+      ]
+    },
+    "W001-T02-public-repository-boundary-seal": {
+      "base": "8c25694be0ba16d8167527347e5d186110937cdd",
+      "head": "64817bf4168c7a75df0eb2d2d6485e2408c7755e",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-public-hosted-marker-fix": {
+      "base": "64817bf4168c7a75df0eb2d2d6485e2408c7755e",
+      "head": "361f0a2d9605d224293d5b6e3c162dd22f29ea58",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/W001-EVIDENCE.md"
+      ]
+    },
+    "W001-T02-public-hosted-marker-fix-seal": {
+      "base": "361f0a2d9605d224293d5b6e3c162dd22f29ea58",
+      "head": "c59a46e8cd466620f5654708a2b1cac8c0371683",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-public-workflow-provenance": {
+      "base": "c59a46e8cd466620f5654708a2b1cac8c0371683",
+      "head": "0de06961e7afaf66bf2084b7782506363148f8a9",
+      "allowedPaths": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/r016-trusted-pr.yml",
+        "DECISIONS.md",
+        "architecture/ADR-REGISTER.md",
+        "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
+        "delivery/WORKTREE-OWNERSHIP-AND-MERGE.md",
+        "scripts/supply-chain/contracts.mjs",
+        "scripts/supply-chain/contracts.test.mjs",
+        "scripts/supply-chain/run.mjs",
+        "scripts/supply-chain/run.test.mjs",
+        "security/r016-evidence.schema.json",
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md"
+      ]
+    },
+    "W001-T02-public-workflow-provenance-seal": {
+      "base": "0de06961e7afaf66bf2084b7782506363148f8a9",
+      "head": "f43554592428a2a0d779a110c66bff2af9c68d6a",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-public-linux-portability": {
+      "base": "f43554592428a2a0d779a110c66bff2af9c68d6a",
+      "head": "43d7c02bdf718704dd64aab22cdfa3a23ca5a10a",
+      "allowedPaths": [
+        ".github/workflows/ci.yml",
+        "scripts/supply-chain/contracts.mjs",
+        "scripts/supply-chain/contracts.test.mjs",
+        "scripts/supply-chain/run.mjs",
+        "scripts/supply-chain/run.test.mjs",
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/W001-EVIDENCE.md"
+      ]
+    }
+  }
+}

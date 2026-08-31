@@ -1,0 +1,7 @@
+package fixture
+
+import "os"
+
+func insecureTemporaryFile() error {
+	return os.WriteFile("/tmp/hedefora-r016-fixture", []byte("fixture"), 0o600)
+}
