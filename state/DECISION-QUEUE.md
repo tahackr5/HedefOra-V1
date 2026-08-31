@@ -56,8 +56,6 @@
 - Resolution: İkinci şifreli off-site repository kopyası ve sıfırdan recovery testi W001 başlangıç blocker'ı değildir; W007 kapsamında ve en geç ilk gerçek kullanıcı, public launch veya production promotion öncesinde zorunludur. DEC-016 açıklaması ve ADR-0014 ile kaydedildi.
 - Closed commit: `9f7703b8411a5252afc54a53174b824eefcdb37a`
 
-## Open
-
 ### DQ-005 — Public repository ve R-016 kullanım sözleşmesi
 
 - Opened by / date: orchestrator + security review / 2026-08-31
@@ -69,7 +67,11 @@
 - Blocking wave/gate: PR #3 exact-head merge ve yeni trusted base.
 - Owner decision: `Repository public kalsın; DEC-024 ve R-016 public-repository remediation’ını onaylıyorum.` — 2026-08-31.
 - Resolution: DEC-025 / ADR-0015 public repository + owner-controlled internal R-016 sözleşmesini kabul eder; foreign repository head acquisition öncesi bloklanır, rule byte'ları dağıtılmaz, public/private görünürlük kanıta bağlanır ve exact yeni head yeniden doğrulanır.
-- Implementation status: `IN_PROGRESS`; exact remediation commit üretildiğinde Closed bölümüne SHA ile taşınır.
+- Closed commit: `62c1f7d5201da56f240f3e04fc6f5969190320eb`
+
+## Open
+
+Açık karar yoktur.
 
 ## Item template
 

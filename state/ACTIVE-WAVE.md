@@ -9,7 +9,7 @@
 - Integration branch: `codex/w001-supply-chain-gates`
 - Worktree: external W001 worktree (OneDrive dışında)
 - Started at: `2026-08-28T21:50:57+03:00` (`2026-08-28T18:50:57Z`)
-- Last checkpoint: R-016 exact clean-clone target `9ec363c6515de20eea5bd9c9ffd036dad957da6b` / tree `1e57e62768d0e73e1797f64933e31ed5d658da74` üzerinde `PASS (0)` verdi. Canonical evidence SHA-256 `3e6baec0ce13551233c39e0fca7897ddce34bbbb63bd246fd3d6b61c0de29fb4`; 340/340 raw artifact, 170 process, 17 terminal/seal, 36 SAST kaynağı ve 29 control-plane girdisi bağımsız yeniden doğrulandı. Exact Node `24.20.0` repository suite `126/126`, supply-chain suite `114/114`, web `3/3`; pinned Go/Python/actionlint/Gitleaks/Compose/ownership kapıları exit `0`. Quality, security ve fresh-context cold review verdictleri `PASS`; hosted eksikler ayrı kalır.
+- Last checkpoint: DEC-025 public use-boundary implementation commit'i `62c1f7d5201da56f240f3e04fc6f5969190320eb` / tree `4855e422bafcc7f088d480514702bdf57124e83a` olarak üretildi. Dirty-worktree ön kapıları exact Node `24.20.0` / pnpm `11.24.0` ile Node `129/129`, web `3/3`, build/audit; pinned Go `1.26.7`, Python `3.12.13`, actionlint `1.7.12`, Gitleaks `8.30.1` ve Compose exit `0` verdi. Bu sonuç ownership seal sonrası clean exact-SHA full-tree/live R-016/hosted/security/cold kanıtı değildir; o kapılar `NOT_RUN` kalır.
 - Current objective: owner-onaylı DEC-025 public-repository use-boundary remediation'ını evidence/schema v2 ile tamamlamak, yeni exact head'i local/hosted/security/cold kapılardan geçirmek ve yeni owner merge gate'ine hazırlamak; runtime foundation bootstrap merge tamamlanana kadar başlamaz
 
 ## Active tasks
@@ -33,7 +33,8 @@
 | Pinned OSS SAST                           | PASS    | Exact `9ec363c`; Semgrep CE 1.175.0 nonroot/`--oss-only`; 36/36 Git kaynağı, repository exit `0`, 5-path/7-finding negative canary exit `1`                                                |
 | pnpm + Go all-scope vulnerability/license | PASS    | Exact `9ec363c`; iki pnpm lock dokümanı + Go manifest, 546 package/2 source parity, fresh npm+Go DB seal; production vulnerability/license exit `0`                                        |
 | R-016 negative fixtures                   | PASS    | Missing DB `127`; npm/Go vulnerability ve denied/unknown license canary'leri `1`; Semgrep bypass canary `1`; DB ZIP `0`; hepsi aynı canonical run içinde                                   |
-| Exact-target local quality/reviews        | PASS    | Node `126/126`, supply-chain `114/114`, web `3/3`; Go/Python/actionlint/Gitleaks/Compose/ownership exit `0`; quality/security/cold verdictleri `PASS`                                      |
+| Historical exact-target local/reviews     | PASS    | DEC-024/evidence v1 exact `9ec363c`: Node `126/126`, supply-chain `114/114`, web `3/3`; current DEC-025 remediation target yerine geçmez                                                   |
+| Public use-boundary implementation        | NOT_RUN | Implementation `62c1f7d` / tree `4855e42`; pre-commit bounded gates PASS, ownership seal sonrası exact live/full-tree/security/cold/hosted kapıları henüz koşmadı                          |
 | R-016 trusted-base PR gate                | NOT_RUN | Wave-start base trusted workflow/runner taşımıyor; ilk control-plane bootstrap owner onayıyla iki aşamalı yapılacak, bu PR için hosted trusted `PASS` iddia edilmeyecek                    |
 | W001 runtime behavior                     | BLOCKED | Public use-boundary remediation yeni exact head/full gate/owner SHA onayı ve exact two-parent merge tamamlanmadan yeni trusted base oluşmaz                                                |
 
