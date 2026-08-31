@@ -58,7 +58,18 @@
 
 ## Open
 
-Açık karar yoktur.
+### DQ-005 — Public repository ve R-016 kullanım sözleşmesi
+
+- Opened by / date: orchestrator + security review / 2026-08-31
+- Conflicting files/sections: `DECISIONS.md` DEC-024; `architecture/ADR-REGISTER.md` ADR-0013; `delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md` R-016 Semgrep kullanım sınırı; canlı GitHub repository görünürlüğü
+- Decision needed: Repository public kalacaksa R-016/Semgrep owner-internal kullanım, foreign head ve rule distribution sınırlarını yeniden tanımlamak; aksi halde repository'yi private'a döndürmek.
+- Options: public repository + makine-doğrulanır owner-only internal scanning sözleşmesi; veya private repository + DEC-024 telafi modeli.
+- Security/privacy/cost/migration impact: Public kaynak kodu yayımlar ve fork/foreign head sınırını kritik yapar; owner-only fail-closed sözleşme rule dağıtımı/scanning-as-a-service riskini sınırlar. API/DB/veri migration etkisi yoktur. Hosted CodeQL/Dependency Review public repository'de kullanılabilir; branch protection yokluğu residual kalır.
+- Work that can continue safely: Read-only inceleme, Dependency Review/Default Setup doğrulaması ve owner kararı beklenirken merge dışındaki geri alınabilir kontrol düzlemi hazırlığı.
+- Blocking wave/gate: PR #3 exact-head merge ve yeni trusted base.
+- Owner decision: `Repository public kalsın; DEC-024 ve R-016 public-repository remediation’ını onaylıyorum.` — 2026-08-31.
+- Resolution: DEC-025 / ADR-0015 public repository + owner-controlled internal R-016 sözleşmesini kabul eder; foreign repository head acquisition öncesi bloklanır, rule byte'ları dağıtılmaz, public/private görünürlük kanıta bağlanır ve exact yeni head yeniden doğrulanır.
+- Implementation status: `IN_PROGRESS`; exact remediation commit üretildiğinde Closed bölümüne SHA ile taşınır.
 
 ## Item template
 

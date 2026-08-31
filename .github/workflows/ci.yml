@@ -19,8 +19,50 @@ env:
   GOTOOLCHAIN: local
 
 jobs:
+  r016-source-boundary:
+    name: R-016 first-party source boundary
+    permissions: {}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Reject non-HedefOra repository execution
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REPOSITORY_ID: ${{ github.event.repository.id }}
+          EVENT_REPOSITORY_FULL_NAME: ${{ github.repository }}
+          EVENT_REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
+          EVENT_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          BASE_REPOSITORY_ID: ${{ github.event.pull_request.base.repo.id }}
+          BASE_REPOSITORY_FULL_NAME: ${{ github.event.pull_request.base.repo.full_name }}
+          BASE_REPOSITORY_VISIBILITY: ${{ github.event.pull_request.base.repo.visibility }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          TARGET_REPOSITORY_ID: ${{ github.event.pull_request.head.repo.id }}
+          TARGET_REPOSITORY_FULL_NAME: ${{ github.event.pull_request.head.repo.full_name }}
+          TARGET_REPOSITORY_VISIBILITY: ${{ github.event.pull_request.head.repo.visibility }}
+          TARGET_REPOSITORY_FORK: ${{ toJSON(github.event.pull_request.head.repo.fork) }}
+        run: |
+          set -euo pipefail
+          [[ "${EVENT_REPOSITORY_ID}" == "1349011765" ]]
+          [[ "${EVENT_REPOSITORY_FULL_NAME}" == "tahackr5/HedefOra-V1" ]]
+          [[ "${EVENT_REPOSITORY_VISIBILITY}" == "public" || "${EVENT_REPOSITORY_VISIBILITY}" == "private" ]]
+          [[ "${EVENT_DEFAULT_BRANCH}" == "main" ]]
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            [[ "${BASE_REPOSITORY_ID}" == "${EVENT_REPOSITORY_ID}" ]]
+            [[ "${BASE_REPOSITORY_FULL_NAME}" == "${EVENT_REPOSITORY_FULL_NAME}" ]]
+            [[ "${BASE_REPOSITORY_VISIBILITY}" == "${EVENT_REPOSITORY_VISIBILITY}" ]]
+            [[ "${BASE_REF}" == "main" ]]
+            [[ "${TARGET_REPOSITORY_ID}" == "${EVENT_REPOSITORY_ID}" ]]
+            [[ "${TARGET_REPOSITORY_FULL_NAME}" == "${EVENT_REPOSITORY_FULL_NAME}" ]]
+            [[ "${TARGET_REPOSITORY_VISIBILITY}" == "${EVENT_REPOSITORY_VISIBILITY}" ]]
+            [[ "${TARGET_REPOSITORY_FORK}" == "false" ]]
+          else
+            [[ "${EVENT_NAME}" == "push" ]]
+          fi
+
   quality:
     name: W001 quality gates
+    needs: r016-source-boundary
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -173,6 +215,7 @@ jobs:
   supply-chain:
     name: R-016 supply-chain gate
     if: github.event_name == 'push'
+    needs: r016-source-boundary
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
@@ -208,6 +251,17 @@ jobs:
         shell: bash
         env:
           EXPECTED_CHECKOUT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          R016_AUTHORITY: github-event
+          R016_VISIBILITY_PROOF: "true"
+          R016_EVENT_NAME: push
+          R016_BASE_REPOSITORY_ID: ${{ github.event.repository.id }}
+          R016_BASE_REPOSITORY_FULL_NAME: ${{ github.repository }}
+          R016_BASE_REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
+          R016_TARGET_REPOSITORY_ID: ${{ github.event.repository.id }}
+          R016_TARGET_REPOSITORY_FULL_NAME: ${{ github.repository }}
+          R016_TARGET_REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
+          R016_TARGET_REPOSITORY_FORK: "false"
+          R016_REPOSITORY_RELATION: same-repository
         run: |
           set -euo pipefail
           trusted_tool_cache="$(realpath "${RUNNER_TOOL_CACHE}")"
@@ -263,6 +317,7 @@ jobs:
   dependency-review:
     name: Dependency review
     if: github.event_name == 'pull_request'
+    needs: r016-source-boundary
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:

@@ -4,12 +4,12 @@ Bu politika ilk günden desired-state'tir. İkinci şifreli kopya ve sıfırdan 
 
 ## Kanonik source
 
-- GitHub private repository ana remote.
+- GitHub repository ana remote'dur; current visibility DEC-025 uyarınca public'tir ve private geçiş ayrı hosted-capability yeniden doğrulama gate'idir.
 - `main` için branch/ruleset protection hedef kontroldür; doğrulanmadan etkin varsayılmaz.
 - release tags protected/signed mümkünse.
 - branch protection ve required checks.
 
-Private/current GitHub planı bu kontrolleri sağlamıyorsa durum `BLOCKED_EXTERNAL` kalır. DEC-024 altındaki exact-SHA telafi protokolü geçici ilerleme sağlar fakat main'i server tarafında protected yapmaz; `R-014` kapanmaz.
+Canlı GitHub planı/ayarları bu kontrolleri sağlamıyorsa durum `BLOCKED_EXTERNAL` kalır. DEC-025 altındaki exact-SHA owner-controlled protokolü geçici ilerleme sağlar fakat main'i server tarafında protected yapmaz; `R-014` kapanmaz.
 
 ## İkinci kopya
 

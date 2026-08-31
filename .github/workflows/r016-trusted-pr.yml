@@ -12,8 +12,45 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  source-boundary:
+    name: R-016 same-repository source boundary
+    permissions: {}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Reject fork or foreign repository head
+        shell: bash
+        env:
+          EVENT_REPOSITORY_ID: ${{ github.event.repository.id }}
+          EVENT_REPOSITORY_FULL_NAME: ${{ github.repository }}
+          EVENT_REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
+          EVENT_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          BASE_REPOSITORY_ID: ${{ github.event.pull_request.base.repo.id }}
+          BASE_REPOSITORY_FULL_NAME: ${{ github.event.pull_request.base.repo.full_name }}
+          BASE_REPOSITORY_VISIBILITY: ${{ github.event.pull_request.base.repo.visibility }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          TARGET_REPOSITORY_ID: ${{ github.event.pull_request.head.repo.id }}
+          TARGET_REPOSITORY_FULL_NAME: ${{ github.event.pull_request.head.repo.full_name }}
+          TARGET_REPOSITORY_VISIBILITY: ${{ github.event.pull_request.head.repo.visibility }}
+          TARGET_REPOSITORY_FORK: ${{ toJSON(github.event.pull_request.head.repo.fork) }}
+        run: |
+          set -euo pipefail
+          [[ "${EVENT_REPOSITORY_ID}" == "1349011765" ]]
+          [[ "${EVENT_REPOSITORY_FULL_NAME}" == "tahackr5/HedefOra-V1" ]]
+          [[ "${EVENT_REPOSITORY_VISIBILITY}" == "public" || "${EVENT_REPOSITORY_VISIBILITY}" == "private" ]]
+          [[ "${EVENT_DEFAULT_BRANCH}" == "main" ]]
+          [[ "${BASE_REPOSITORY_ID}" == "${EVENT_REPOSITORY_ID}" ]]
+          [[ "${BASE_REPOSITORY_FULL_NAME}" == "${EVENT_REPOSITORY_FULL_NAME}" ]]
+          [[ "${BASE_REPOSITORY_VISIBILITY}" == "${EVENT_REPOSITORY_VISIBILITY}" ]]
+          [[ "${BASE_REF}" == "main" ]]
+          [[ "${TARGET_REPOSITORY_ID}" == "${EVENT_REPOSITORY_ID}" ]]
+          [[ "${TARGET_REPOSITORY_FULL_NAME}" == "${EVENT_REPOSITORY_FULL_NAME}" ]]
+          [[ "${TARGET_REPOSITORY_VISIBILITY}" == "${EVENT_REPOSITORY_VISIBILITY}" ]]
+          [[ "${TARGET_REPOSITORY_FORK}" == "false" ]]
+
   supply-chain:
     name: R-016 trusted-base supply-chain gate
+    needs: source-boundary
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
@@ -28,7 +65,7 @@ jobs:
       - name: Checkout exact untrusted pull-request source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          repository: ${{ github.repository }}
           ref: ${{ github.event.pull_request.head.sha }}
           path: target
           fetch-depth: 0
@@ -62,6 +99,17 @@ jobs:
           EXPECTED_CHECKOUT_SHA: ${{ github.event.pull_request.head.sha }}
           EXPECTED_CONTROL_SHA: ${{ github.event.pull_request.base.sha }}
           TARGET_ROOT: ${{ github.workspace }}/target
+          R016_AUTHORITY: github-event
+          R016_VISIBILITY_PROOF: "true"
+          R016_EVENT_NAME: pull_request_target
+          R016_BASE_REPOSITORY_ID: ${{ github.event.pull_request.base.repo.id }}
+          R016_BASE_REPOSITORY_FULL_NAME: ${{ github.event.pull_request.base.repo.full_name }}
+          R016_BASE_REPOSITORY_VISIBILITY: ${{ github.event.pull_request.base.repo.visibility }}
+          R016_TARGET_REPOSITORY_ID: ${{ github.event.pull_request.head.repo.id }}
+          R016_TARGET_REPOSITORY_FULL_NAME: ${{ github.event.pull_request.head.repo.full_name }}
+          R016_TARGET_REPOSITORY_VISIBILITY: ${{ github.event.pull_request.head.repo.visibility }}
+          R016_TARGET_REPOSITORY_FORK: ${{ toJSON(github.event.pull_request.head.repo.fork) }}
+          R016_REPOSITORY_RELATION: same-repository
         run: |
           set -euo pipefail
           control_root_real="$(realpath -e -- "${CONTROL_ROOT}")"

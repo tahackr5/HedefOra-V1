@@ -12,32 +12,35 @@ W001 runtime davranışından önce aşağıdaki telafi paketi zorunludur:
 4. scanner/rules/config/advisory DB identity,
 5. dev/unknown vulnerability, disallowed/unknown license, missing/stale DB, parse/timeout/internal/network negatif fixture'ları.
 
-Hosted CodeQL, Dependency Review ve branch/ruleset enforcement ayrı `BLOCKED_EXTERNAL` sonuçlarıdır; bu paket onları `PASS` yapmaz.
+CodeQL Default Setup ve Dependency Review kullanılabildiği sürece exact target üzerinde ayrıca çalışır; branch/ruleset enforcement ayrı doğrulanır. Yerel R-016 hiçbir hosted sonucu yeniden adlandırmaz.
+
+> 2026-08-31 geçiş notu: Aşağıdaki `9ec363c`/evidence v1 PASS kayıtları DEC-024 private-only bağlamının tarihsel kanıtıdır. Repository public olduktan sonra bu kayıtlar DEC-025 public use-boundary gate'ini karşılamaz. Evidence/schema v2 remediation exact head'i ve yeni local/hosted/security/cold sonuçları oluşana kadar current verdict `NOT_RUN`dır.
 
 ## Opening identity
 
 - Immutable start commit: `bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b`
 - Start tree: `7a2ae76ee31b6c85ec5b3839c78306cde2bd3f23`
 - Branch/worktree: `codex/w001-supply-chain-gates` / OneDrive dışı W001 worktree
-- External mutation: none; VPS/SSH/Cloudflare/DNS untouched
+- External mutation: owner repository'yi public yaptı; preflight sırasında Dependency Graph/vulnerability alerts etkinleştirildi, Default CodeQL ile çakışan Advanced workflow GitHub ayarında `disabled_manually` yapıldı. VPS/SSH/Cloudflare/DNS untouched.
 
 ## Gate state
 
-| Gate                                    | Status           | Evidence                                                                                                                                                       |
-| --------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Wave opening identity/ownership         | PASS             | Kesintisiz ownership `bde560f` → verified implementation `37543b1`; manifest-only trailing seal `9ec363c`; pinned Go 1.26.7 repolint exit `0`                  |
-| Scanner and rules research              | PASS             | OSV 2.5.1, Semgrep CE 1.175.0 nonroot, Go 1.26.7 ve semgrep-rules exact identities; multi-doc false-clean probu `19` vs `19+527`                               |
-| SAST implementation                     | PASS             | Exact `9ec363c`: 36/36 Git kaynağı, CE/OSS-only repository exit `0`; 5-path large/minified bypass fixture, 7 findings ve raw exit `1`                          |
-| Dependency vulnerability implementation | PASS             | Exact `9ec363c`: iki pnpm dokümanı + Go manifest, 546 package/2 source parity; production raw exit `0`; npm+Go fresh DB identity/seal                          |
-| License implementation                  | PASS             | Exact `9ec363c`: 546 package/2 source exact parity, deps.dev raw exit `0`; npm denied/unknown ve Go GPL canary raw exit `1`                                    |
-| Negative fixtures                       | PASS             | Missing DB `127`; npm unknown/development vulnerability, Go advisory, npm/Go denied/unknown license ve Semgrep canary'leri beklenen nonzero exit ile bloklandı |
-| Exact-target local/full-tree            | PASS             | Node `126/126`, supply-chain `114/114`, web `3/3`; pinned Go/Python/actionlint/Gitleaks/Compose/ownership ve artifact rehash kapıları exit `0`                 |
-| Quality evidence review                 | PASS             | Exact `9ec363c` / `1e57e62`; 187 check, 340 raw artifact, DB/source/control/process/terminal bağları; bloklayıcı bulgu yok                                     |
-| Security review                         | PASS             | Exact `9ec363c` / `1e57e62`; release-blocking bulgu yok; bir LOW future multi-module slug riski R-017 olarak izlendi                                           |
-| Cold review                             | PASS             | Fresh-context exact-tree verdict `PASS`; local blocker/finding yok; hosted/trusted-base sonuçları doğru biçimde ayrıldı                                        |
-| GitHub exact-head quality               | NOT_RUN          | —                                                                                                                                                              |
-| Trusted-base PR gate                    | NOT_RUN          | Wave-start base `.github/workflows/r016-trusted-pr.yml` ve trusted runner'ı taşımıyor; ilk control-plane bootstrap PR'ında hosted `PASS` iddia edilemez        |
-| Hosted security/enforcement             | BLOCKED_EXTERNAL | DEC-024 / R-014 / R-016                                                                                                                                        |
+| Gate                                    | Status  | Evidence                                                                                                                                                       |
+| --------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Wave opening identity/ownership         | PASS    | Kesintisiz ownership `bde560f` → verified implementation `37543b1`; manifest-only trailing seal `9ec363c`; pinned Go 1.26.7 repolint exit `0`                  |
+| Scanner and rules research              | PASS    | OSV 2.5.1, Semgrep CE 1.175.0 nonroot, Go 1.26.7 ve semgrep-rules exact identities; multi-doc false-clean probu `19` vs `19+527`                               |
+| Historical SAST implementation          | PASS    | DEC-024/evidence v1 exact `9ec363c`: 36/36 Git kaynağı, CE/OSS-only repository exit `0`; current public use-boundary yerine geçmez                             |
+| Dependency vulnerability implementation | PASS    | Exact `9ec363c`: iki pnpm dokümanı + Go manifest, 546 package/2 source parity; production raw exit `0`; npm+Go fresh DB identity/seal                          |
+| License implementation                  | PASS    | Exact `9ec363c`: 546 package/2 source exact parity, deps.dev raw exit `0`; npm denied/unknown ve Go GPL canary raw exit `1`                                    |
+| Negative fixtures                       | PASS    | Missing DB `127`; npm unknown/development vulnerability, Go advisory, npm/Go denied/unknown license ve Semgrep canary'leri beklenen nonzero exit ile bloklandı |
+| Historical exact-target local/full-tree | PASS    | DEC-024/evidence v1 exact `9ec363c`: Node `126/126`, supply-chain `114/114`, web `3/3`; current remediation target yerine geçmez                               |
+| Quality evidence review                 | PASS    | Exact `9ec363c` / `1e57e62`; 187 check, 340 raw artifact, DB/source/control/process/terminal bağları; bloklayıcı bulgu yok                                     |
+| Security review                         | PASS    | Exact `9ec363c` / `1e57e62`; release-blocking bulgu yok; bir LOW future multi-module slug riski R-017 olarak izlendi                                           |
+| Cold review                             | PASS    | Fresh-context exact-tree verdict `PASS`; local blocker/finding yok; hosted/trusted-base sonuçları doğru biçimde ayrıldı                                        |
+| Public use-boundary evidence/schema v2  | NOT_RUN | Implementation in progress; exact remediation SHA/tree ve live R-016 henüz mühürlenmedi                                                                        |
+| GitHub exact-head quality               | NOT_RUN | Eski `e3ca17d` quality SUCCESS tarihsel; remediation exact head henüz üretilmedi                                                                               |
+| Trusted-base PR gate                    | NOT_RUN | Wave-start base `.github/workflows/r016-trusted-pr.yml` ve trusted runner'ı taşımıyor; ilk control-plane bootstrap PR'ında hosted `PASS` iddia edilemez        |
+| Hosted security/enforcement             | NOT_RUN | Default CodeQL base `bde560f` ve Dependency Review eski `e3ca17d` için SUCCESS; remediation exact head henüz taranmadı. Branch/ruleset `BLOCKED_EXTERNAL`      |
 
 ## Exact live PASS
 
@@ -131,9 +134,9 @@ Her başarısız artifact korundu; hiçbiri `PASS` olarak yeniden adlandırılma
 
 ## Açık ve residual riskler
 
-- R-016 local compensating control `PASS`, risk durumu `MITIGATING`: hosted CodeQL/Dependency Review/ruleset `BLOCKED_EXTERNAL`; Semgrep interfile/provenance, deps.dev replay ve OSV publisher-signature boşlukları local sonucu production/hosted `PASS` yapmaz.
+- DEC-024 evidence v1 local compensating control tarihsel `PASS`; DEC-025 evidence v2 current sonucu `NOT_RUN`, risk `MITIGATING`. Semgrep interfile/provenance, deps.dev replay, OSV publisher-signature ve server-side enforcement residual kalır.
 - R-017 `OPEN`, non-blocking: mevcut tek kök `go.mod` güvenlidir ve collision fail-closed olur; ikinci Go manifest eklenmeden önce dinamik process/artifact kimliğine path hash suffix ve collision/case fixture'ları zorunludur.
-- R-014 `OPEN`: server-side merge enforcement private planda yok; bootstrap merge owner-controlled exact two-parent olmalıdır.
+- R-014 `OPEN`: canlı repository'de server-side branch/ruleset enforcement yok; bootstrap merge owner-controlled exact two-parent olmalıdır.
 - R-001/R-009/R-013 W007/pre-user sınırına kadar açık; W001'i engellemez.
 
 ## Implementation checkpoint

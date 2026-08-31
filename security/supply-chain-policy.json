@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "gateId": "R-016",
   "runtime": {
     "nodeVersion": "24.20.0"

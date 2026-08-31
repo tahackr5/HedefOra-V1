@@ -29,6 +29,8 @@ import {
   validateGitIndexFlags,
   validateGoModEdit,
   validateOsvConfiguration,
+  validateRepositoryUseBoundary,
+  validateRepositoryUseContext,
 } from "./contracts.mjs";
 import {
   DIRECT_SCOPE_NAMES,
@@ -70,6 +72,7 @@ const CONTROL_CONFIGURATION_PATHS = Object.freeze({
 const CONTROL_PROTECTED_EXACT_PATHS = new Set([
   ...Object.values(CONTROL_CONFIGURATION_PATHS),
   ".github/workflows/ci.yml",
+  ".github/workflows/codeql.yml",
   ".github/workflows/r016-trusted-pr.yml",
 ]);
 const CONTROL_PROTECTED_PREFIXES = Object.freeze([
@@ -118,6 +121,7 @@ export async function executeSupplyChainGate({
   trustedExecutables,
   expectedCheckoutSha = process.env.EXPECTED_CHECKOUT_SHA,
   expectedControlSha = process.env.EXPECTED_CONTROL_SHA,
+  repositoryUseContext,
 } = {}) {
   const root = path.resolve(repositoryRoot);
   const resolvedControlRoot = path.resolve(controlRoot);
@@ -135,6 +139,7 @@ export async function executeSupplyChainGate({
     controlRoot: resolvedControlRoot,
     expectedCheckoutSha,
     expectedControlSha,
+    declaredRepositoryUseContext: repositoryUseContext,
     runId,
     artifactRoot,
     rawRoot,
@@ -147,7 +152,7 @@ export async function executeSupplyChainGate({
     trustedExecutables: {},
     verdictExecutionSeals: Object.create(null),
     evidence: {
-      schemaVersion: 1,
+      schemaVersion: 2,
       gateId: "R-016",
       runId,
       status: "IN_PROGRESS",
@@ -375,6 +380,19 @@ async function runGate(context, now) {
   context.controlInputsSeal = structuredClone(controlPlane);
   context.evidence.inputs.controlPlane = structuredClone(controlPlane);
   const configuration = await loadConfiguration(context);
+  const repositoryUse = validateRepositoryUseContext(
+    context.declaredRepositoryUseContext ??
+      repositoryUseContextFromEnvironment(process.env),
+    configuration.scanners.semgrepRules.useBoundary,
+    process.env.GITHUB_ACTIONS,
+  );
+  context.repositoryUseSeal = structuredClone(repositoryUse);
+  context.evidence.inputs.repositoryUse = structuredClone(repositoryUse);
+  recordTerminalCheck(context, {
+    id: "R016-REPOSITORY-USE",
+    status: "PASS",
+    context: structuredClone(repositoryUse),
+  });
   await inspectExecutionEnvironment(context, configuration);
   const inventory = await prepareInputs(context, configuration);
   const semgrepSources = await prepareSemgrepSourceInputs(
@@ -765,6 +783,67 @@ export function expectedCheckoutShaIsRequired(
   return githubActions === "true" || !sameSourceRoot;
 }
 
+export function repositoryUseContextFromEnvironment(environment = {}) {
+  const repositoryId = (name) => {
+    const value = requiredEvidenceString(environment[name], name);
+    if (!/^[1-9][0-9]*$/u.test(value)) {
+      throw new ContractError(
+        `${name} must be a positive decimal repository ID`,
+      );
+    }
+    const parsed = Number(value);
+    if (!Number.isSafeInteger(parsed)) {
+      throw new ContractError(`${name} exceeds the safe integer range`);
+    }
+    return parsed;
+  };
+  const boolean = (name) => {
+    const value = requiredEvidenceString(environment[name], name);
+    if (value !== "true" && value !== "false") {
+      throw new ContractError(`${name} must be literal true or false`);
+    }
+    return value === "true";
+  };
+  return {
+    authority: requiredEvidenceString(
+      environment.R016_AUTHORITY,
+      "R016_AUTHORITY",
+    ),
+    visibilityProof: boolean("R016_VISIBILITY_PROOF"),
+    eventName: requiredEvidenceString(
+      environment.R016_EVENT_NAME,
+      "R016_EVENT_NAME",
+    ),
+    base: {
+      repositoryId: repositoryId("R016_BASE_REPOSITORY_ID"),
+      repositoryFullName: requiredEvidenceString(
+        environment.R016_BASE_REPOSITORY_FULL_NAME,
+        "R016_BASE_REPOSITORY_FULL_NAME",
+      ),
+      visibility: requiredEvidenceString(
+        environment.R016_BASE_REPOSITORY_VISIBILITY,
+        "R016_BASE_REPOSITORY_VISIBILITY",
+      ),
+    },
+    target: {
+      repositoryId: repositoryId("R016_TARGET_REPOSITORY_ID"),
+      repositoryFullName: requiredEvidenceString(
+        environment.R016_TARGET_REPOSITORY_FULL_NAME,
+        "R016_TARGET_REPOSITORY_FULL_NAME",
+      ),
+      visibility: requiredEvidenceString(
+        environment.R016_TARGET_REPOSITORY_VISIBILITY,
+        "R016_TARGET_REPOSITORY_VISIBILITY",
+      ),
+      fork: boolean("R016_TARGET_REPOSITORY_FORK"),
+    },
+    relation: requiredEvidenceString(
+      environment.R016_REPOSITORY_RELATION,
+      "R016_REPOSITORY_RELATION",
+    ),
+  };
+}
+
 export function validateExpectedControlSha(actual, expected, required = true) {
   return validateExpectedSourceSha(
     actual,
@@ -988,12 +1067,12 @@ async function loadConfiguration(context) {
 }
 
 export function validateConfiguration(policy, scanners) {
-  if (policy?.schemaVersion !== 1 || policy?.gateId !== "R-016") {
+  if (policy?.schemaVersion !== 2 || policy?.gateId !== "R-016") {
     throw new ContractError(
       "supply-chain policy schema/gate identity is invalid",
     );
   }
-  if (scanners?.schemaVersion !== 1) {
+  if (scanners?.schemaVersion !== 2) {
     throw new ContractError("scanner lock schema identity is invalid");
   }
   if (policy.runtime?.nodeVersion !== "24.20.0") {
@@ -1184,6 +1263,24 @@ export function validateConfiguration(policy, scanners) {
       "Semgrep rules must use the locked official repository",
     );
   }
+  const ruleLicense = scanners.semgrepRules?.license;
+  assertExactStringSet(
+    Object.keys(ruleLicense ?? {}),
+    ["path", "sha256", "name", "usage", "publicDistribution"],
+    "Semgrep rule license keys",
+  );
+  if (
+    ruleLicense.path !== "LICENSE" ||
+    ruleLicense.name !== "Semgrep Rules License v1.0" ||
+    ruleLicense.usage !== "owner-controlled-internal-ci" ||
+    ruleLicense.publicDistribution !== "prohibited"
+  ) {
+    throw new ContractError(
+      "Semgrep rule license use differs from the locked no-distribution contract",
+    );
+  }
+  validateHexDigest(ruleLicense.sha256, 64, "Semgrep rule license SHA-256");
+  validateRepositoryUseBoundary(scanners.semgrepRules.useBoundary);
   if (
     !Array.isArray(scanners.semgrepRules?.files) ||
     scanners.semgrepRules.files.length === 0
@@ -1207,7 +1304,7 @@ function validateEvidenceSchema(schema) {
     schema?.$schema !== "https://json-schema.org/draft/2020-12/schema" ||
     schema?.$id !==
       "https://hedefora.com/schemas/security/r016-evidence.schema.json" ||
-    schema?.properties?.schemaVersion?.const !== 1 ||
+    schema?.properties?.schemaVersion?.const !== 2 ||
     schema?.properties?.gateId?.const !== "R-016" ||
     !Array.isArray(schema.required)
   ) {
@@ -4637,6 +4734,7 @@ async function writeEvidence(context) {
     inputsSeal: context.inputsSeal,
     processSeals: context.processSeals,
     rawArtifactSeals: context.rawArtifactSeals,
+    repositoryUseSeal: context.repositoryUseSeal,
     root: context.root,
     sourceSeal: context.sourceSeal,
     terminalSeals: context.terminalSeals,

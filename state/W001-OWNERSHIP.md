@@ -42,6 +42,14 @@ Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERS
 - Owned paths: `state/ACTIVE-WAVE.md`, `state/RELEASE-LEDGER.md`, `state/RISK-REGISTER.md`, `state/W001-EVIDENCE.md`, `state/W001-OWNERSHIP.md`, `state/W001-OWNERSHIP.json`.
 - R-016 yalnız target ve control source seal'leri, protected control-plane parity'si, scanner image/binary, rule tree, policy/config ve npm/Go advisory DB kimlikleriyle; literal commands/exits ve negative fixture kanıtıyla `PASS` olabilir.
 
+## W001-T02B — Public repository use-boundary remediation
+
+- Immutable task base: `e3ca17d9ed000f7758cdb43d28dd22862b20cdd3`; writer/merge/stage sahibi orchestrator'dır. Read-only architecture, infra, quality ve security reviewers proposal döndürür.
+- Owner gate: repository public kalacak; DEC-024 ve R-016 public-repository remediation'ı 2026-08-31 tarihinde açıkça onaylandı.
+- Owned paths: `DECISIONS.md`, `architecture/ADR-REGISTER.md`, `state/DECISION-QUEUE.md`, `delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md`, `delivery/WORKTREE-OWNERSHIP-AND-MERGE.md`, `operations/REPOSITORY-BACKUP-POLICY.md`, `.github/workflows/ci.yml`, `.github/workflows/r016-trusted-pr.yml`, `.github/workflows/codeql.yml` (silme), `security/scanners.lock.json`, `security/supply-chain-policy.json`, `security/r016-evidence.schema.json`, `scripts/supply-chain/contracts.mjs`, `scripts/supply-chain/contracts.test.mjs`, `scripts/supply-chain/run.mjs`, `scripts/supply-chain/run.test.mjs`, `state/ACTIVE-WAVE.md`, `state/RISK-REGISTER.md`, `state/W001-EVIDENCE.md`, `state/RELEASE-LEDGER.md`, `state/W001-OWNERSHIP.md`, `state/W001-OWNERSHIP.json`.
+- Boundary: GitHub repository ID `1349011765` ve full name `tahackr5/HedefOra-V1` birlikte exact eşleşir; hosted visibility proof ile local declaration ayrıdır; fork/foreign head checkout ve scanner/rule/image/DB acquisition öncesi bloklanır. Rule byte'ları repository/artifact'e konmaz ve scanning-as-a-service sunulmaz.
+- Expected gates: evidence/schema v2 unit/negative tests, workflow/actionlint, frozen full tree, exact public local R-016, rule artifact redaction/rehash, ownership range+seal, hosted quality/Dependency Review/Default CodeQL, fresh security ve cold review. Yeni exact SHA ayrı owner merge onayı almadan birleşmez.
+
 ## Merge ve rollback
 
 1. W001 açılış state commit'i.
@@ -52,10 +60,10 @@ Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERS
 6. Yeni base üzerinde ayrı target/runtime PR'ı; trusted-base gate `PASS` olmadan ilerlemez. Protected control-plane değişikliği gerekiyorsa yine önce control-only owner-approved bootstrap, sonra ayrı target PR yapılır.
 7. Final `main` push active-wave merge-wrapper/full-tree gate.
 
-Squash/rebase/direct push kabul edilmez. Rollback, W001 PR'ını merge etmemek veya exact two-parent merge'i yeni bir reviewed revert PR ile geri almaktır; hosted kontroller çözülene kadar `BLOCKED_EXTERNAL` kalır. VPS/DNS rollback bu task için `NOT_APPLICABLE`, çünkü dış sistem mutation'ı yoktur.
+Squash/rebase/direct push kabul edilmez. Rollback, W001 PR'ını merge etmemek veya exact two-parent merge'i yeni bir reviewed revert PR ile geri almaktır. Hosted CodeQL/Dependency Review kullanılabildiği sürece gerçek gate'tir; branch/ruleset enforcement doğrulanana kadar `BLOCKED_EXTERNAL` kalır. VPS/DNS rollback bu task için `NOT_APPLICABLE`, çünkü dış sistem mutation'ı yoktur.
 
 ## Secret ve artifact sınırı
 
 - Password, token, private key, cookie, MFA/recovery code, gerçek `.env` ve production verisi okunmaz veya commitlenmez.
-- Scanner DB/cache, cloned rules, raw output ve evidence çalışma artifact'ları `artifacts/**` altında kalır ve commitlenmez.
+- Scanner DB/cache, redacted raw output ve evidence çalışma artifact'ları `artifacts/**` altında kalır ve commitlenmez. Cloned rule byte'ları yalnız run-specific OS temp kökünde tutulur, artifact'e taşınmaz ve cleanup ile silinir.
 - Scanner/rules/DB acquisition hatası eski cache'e veya önceki PASS artifact'ına düşmez; yeni ve izole run fail-closed biter.

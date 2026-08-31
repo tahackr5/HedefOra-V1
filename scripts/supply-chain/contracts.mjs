@@ -12,6 +12,7 @@ const POSIX = path.posix;
 const HEX_OBJECT_ID = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u;
 const PROCESS_ID = /^PROCESS-/u;
 const PASS_TERMINAL_CHECK_IDS = [
+  "R016-REPOSITORY-USE",
   "R016-EXECUTION-ENVIRONMENT",
   "R016-CONTROL-SOURCE-SEAL",
   "R016-OSV-MISSING-DB-NEGATIVE",
@@ -34,11 +35,14 @@ const PASS_TOOL_NAMES = ["osv-scanner", "semgrep-ce", "go-toolchain"];
 const PASS_INPUT_NAMES = [
   "controlPlane",
   "configuration",
+  "repositoryUse",
   "pnpm",
   "go",
   "semgrepSources",
   "semgrepRules",
 ];
+const HEDEFORA_REPOSITORY_ID = 1_349_011_765;
+const HEDEFORA_REPOSITORY_FULL_NAME = "tahackr5/HedefOra-V1";
 const PASS_REQUIRED_PROCESS_IDS = [
   "PROCESS-GIT-TOP-LEVEL",
   "PROCESS-GIT-DIRECTORY",
@@ -86,6 +90,122 @@ const PASS_REQUIRED_PROCESS_IDS = [
   "PROCESS-GIT-INDEX-FINAL",
   "PROCESS-GIT-INDEX-FLAGS-FINAL",
 ];
+
+export function validateRepositoryUseBoundary(boundary) {
+  requireRecord(boundary, "Semgrep repository use boundary");
+  assertExactObjectKeys(
+    boundary,
+    [
+      "repository",
+      "purpose",
+      "targetRelation",
+      "forkPullRequests",
+      "externalRepositoryScanning",
+      "scanningAsAService",
+      "ruleDistribution",
+      "ruleContentPersistence",
+    ],
+    "Semgrep repository use boundary",
+  );
+  requireRecord(boundary.repository, "Semgrep repository use identity");
+  assertExactObjectKeys(
+    boundary.repository,
+    ["id", "fullName", "allowedVisibilities"],
+    "Semgrep repository use identity",
+  );
+  if (
+    boundary.repository.id !== HEDEFORA_REPOSITORY_ID ||
+    boundary.repository.fullName !== HEDEFORA_REPOSITORY_FULL_NAME ||
+    canonicalJson(boundary.repository.allowedVisibilities) !==
+      canonicalJson(["private", "public"]) ||
+    boundary.purpose !== "owner-controlled-internal-ci" ||
+    boundary.targetRelation !== "same-repository-only" ||
+    boundary.forkPullRequests !== "reject-before-acquisition" ||
+    boundary.externalRepositoryScanning !== "prohibited" ||
+    boundary.scanningAsAService !== "prohibited" ||
+    boundary.ruleDistribution !== "prohibited" ||
+    boundary.ruleContentPersistence !== "ephemeral-temp-only"
+  ) {
+    throw new ContractError(
+      "Semgrep repository use boundary differs from the owner-controlled first-party contract",
+    );
+  }
+  return true;
+}
+
+export function validateRepositoryUseContext(context, boundary, githubActions) {
+  validateRepositoryUseBoundary(boundary);
+  requireRecord(context, "repository use context");
+  assertExactObjectKeys(
+    context,
+    ["authority", "visibilityProof", "eventName", "base", "target", "relation"],
+    "repository use context",
+  );
+  requireRecord(context.base, "repository use base");
+  requireRecord(context.target, "repository use target");
+  assertExactObjectKeys(
+    context.base,
+    ["repositoryId", "repositoryFullName", "visibility"],
+    "repository use base",
+  );
+  assertExactObjectKeys(
+    context.target,
+    ["repositoryId", "repositoryFullName", "visibility", "fork"],
+    "repository use target",
+  );
+  const expected = boundary.repository;
+  for (const [identity, label] of [
+    [context.base, "base"],
+    [context.target, "target"],
+  ]) {
+    if (
+      identity.repositoryId !== expected.id ||
+      identity.repositoryFullName !== expected.fullName ||
+      !expected.allowedVisibilities.includes(identity.visibility)
+    ) {
+      throw new ContractError(
+        `R-016 ${label} repository identity or visibility is outside the locked first-party boundary`,
+      );
+    }
+  }
+  if (
+    context.base.visibility !== context.target.visibility ||
+    context.target.fork !== false ||
+    context.relation !== "same-repository"
+  ) {
+    throw new ContractError(
+      "R-016 target must be a non-fork source in the same HedefOra repository",
+    );
+  }
+  if (context.authority === "github-event") {
+    if (
+      context.visibilityProof !== true ||
+      !["push", "pull_request_target"].includes(context.eventName) ||
+      githubActions !== "true"
+    ) {
+      throw new ContractError(
+        "hosted repository use context requires a GitHub event visibility proof",
+      );
+    }
+  } else if (
+    context.authority !== "local-declaration" ||
+    context.visibilityProof !== false ||
+    context.eventName !== "local" ||
+    githubActions === "true"
+  ) {
+    throw new ContractError(
+      "local repository use context must remain an untrusted local declaration",
+    );
+  }
+  return {
+    authority: context.authority,
+    visibilityProof: context.visibilityProof,
+    eventName: context.eventName,
+    base: { ...context.base },
+    target: { ...context.target },
+    relation: context.relation,
+  };
+}
 const SPLIT_CONTROL_SOURCE_PROCESS_IDS = [
   "PROCESS-GIT-CONTROL-TOP-LEVEL",
   "PROCESS-GIT-CONTROL-DIRECTORY",
@@ -133,6 +253,7 @@ const CONTROL_PROTECTED_EXACT_PATHS = new Set([
   "security/osv-scanner.toml",
   "security/r016-evidence.schema.json",
   ".github/workflows/ci.yml",
+  ".github/workflows/codeql.yml",
   ".github/workflows/r016-trusted-pr.yml",
 ]);
 const CONTROL_PROTECTED_PREFIXES = Object.freeze([
@@ -448,7 +569,7 @@ export function validateEvidenceDocument(
 ) {
   requireRecord(evidence, "evidence");
   if (schema !== undefined) validateEvidenceAgainstSchema(evidence, schema);
-  if (evidence.schemaVersion !== 1 || evidence.gateId !== "R-016") {
+  if (evidence.schemaVersion !== 2 || evidence.gateId !== "R-016") {
     throw new ContractError("evidence schema/gate identity is invalid");
   }
   for (const name of ["runId", "status", "startedAt", "finishedAt"]) {
@@ -961,7 +1082,11 @@ function validatePassEvidence(evidence, checkIds, validationContext) {
     PASS_INPUT_NAMES,
     "PASS evidence inputs",
   );
-  validatePassInputs(evidence.inputs, trusted);
+  validatePassInputs(
+    evidence.inputs,
+    trusted,
+    evidence.environment.runner?.GITHUB_ACTIONS,
+  );
   validateRequiredProcessChecks(processChecks, evidence, trusted);
   assertExactObjectKeys(evidence.tools, PASS_TOOL_NAMES, "PASS evidence tools");
   for (const name of PASS_TOOL_NAMES) {
@@ -2107,7 +2232,7 @@ function expectedDockerRunContract(id, evidence, configuration, temporaryRoot) {
   );
 }
 
-function validatePassInputs(inputs, trusted) {
+function validatePassInputs(inputs, trusted, githubActions) {
   validateControlPlaneEvidence(inputs.controlPlane, trusted);
   requireRecord(inputs.configuration, "evidence.inputs.configuration");
   const configurationPaths = {
@@ -2149,6 +2274,20 @@ function validatePassInputs(inputs, trusted) {
   ) {
     throw new ContractError(
       "PASS evidence configuration input identities differ from trusted bytes",
+    );
+  }
+  validateRepositoryUseContext(
+    inputs.repositoryUse,
+    trusted.configuration.scanners.semgrepRules.useBoundary,
+    githubActions,
+  );
+  if (
+    trusted.repositoryUseSeal !== undefined &&
+    canonicalJson(inputs.repositoryUse) !==
+      canonicalJson(trusted.repositoryUseSeal)
+  ) {
+    throw new ContractError(
+      "PASS evidence repository use context differs from the opening seal",
     );
   }
   requireRecord(inputs.pnpm, "evidence.inputs.pnpm");
@@ -3645,6 +3784,14 @@ function validateTerminalSemantics(
 ) {
   validateExactTerminalShapes(evidence, terminalById);
   validateExecutionEnvironmentSemantics(evidence, processById, trusted);
+  if (
+    canonicalJson(terminalById.get("R016-REPOSITORY-USE")?.context) !==
+    canonicalJson(evidence.inputs.repositoryUse)
+  ) {
+    throw new ContractError(
+      "PASS evidence repository use terminal is inconsistent",
+    );
+  }
   const execution = terminalById.get("R016-EXECUTION-ENVIRONMENT");
   for (const field of ["runtime", "docker", "executables"]) {
     if (
@@ -3969,6 +4116,7 @@ function validateExactTerminalShapes(evidence, terminalById) {
     ...processReference,
   ];
   const shapes = {
+    "R016-REPOSITORY-USE": [...base, "context"],
     "R016-EXECUTION-ENVIRONMENT": [...base, "runtime", "docker", "executables"],
     "R016-OSV-MISSING-DB-NEGATIVE": processTerminal(),
     "R016-OSV-VULNERABILITY-CANARY": processTerminal(

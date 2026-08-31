@@ -21,7 +21,7 @@
     "rawArtifacts"
   ],
   "properties": {
-    "schemaVersion": { "const": 1 },
+    "schemaVersion": { "const": 2 },
     "gateId": { "const": "R-016" },
     "runId": { "type": "string", "minLength": 1 },
     "status": { "enum": ["PASS", "FAIL"] },
@@ -348,9 +348,9 @@
       "properties": {
         "path": { "$ref": "#/$defs/nonEmptyString" },
         "sha256": { "$ref": "#/$defs/sha256" },
-        "name": { "$ref": "#/$defs/nonEmptyString" },
-        "usage": { "$ref": "#/$defs/nonEmptyString" },
-        "publicDistribution": { "$ref": "#/$defs/nonEmptyString" }
+        "name": { "const": "Semgrep Rules License v1.0" },
+        "usage": { "const": "owner-controlled-internal-ci" },
+        "publicDistribution": { "const": "prohibited" }
       },
       "additionalProperties": false
     },
@@ -389,12 +389,74 @@
       },
       "additionalProperties": false
     },
+    "repositoryUseBase": {
+      "type": "object",
+      "required": ["repositoryId", "repositoryFullName", "visibility"],
+      "properties": {
+        "repositoryId": { "const": 1349011765 },
+        "repositoryFullName": { "const": "tahackr5/HedefOra-V1" },
+        "visibility": { "enum": ["private", "public"] }
+      },
+      "additionalProperties": false
+    },
+    "repositoryUseTarget": {
+      "type": "object",
+      "required": ["repositoryId", "repositoryFullName", "visibility", "fork"],
+      "properties": {
+        "repositoryId": { "const": 1349011765 },
+        "repositoryFullName": { "const": "tahackr5/HedefOra-V1" },
+        "visibility": { "enum": ["private", "public"] },
+        "fork": { "const": false }
+      },
+      "additionalProperties": false
+    },
+    "repositoryUse": {
+      "type": "object",
+      "required": [
+        "authority",
+        "visibilityProof",
+        "eventName",
+        "base",
+        "target",
+        "relation"
+      ],
+      "properties": {
+        "authority": { "enum": ["github-event", "local-declaration"] },
+        "visibilityProof": { "type": "boolean" },
+        "eventName": { "enum": ["push", "pull_request_target", "local"] },
+        "base": { "$ref": "#/$defs/repositoryUseBase" },
+        "target": { "$ref": "#/$defs/repositoryUseTarget" },
+        "relation": { "const": "same-repository" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "authority": { "const": "github-event" } },
+            "required": ["authority"]
+          },
+          "then": {
+            "properties": {
+              "visibilityProof": { "const": true },
+              "eventName": { "enum": ["push", "pull_request_target"] }
+            }
+          },
+          "else": {
+            "properties": {
+              "visibilityProof": { "const": false },
+              "eventName": { "const": "local" }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
     "passInputs": {
       "type": "object",
-      "minProperties": 6,
+      "minProperties": 7,
       "required": [
         "controlPlane",
         "configuration",
+        "repositoryUse",
         "pnpm",
         "go",
         "semgrepSources",
@@ -403,6 +465,7 @@
       "properties": {
         "controlPlane": { "$ref": "#/$defs/controlPlaneInput" },
         "configuration": { "$ref": "#/$defs/configurationInputs" },
+        "repositoryUse": { "$ref": "#/$defs/repositoryUse" },
         "pnpm": { "$ref": "#/$defs/pnpmInput" },
         "go": {
           "type": "array",

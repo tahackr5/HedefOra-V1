@@ -62,7 +62,7 @@ W000'ın buildable monorepo hedefi, W001 davranışını erkenden uygulama izni 
 
 ## ADR-0013 — Private GitHub planında telafi kapıları
 
-- Durum: `Accepted`
+- Durum: `Superseded by ADR-0015 / DEC-025`
 - Owner onayı: `2026-08-28`
 
 Repository private ve mevcut GitHub planında kalır. Bu planda doğrulanamayan CodeQL upload, Dependency Review ve branch/ruleset enforcement `BLOCKED_EXTERNAL` olarak raporlanır; skipped/failed hosted job hiçbir zaman `PASS` sayılmaz.
@@ -79,6 +79,20 @@ W001 runtime davranışından önce pinned OSS SAST ile all-scope dependency vul
 DEC-016 launch ön koşulu olarak yorumlanır; ikinci şifreli off-site repository kopyası ve sıfırdan recovery testi W001 başlangıcını engellemez. Bu kapılar W007 kapsamında ve en geç ilk gerçek kullanıcı, public launch veya production promotion öncesinde tamamlanır. W001 boyunca tek-independent-copy riski `R-001`, recovery belirsizliği `R-009` ve kanonik checkout riski `R-013` açık kalır.
 
 API/DB/event/job migration etkisi yoktur. Rollback, backup/recovery'yi yeniden W001 başlangıç blocker'ı yapmaktır.
+
+## ADR-0015 — Public repository ve owner-controlled R-016 kullanım sınırı
+
+- Durum: `Accepted`
+- Owner onayı: `2026-08-31`
+- Supersedes: `ADR-0013 / DEC-024`
+
+Repository geliştirme boyunca public kalır. Public görünürlük kaynak kodunu yayımlar; Semgrep Rules License v1.0 kapsamındaki upstream rule byte'larını yayımlama veya üçüncü taraflara scanning-as-a-service sunma yetkisi vermez. R-016 bu nedenle yalnız GitHub repository ID `1349011765` ve full name `tahackr5/HedefOra-V1` control/target için birlikte eşleştiğinde, `owner-controlled-internal-ci` amacıyla çalışır. Hosted GitHub event'i public/private görünürlüğü doğrulanmış authority olarak, yerel koşum ise yalnız `local-declaration` olarak kanıta yazar. Fork/foreign head checkout, scanner image pull, Semgrep rule fetch veya advisory acquisition başlamadan reddedilir. Rule byte'ları geçici run dizini dışında repository'ye veya uploaded artifact'e konmaz.
+
+GitHub CodeQL Default Setup ve Dependency Review desteklendiği sürece gerçek hosted gate olarak çalıştırılır; tracked Advanced CodeQL workflow'u Default Setup ile çakışmaması için kaldırılır. Hosted bir kontrol exact target üzerinde koşmadıysa sonucu `NOT_RUN`, dış nedenle kullanılamıyorsa `BLOCKED_EXTERNAL` kalır. Main branch için server-side branch protection/ruleset bulunmaması `R-014` residual riskidir ve owner-controlled exact-head, two-parent content-identical merge protokolünü zorunlu tutar.
+
+Etki: API, DB, event, job, kullanıcı verisi veya production migration etkisi yoktur. Güvenlik etkisi repository görünürlüğü ile supply-chain kullanım bağlamının kanonik ve makine doğrulanır hale gelmesidir. Maliyet etkisi mevcut GitHub public-repository özellikleri ve GitHub-hosted runner kullanımıyla sınırlıdır.
+
+Migration: DEC-024'ün private-only varsayımı, scanner lock/policy/evidence schema/runner/workflow ve W001 kanıtında public/private owner-repository sözleşmesine taşınır; exact yeni head tüm local/hosted/security/cold kapılardan yeniden geçer. Rollback: owner repository'yi private yapabilir; R-016 aynı owner repository kimliğiyle `private` görünürlüğü kanıtlar, hosted CodeQL/Dependency Review kullanılabilirliği yeniden doğrulanır ve kaybolan capability `BLOCKED_EXTERNAL` olarak geri açılır. Public veya private görünürlük değişimi exact-head kanıtını geriye dönük değiştirmez.
 
 ## Yeni ADR şablonu
 

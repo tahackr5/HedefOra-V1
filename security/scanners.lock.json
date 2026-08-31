@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "osvScanner": {
     "version": "2.5.1",
     "sourceCommit": "c84fa4568f2526d0333e9a914ea8a0a5f74ad68b",
@@ -37,8 +37,22 @@
       "path": "LICENSE",
       "sha256": "1a6466ae5f1c68631bbd13e3f1aa8f380d84219853c08f0456b853fccfacee1d",
       "name": "Semgrep Rules License v1.0",
-      "usage": "private-internal-ci-only",
-      "publicDistribution": "block-and-review"
+      "usage": "owner-controlled-internal-ci",
+      "publicDistribution": "prohibited"
+    },
+    "useBoundary": {
+      "repository": {
+        "id": 1349011765,
+        "fullName": "tahackr5/HedefOra-V1",
+        "allowedVisibilities": ["private", "public"]
+      },
+      "purpose": "owner-controlled-internal-ci",
+      "targetRelation": "same-repository-only",
+      "forkPullRequests": "reject-before-acquisition",
+      "externalRepositoryScanning": "prohibited",
+      "scanningAsAService": "prohibited",
+      "ruleDistribution": "prohibited",
+      "ruleContentPersistence": "ephemeral-temp-only"
     },
     "files": [
       {

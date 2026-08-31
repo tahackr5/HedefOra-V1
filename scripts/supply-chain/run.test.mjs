@@ -13,7 +13,11 @@ import {
   parseStrictJson,
   sha256Hex,
 } from "./policy.mjs";
-import { parseGitIndex } from "./contracts.mjs";
+import {
+  parseGitIndex,
+  validateRepositoryUseBoundary,
+  validateRepositoryUseContext,
+} from "./contracts.mjs";
 import {
   assertNetworkMountIsolation,
   assertOsvGoAdvisoryCanary,
@@ -36,6 +40,7 @@ import {
   parseTrustedExecutableArguments,
   prepareArtifactDirectories,
   removeContainerAndVerify,
+  repositoryUseContextFromEnvironment,
   runDocker,
   sanitizeDockerEnvironment,
   sanitizeGitEnvironment,
@@ -91,6 +96,10 @@ const trustedGitBinary = path.resolve(
 test("current R-016 policy and scanner lock satisfy the wrapper contract", () => {
   assert.equal(validateConfiguration(policy, scanners), true);
   assert.equal(
+    validateRepositoryUseBoundary(scanners.semgrepRules.useBoundary),
+    true,
+  );
+  assert.equal(
     validateNodeRuntimeVersion("v24.20.0", policy.runtime.nodeVersion),
     true,
   );
@@ -98,6 +107,124 @@ test("current R-016 policy and scanner lock satisfy the wrapper contract", () =>
     () => validateNodeRuntimeVersion("v24.19.0", policy.runtime.nodeVersion),
     /requires Node v24\.20\.0/u,
   );
+});
+
+test("repository use context accepts only first-party public/private sources", () => {
+  const boundary = scanners.semgrepRules.useBoundary;
+  const localContext = (visibility = "public") => ({
+    authority: "local-declaration",
+    visibilityProof: false,
+    eventName: "local",
+    base: {
+      repositoryId: 1_349_011_765,
+      repositoryFullName: "tahackr5/HedefOra-V1",
+      visibility,
+    },
+    target: {
+      repositoryId: 1_349_011_765,
+      repositoryFullName: "tahackr5/HedefOra-V1",
+      visibility,
+      fork: false,
+    },
+    relation: "same-repository",
+  });
+  assert.deepEqual(
+    validateRepositoryUseContext(localContext("public"), boundary, undefined),
+    localContext("public"),
+  );
+  assert.deepEqual(
+    validateRepositoryUseContext(localContext("private"), boundary, "false"),
+    localContext("private"),
+  );
+  const hosted = {
+    ...localContext("public"),
+    authority: "github-event",
+    visibilityProof: true,
+    eventName: "pull_request_target",
+  };
+  assert.deepEqual(
+    validateRepositoryUseContext(hosted, boundary, "true"),
+    hosted,
+  );
+
+  for (const [mutate, message] of [
+    [(value) => (value.target.repositoryId = 42), /identity or visibility/u],
+    [
+      (value) => (value.target.repositoryFullName = "attacker/fork"),
+      /identity or visibility/u,
+    ],
+    [
+      (value) => (value.target.visibility = "internal"),
+      /identity or visibility/u,
+    ],
+    [(value) => (value.target.fork = true), /non-fork source/u],
+    [(value) => (value.relation = "foreign-repository"), /non-fork source/u],
+    [
+      (value) => {
+        value.authority = "github-event";
+        value.visibilityProof = true;
+        value.eventName = "push";
+      },
+      /GitHub event visibility proof/u,
+    ],
+  ]) {
+    const invalid = localContext();
+    mutate(invalid);
+    assert.throws(
+      () => validateRepositoryUseContext(invalid, boundary, undefined),
+      message,
+    );
+  }
+});
+
+test("repository use environment parser preserves hosted proof provenance", () => {
+  const context = repositoryUseContextFromEnvironment({
+    R016_AUTHORITY: "github-event",
+    R016_VISIBILITY_PROOF: "true",
+    R016_EVENT_NAME: "push",
+    R016_BASE_REPOSITORY_ID: "1349011765",
+    R016_BASE_REPOSITORY_FULL_NAME: "tahackr5/HedefOra-V1",
+    R016_BASE_REPOSITORY_VISIBILITY: "public",
+    R016_TARGET_REPOSITORY_ID: "1349011765",
+    R016_TARGET_REPOSITORY_FULL_NAME: "tahackr5/HedefOra-V1",
+    R016_TARGET_REPOSITORY_VISIBILITY: "public",
+    R016_TARGET_REPOSITORY_FORK: "false",
+    R016_REPOSITORY_RELATION: "same-repository",
+  });
+  assert.equal(context.visibilityProof, true);
+  assert.equal(context.base.repositoryId, 1_349_011_765);
+  assert.equal(context.target.fork, false);
+  assert.throws(
+    () =>
+      repositoryUseContextFromEnvironment({
+        R016_AUTHORITY: "github-event",
+        R016_VISIBILITY_PROOF: "yes",
+      }),
+    /literal true or false/u,
+  );
+});
+
+test("repository use validation precedes every scanner and rule acquisition", async () => {
+  const source = await readFile(
+    path.join(repositoryRoot, "scripts", "supply-chain", "run.mjs"),
+    "utf8",
+  );
+  const runGateStart = source.indexOf("async function runGate(context, now)");
+  const runGateEnd = source.indexOf(
+    "\nasync function inspectSource",
+    runGateStart,
+  );
+  const runGate = source.slice(runGateStart, runGateEnd);
+  const boundaryOffset = runGate.indexOf("validateRepositoryUseContext(");
+  assert.ok(boundaryOffset >= 0);
+  for (const acquisition of [
+    "inspectExecutionEnvironment(context, configuration)",
+    "acquireImages(context, configuration)",
+    "acquireRules(context, configuration)",
+    "acquireDatabases(context, configuration, now)",
+  ]) {
+    assert.ok(boundaryOffset < runGate.indexOf(acquisition), acquisition);
+  }
 });
 
 test("CI R-016 step binds the exact checkout and hard-pinned trusted Node", async () => {
@@ -152,16 +279,53 @@ test("CI R-016 step binds the exact checkout and hard-pinned trusted Node", asyn
     workflow.indexOf("\n  dependency-review:\n"),
   );
   assert.match(supplyChainJob, /if: github\.event_name == 'push'/u);
+  assert.match(supplyChainJob, /needs: r016-source-boundary/u);
+  for (const expected of [
+    /R016_AUTHORITY: github-event/u,
+    /R016_VISIBILITY_PROOF: "true"/u,
+    /R016_EVENT_NAME: push/u,
+    /R016_BASE_REPOSITORY_ID: \$\{\{ github\.event\.repository\.id \}\}/u,
+    /R016_TARGET_REPOSITORY_FORK: "false"/u,
+  ]) {
+    assert.match(gateStep, expected);
+  }
   assert.doesNotMatch(supplyChainJob, /pnpm\/setup|node-version-file/u);
   assert.match(
     supplyChainJob,
     /- name: Upload R-016 evidence\n\s+if: always\(\)\n\s+uses: actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7\.0\.1\n\s+with:\n\s+name: r016-\$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}\n\s+path: \$\{\{ steps\.r016\.outputs\.artifact_path \}\}\n\s+if-no-files-found: error\n\s+retention-days: 7/u,
   );
+  const boundaryOffset = workflow.indexOf("  r016-source-boundary:\n");
+  const checkoutOffset = workflow.indexOf(
+    "      - name: Checkout exact source\n",
+  );
+  assert.ok(boundaryOffset >= 0 && boundaryOffset < checkoutOffset);
+  const boundaryJob = workflow.slice(
+    boundaryOffset,
+    workflow.indexOf("\n  quality:\n", boundaryOffset),
+  );
+  assert.match(boundaryJob, /permissions: \{\}/u);
+  assert.doesNotMatch(boundaryJob, /if: github\.event_name == 'push'/u);
+  assert.match(
+    boundaryJob,
+    /EVENT_REPOSITORY_ID.*github\.event\.repository\.id/u,
+  );
+  assert.match(boundaryJob, /EVENT_NAME: \$\{\{ github\.event_name \}\}/u);
+  assert.match(boundaryJob, /TARGET_REPOSITORY_FORK/u);
+  assert.match(boundaryJob, /"\$\{TARGET_REPOSITORY_FORK\}" == "false"/u);
+  assert.match(boundaryJob, /"1349011765"/u);
+  assert.match(boundaryJob, /"tahackr5\/HedefOra-V1"/u);
+  assert.doesNotMatch(boundaryJob, /actions\/checkout|docker|node /u);
   const qualityJob = workflow.slice(
     workflow.indexOf("  quality:\n"),
     workflow.indexOf("\n  supply-chain:\n"),
   );
+  assert.match(qualityJob, /needs: r016-source-boundary/u);
   assert.match(qualityJob, /run: pnpm ci:check/u);
+  const dependencyReviewJob = workflow.slice(
+    workflow.indexOf("  dependency-review:\n"),
+  );
+  assert.match(dependencyReviewJob, /needs: r016-source-boundary/u);
+  assert.match(dependencyReviewJob, /actions\/checkout/u);
   const packageDocument = parseStrictJson(
     await readFile(path.join(repositoryRoot, "package.json"), "utf8"),
     "package.json",
@@ -181,18 +345,45 @@ test("trusted PR gate keeps control code on the immutable base checkout", async 
   ).replaceAll("\r\n", "\n");
   assert.match(workflow, /\non:\n  pull_request_target:/u);
   assert.match(workflow, /permissions:\n  contents: read/u);
+  const boundaryOffset = workflow.indexOf("  source-boundary:\n");
+  const controlCheckoutOffset = workflow.indexOf(
+    "      - name: Checkout immutable trusted control plane\n",
+  );
+  assert.ok(boundaryOffset >= 0 && boundaryOffset < controlCheckoutOffset);
+  const boundaryJob = workflow.slice(
+    boundaryOffset,
+    workflow.indexOf("\n  supply-chain:\n", boundaryOffset),
+  );
+  assert.match(boundaryJob, /permissions: \{\}/u);
+  assert.match(boundaryJob, /TARGET_REPOSITORY_FORK/u);
+  assert.match(boundaryJob, /"1349011765"/u);
+  assert.match(boundaryJob, /"tahackr5\/HedefOra-V1"/u);
+  assert.doesNotMatch(boundaryJob, /actions\/checkout|docker|node /u);
+  assert.match(workflow, /needs: source-boundary/u);
   assert.match(
     workflow,
     /ref: \$\{\{ github\.event\.pull_request\.base\.sha \}\}\n\s+path: control/u,
   );
   assert.match(
     workflow,
-    /repository: \$\{\{ github\.event\.pull_request\.head\.repo\.full_name \}\}\n\s+ref: \$\{\{ github\.event\.pull_request\.head\.sha \}\}\n\s+path: target/u,
+    /repository: \$\{\{ github\.repository \}\}\n\s+ref: \$\{\{ github\.event\.pull_request\.head\.sha \}\}\n\s+path: target/u,
+  );
+  assert.doesNotMatch(
+    workflow,
+    /repository: \$\{\{ github\.event\.pull_request\.head\.repo\.full_name \}\}/u,
   );
   assert.match(
     workflow,
     /await import\(pathToFileURL\(process\.env\.CONTROL_RUNNER\)\.href\)/u,
   );
+  for (const expected of [
+    /R016_AUTHORITY: github-event/u,
+    /R016_VISIBILITY_PROOF: "true"/u,
+    /R016_EVENT_NAME: pull_request_target/u,
+    /R016_REPOSITORY_RELATION: same-repository/u,
+  ]) {
+    assert.match(workflow, expected);
+  }
   const importOffset = workflow.indexOf(
     "await import(pathToFileURL(process.env.CONTROL_RUNNER).href)",
   );
@@ -383,7 +574,7 @@ test("Git routing environment is minimal and source binding is exact", () => {
   );
 });
 
-test("target and trusted control roots are disjoint and protected Git objects stay exact", () => {
+test("target and trusted control roots are disjoint and protected Git objects stay exact", async () => {
   const targetRoot = path.resolve(repositoryRoot, "target-fixture");
   const controlRoot = path.resolve(repositoryRoot, "control-fixture");
   assert.equal(validateControlRootSeparation(targetRoot, targetRoot), true);
@@ -420,6 +611,7 @@ test("target and trusted control roots are disjoint and protected Git objects st
 
   const protectedPaths = [
     ".github/workflows/ci.yml",
+    ".github/workflows/codeql.yml",
     ".github/workflows/r016-trusted-pr.yml",
     "scripts/fixtures/supply-chain/go-license-denied.mod.txt",
     "scripts/fixtures/supply-chain/license-denied-pnpm-lock.yaml.txt",
@@ -452,6 +644,14 @@ test("target and trusted control roots are disjoint and protected Git objects st
   target.set("go.mod", entry("go.mod", "c".repeat(40)));
   target.set("apps/web/src/App.tsx", entry("apps/web/src/App.tsx"));
   assert.equal(isProtectedControlPath("scripts/supply-chain/run.mjs"), true);
+  assert.equal(isProtectedControlPath(".github/workflows/codeql.yml"), true);
+  await assert.rejects(
+    readFile(
+      path.join(repositoryRoot, ".github", "workflows", "codeql.yml"),
+      "utf8",
+    ),
+    /ENOENT/u,
+  );
   assert.equal(isProtectedControlPath("pnpm-lock.yaml"), false);
   assert.equal(
     validateProtectedControlPlane(target, control, true).entries.length,
@@ -650,6 +850,27 @@ test("wrong offline cache path and mutable image reference fail closed", () => {
   assert.throws(
     () => validateConfiguration(policy, mutableImage),
     /must end with its index digest/u,
+  );
+
+  const privateOnlyLicense = structuredClone(scanners);
+  privateOnlyLicense.semgrepRules.license.usage = "private-internal-ci-only";
+  assert.throws(
+    () => validateConfiguration(policy, privateOnlyLicense),
+    /no-distribution contract/u,
+  );
+
+  const foreignBoundary = structuredClone(scanners);
+  foreignBoundary.semgrepRules.useBoundary.repository.id = 42;
+  assert.throws(
+    () => validateConfiguration(policy, foreignBoundary),
+    /first-party contract/u,
+  );
+
+  const oldPolicy = structuredClone(policy);
+  oldPolicy.schemaVersion = 1;
+  assert.throws(
+    () => validateConfiguration(oldPolicy, scanners),
+    /schema\/gate identity/u,
   );
 });
 

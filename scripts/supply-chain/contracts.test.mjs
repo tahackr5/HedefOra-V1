@@ -258,6 +258,7 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     "R016-SAST-NEGATIVE": 1,
   };
   const terminalChecks = [
+    "R016-REPOSITORY-USE",
     "R016-EXECUTION-ENVIRONMENT",
     "R016-CONTROL-SOURCE-SEAL",
     "R016-OSV-MISSING-DB-NEGATIVE",
@@ -1251,6 +1252,7 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
       "security/osv-scanner.toml",
       "security/r016-evidence.schema.json",
       ".github/workflows/ci.yml",
+      ".github/workflows/codeql.yml",
       ".github/workflows/r016-trusted-pr.yml",
     ].includes(repositoryPath) ||
     [
@@ -1338,6 +1340,23 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
         ),
       },
       configuration: configurationInputs,
+      repositoryUse: {
+        authority: "local-declaration",
+        visibilityProof: false,
+        eventName: "local",
+        base: {
+          repositoryId: 1_349_011_765,
+          repositoryFullName: "tahackr5/HedefOra-V1",
+          visibility: "public",
+        },
+        target: {
+          repositoryId: 1_349_011_765,
+          repositoryFullName: "tahackr5/HedefOra-V1",
+          visibility: "public",
+          fork: false,
+        },
+        relation: "same-repository",
+      },
       go: goInputs,
       pnpm: pnpmInput,
       semgrepRules: {
@@ -1357,7 +1376,7 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     },
     rawArtifacts,
     runId: "fixture",
-    schemaVersion: 1,
+    schemaVersion: 2,
     source: {
       branch: "codex/w001-supply-chain-gates",
       expectedCheckoutSha: null,
@@ -1378,11 +1397,18 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
   };
   if (activeRunner.GITHUB_ACTIONS === "true") {
     golden.source.expectedCheckoutSha = golden.source.head;
+    golden.inputs.repositoryUse.authority = "github-event";
+    golden.inputs.repositoryUse.visibilityProof = true;
+    golden.inputs.repositoryUse.eventName = "push";
   }
   golden.controlSource = structuredClone(golden.source);
   for (const check of golden.checks) {
     if (check.command === "git") check.command = trustedGitPath;
   }
+  Object.assign(
+    golden.checks.find(({ id }) => id === "R016-REPOSITORY-USE"),
+    { context: structuredClone(golden.inputs.repositoryUse) },
+  );
   Object.assign(
     golden.checks.find(({ id }) => id === "R016-EXECUTION-ENVIRONMENT"),
     {
@@ -1722,6 +1748,7 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
         structuredClone(artifact),
       ]),
     ),
+    repositoryUseSeal: structuredClone(golden.inputs.repositoryUse),
     root: repositoryRoot,
     sourceSeal: structuredClone(golden.source),
     terminalSeals: new Map(
@@ -1804,6 +1831,58 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     return document;
   };
   assert.equal(validate(golden), true);
+
+  const legacyEvidence = structuredClone(golden);
+  legacyEvidence.schemaVersion = 1;
+  assert.throws(
+    () => validateCoSealed(legacyEvidence),
+    /schemaVersion|identity/u,
+  );
+
+  for (const [mutate, message] of [
+    [
+      (document) => (document.inputs.repositoryUse.target.repositoryId = 42),
+      /repository use|schema|boundary/u,
+    ],
+    [
+      (document) => (document.inputs.repositoryUse.target.fork = true),
+      /repository use|schema|non-fork/u,
+    ],
+    [
+      (document) =>
+        (document.inputs.repositoryUse.base.visibility = "internal"),
+      /repository use|schema|visibility/u,
+    ],
+    [
+      (document) =>
+        (document.inputs.repositoryUse.visibilityProof =
+          !document.inputs.repositoryUse.visibilityProof),
+      /repository use|schema|visibility proof|local declaration/u,
+    ],
+  ]) {
+    const invalid = structuredClone(golden);
+    mutate(invalid);
+    assert.throws(() => validateCoSealed(invalid), message);
+  }
+
+  const mismatchedRepositoryTerminal = structuredClone(golden);
+  mismatchedRepositoryTerminal.checks.find(
+    ({ id }) => id === "R016-REPOSITORY-USE",
+  ).context.target.visibility = "private";
+  assert.throws(
+    () => validateCoSealed(mismatchedRepositoryTerminal),
+    /repository use terminal|opening seal/u,
+  );
+
+  const unredactedRuleArtifact = structuredClone(golden);
+  unredactedRuleArtifact.rawArtifacts.find(
+    ({ processId, stream }) =>
+      processId.startsWith("PROCESS-RULE-BLOB-") && stream === "stdout",
+  ).redacted = false;
+  assert.throws(
+    () => validateCoSealed(unredactedRuleArtifact),
+    /tracked blob artifact|redacted|trusted raw artifact/u,
+  );
 
   const dockerManifestList = structuredClone(baseToolIndexDocument);
   dockerManifestList.mediaType = DOCKER_LIST_MEDIA_TYPE;
