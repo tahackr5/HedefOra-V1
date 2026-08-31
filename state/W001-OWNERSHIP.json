@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "22394594d53541351ae99b7d3f9ffa0d814163fe",
+  "verifiedThrough": "dbfa70715f5b684b34d743ecd05e2827fe8a60e9",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -452,6 +452,35 @@
         "state/RELEASE-LEDGER.md",
         "state/RISK-REGISTER.md",
         "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md"
+      ]
+    },
+    "W001-T04E-generator-checkpoint-promotion-seal": {
+      "base": "22394594d53541351ae99b7d3f9ffa0d814163fe",
+      "head": "f9dbf65c767d2f19a5381fff8607536239c3a4a9",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04D-api-runtime-foundation": {
+      "base": "f9dbf65c767d2f19a5381fff8607536239c3a4a9",
+      "head": "dbfa70715f5b684b34d743ecd05e2827fe8a60e9",
+      "allowedPaths": [
+        "cmd/hedefora/main.go",
+        "cmd/hedefora/main_test.go",
+        "internal/platform/app/api.go",
+        "internal/platform/app/api_test.go",
+        "internal/platform/config/api.go",
+        "internal/platform/config/api_test.go",
+        "internal/platform/health/service.go",
+        "internal/platform/health/service_test.go",
+        "internal/platform/http/handler.go",
+        "internal/platform/http/handler_test.go",
+        "internal/platform/http/server.go",
+        "internal/platform/http/server_test.go",
+        "internal/platform/telemetry/telemetry.go",
+        "internal/platform/telemetry/telemetry_test.go",
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "state/ACTIVE-WAVE.md",
         "state/W001-OWNERSHIP.md"
       ]
     }
