@@ -73,7 +73,7 @@
 - `.agents/skills/**/SKILL.md`
 - `plugins/**`
 
-## Aktif W001 supply-chain kapısı
+## Aktif W001 control-plane ve runtime foundation
 
 - `state/W001-OWNERSHIP.md` (W001 immutable-base yazma sahipliği ve görev DAG'ı)
 - `state/W001-OWNERSHIP.json` (W001 commit aralığı ve path allowlist kanıtı)
@@ -81,6 +81,9 @@
 - `security/**` (supply-chain policy, exact scanner/ruleset pinleri ve açık istisnalar)
 - `scripts/supply-chain/**` ve `scripts/fixtures/supply-chain/**`
 - `.github/workflows/ci.yml`
+- `contracts/openapi/**`, `architecture/API-AND-EVENT-CONTRACTS.md` ve `architecture/DATA-CONSISTENCY-AND-TRANSACTIONS.md`
+- `delivery/TOOLCHAIN-LOCK.md`, `delivery/TEST-STRATEGY.md` ve `delivery/QUALITY-GATES-AND-DOD.md`
+- `cmd/hedefora/**`, `internal/platform/**`, `db/migrations/**` ve `infra/**` (T04 ownership kaydına göre hedefli okunur)
 
 ## Kural
 

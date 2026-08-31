@@ -14,7 +14,7 @@ W001 runtime davranışından önce aşağıdaki telafi paketi zorunludur:
 
 CodeQL Default Setup ve Dependency Review kullanılabildiği sürece exact target üzerinde ayrıca çalışır; branch/ruleset enforcement ayrı doğrulanır. Yerel R-016 hiçbir hosted sonucu yeniden adlandırmaz. R-016 artifact'ındaki `github-context-claim` ve `visibilityProof=false` hosted kanıt değildir; hosted `PASS` authenticated GitHub run/job/artifact digest'i ile indirilen internal evidence SHA-256/source seal'i dışarıdan bağlanmadan verilemez.
 
-> 2026-08-31 geçiş notu: Aşağıdaki `9ec363c`/evidence v1 PASS kayıtları DEC-024 private-only bağlamının tarihsel kanıtıdır. Repository public olduktan sonra bu kayıtlar DEC-025 public use-boundary gate'ini karşılamaz. Evidence/schema v2 remediation exact head'i ve yeni local/hosted/security/cold sonuçları oluşana kadar current verdict `NOT_RUN`dır.
+> 2026-08-31 geçiş notu: Aşağıdaki `9ec363c`/evidence v1 PASS kayıtları DEC-024 private-only bağlamının tarihsel kanıtıdır ve current DEC-025 sonucunun yerine geçmez. Current public use-boundary verdict'i exact bootstrap head `ac637de`, merge `1dbc81b` ve aşağıdaki local/hosted evidence/schema v2 replay zincirinde `PASS`tir.
 
 ## Opening identity
 
@@ -22,6 +22,17 @@ CodeQL Default Setup ve Dependency Review kullanılabildiği sürece exact targe
 - Start tree: `7a2ae76ee31b6c85ec5b3839c78306cde2bd3f23`
 - Branch/worktree: `codex/w001-supply-chain-gates` / OneDrive dışı W001 worktree
 - External mutation: owner repository'yi public yaptı; preflight sırasında Dependency Graph/vulnerability alerts etkinleştirildi, Default CodeQL ile çakışan Advanced workflow GitHub ayarında `disabled_manually` yapıldı. VPS/SSH/Cloudflare/DNS untouched.
+
+## Trusted runtime checkpoint `1dbc81b`
+
+- PR #3 reviewed head `ac637de57d4f7c3a7f51c4933365f596e0b3817b`, tree `8e6973a69f8f9551a29c8f301d59961113cf4e70`; owner tarafından exact SHA ile onaylandı. Merge commit `1dbc81b57e4809ce7ba0f530cab946ee0540ea71`, ordered parents `bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b` + `ac637de...`; merge tree approved head ile content-identical. PR #3 GitHub state `MERGED`.
+- Pre-merge exact head local full-tree, public R-016, hosted CI/R-016 provenance, dört dilli CodeQL, final security ve fresh cold review `PASS`; release-blocking finding `0`. Bootstrap base trusted runner taşımadığı için PR trusted-base gate'i `NOT_RUN` kaldı.
+- Post-merge clean detached clone: exact Node `24.20.0`/pnpm `11.24.0` frozen install; repository `132/132`, web `3/3`, `%100` coverage, build ve audit; pinned Go `1.26.7`, Python `3.12.13`, actionlint, Gitleaks, Compose, W000 history, W001 `-merge-wrapper`, Git diff/status/fsck exit `0`.
+- Local R-016 run `20260831T031233883Z-23152-26b0ce37`: `PASS/0`; evidence SHA-256 `4719905fe860ca51a217d7c14051c9760b2c91e7a4bb344d43e0c29c600effb0`; DB seal `5e4001de9709bada5da22a5d637bc4fdfe6b4128fd3d1e172a19381f65ce4f52`. Independent replay: 340/340 raw, 170 process + 18 terminal, 34/34 cleanup, schema/error `0`, artifact Gitleaks temiz.
+- Hosted CI run `33352637930` attempt 1 `push/main`: source boundary `99368813059`, quality `99368829744`, R-016 `99368829653`, tüm step'ler `success`. Artifact `9744156010`; GitHub digest ve indirilen ZIP SHA-256 `13a192f983be2972d90ec47fb35b961fb2cd3e5105fcbcdc2b93ddaedbb50be1`; 342 safe entry.
+- Hosted evidence run `20260831T030446435Z-2164-0f7702c6`: evidence SHA-256 `ae5a6468fe2f09cf57a0483aaf5b882f4ce9a1b24d45e0caa1b7c8adef857975`; DB seal `f23efb4709eb555e58fc13cb0e78843e7991032bee076f60089d15d045eddb13`; 52 repository input, 188 check, 340/340 raw ve 34/34 cleanup yeniden doğrulandı.
+- CodeQL Default Setup run `33352636921`: Actions `99368812989`, JavaScript/TypeScript `99368813096`, Go `99368813151`, Python `99368813167`; dört analiz `success`, result count `0`, `main` açık alert `0`.
+- Residual: server-side branch/ruleset enforcement `R-014/BLOCKED_EXTERNAL`. Yeni runtime PR'ı trusted-base R-016 + Dependency Review + CodeQL ve ayrı exact-head owner merge onayı almadan ilerlemez. VPS/SSH/DNS/Cloudflare mutation yapılmadı.
 
 ## Gate state
 
@@ -35,12 +46,14 @@ CodeQL Default Setup ve Dependency Review kullanılabildiği sürece exact targe
 | Negative fixtures                       | PASS    | Missing DB `127`; npm unknown/development vulnerability, Go advisory, npm/Go denied/unknown license ve Semgrep canary'leri beklenen nonzero exit ile bloklandı |
 | Historical exact-target local/full-tree | PASS    | DEC-024/evidence v1 exact `9ec363c`: Node `126/126`, supply-chain `114/114`, web `3/3`; current remediation target yerine geçmez                               |
 | Quality evidence review                 | PASS    | Exact `9ec363c` / `1e57e62`; 187 check, 340 raw artifact, DB/source/control/process/terminal bağları; bloklayıcı bulgu yok                                     |
-| Security review                         | PASS    | Exact `9ec363c` / `1e57e62`; release-blocking bulgu yok; bir LOW future multi-module slug riski R-017 olarak izlendi                                           |
-| Cold review                             | PASS    | Fresh-context exact-tree verdict `PASS`; local blocker/finding yok; hosted/trusted-base sonuçları doğru biçimde ayrıldı                                        |
-| Public use-boundary evidence/schema v2  | FAIL    | Sealed `f435545` local R-016 `PASS`; hosted run `33348065572` branch merge-wrapper ve Linux temporary cleanup hatalarını fail-closed yakaladı. Yeni seal bekleniyor |
-| GitHub exact-head quality               | FAIL    | Run `33348065572`, exact `f435545`: source boundary `PASS`; quality tek-parent branch push'ında merge-wrapper istediği için, R-016 Linux cleanup nedeniyle `FAIL` |
-| Trusted-base PR gate                    | NOT_RUN | Wave-start base `.github/workflows/r016-trusted-pr.yml` ve trusted runner'ı taşımıyor; ilk control-plane bootstrap PR'ında hosted `PASS` iddia edilemez        |
-| Hosted security/enforcement             | FAIL    | `f435545` hosted CI fail-closed kaldı; current remediation exact head'i henüz yok. Default CodeQL ve authenticated hosted provenance yeni seal'de tekrarlanacak; branch/ruleset `BLOCKED_EXTERNAL` |
+| Security review                         | PASS    | Exact bootstrap head `ac637de` / tree `8e6973a`; final read-only verdict `PASS`, local finding ve release blocker `0`; R-014 residual ayrı tutuldu |
+| Cold review                             | PASS    | Fresh-context exact `ac637de` / tree `8e6973a` verdict `PASS`; runtime foundation tamamlandı iddiası yapılmadı |
+| Public use-boundary evidence/schema v2  | PASS    | Exact `ac637de` pre-merge ve content-identical `1dbc81b` post-merge local/hosted R-016; iki evidence replay 340/340 raw, 34/34 cleanup, schema v2 `PASS/0` |
+| GitHub exact-head/main quality           | PASS    | Pre-merge run `33349062559`; post-merge run `33352637930`, exact `1dbc81b`: source boundary, quality ve R-016 jobs `success` |
+| Bootstrap trusted-base PR gate          | NOT_RUN | Wave-start base trusted workflow/runner taşımıyordu; bu PR için hosted trusted `PASS` iddia edilmez ve geriye dönük yeniden adlandırılmaz |
+| Runtime trusted-base PR gate            | NOT_RUN | Yeni runtime target henüz push/PR olmadı; ilk runtime merge'ünden önce zorunlu |
+| Hosted CI/CodeQL/provenance              | PASS    | CI `33352637930`, CodeQL `33352636921`, artifact `9744156010`; authenticated run/job/workflow/artifact/evidence zinciri exact merge SHA'ya bağlandı |
+| Branch/ruleset enforcement              | BLOCKED_EXTERNAL | `R-014`; owner-controlled exact-head/two-parent protokolü server-side direct/force/delete koruması değildir |
 
 ## Public remediation implementation checkpoint
 

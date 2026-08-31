@@ -69,6 +69,18 @@
 - Resolution: DEC-025 / ADR-0015 public repository + owner-controlled internal R-016 sözleşmesini kabul eder; foreign repository head acquisition öncesi bloklanır, rule byte'ları dağıtılmaz, public/private görünürlük kanıta bağlanır ve exact yeni head yeniden doğrulanır.
 - Closed commit: `62c1f7d5201da56f240f3e04fc6f5969190320eb`
 
+### DQ-006 — W001 runtime task-phase base'i
+
+- Opened by / date: orchestrator + runtime scope review / 2026-08-31
+- Conflicting files/sections: `AGENTS.md` orkestrasyon kuralı, DEC-014 ve `state/W001-OWNERSHIP.md` original `WAVE_START_COMMIT` zorunluluğu; aynı ownership belgesindeki yeni-base runtime PR sözleşmesi; owner'ın son talimatı
+- Decision needed: W001 runtime writer'larını original `bde560f` üzerinden açıp trusted control plane'i kaybetmek ile post-merge doğrulanmış `1dbc81b` checkpoint'ini ortak immutable base yapmak arasındaki çelişkiyi çöz.
+- Options: W001'i durdurup yeni wave tanımlamak; original base'i kullanmak; veya wave start provenance'ını koruyup owner-onaylı ve full-tree doğrulanmış merge'i immutable task-phase checkpoint'i yapmak.
+- Security/privacy/cost/migration impact: Original base trusted PR/R-016 boundary'sini taşımaz. Kontrollü checkpoint security kontrolünü korur ve writer drift'ini artırmaz. API/DB/veri migration veya dış sistem maliyet etkisi yoktur.
+- Work that can continue safely: Read-only scope/dependency araştırması ve exact post-merge verification.
+- Blocking wave/gate: W001-T04 writer worktree'lerinin açılması.
+- Owner decision: `... yeni trusted base üzerinden runtime geliştirme aşamasına otonom olarak devam edin.` — 2026-08-31; exact merge ayrıca owner tarafından onaylandı.
+- Resolution: DEC-026 / ADR-0016 wave start'ı tarihsel provenance olarak korur; `1dbc81b57e4809ce7ba0f530cab946ee0540ea71` W001 runtime fazının tek immutable base'idir. Exact uygulama aralığı `state/W001-OWNERSHIP.json` içinde `W001-T04A-trusted-runtime-checkpoint` olarak mühürlenir.
+
 ## Open
 
 Açık karar yoktur.

@@ -94,6 +94,17 @@ Etki: API, DB, event, job, kullanıcı verisi veya production migration etkisi y
 
 Migration: DEC-024'ün private-only varsayımı, scanner lock/policy/evidence schema/runner/workflow ve W001 kanıtında public/private owner-repository sözleşmesine taşınır; exact yeni head tüm local/hosted/security/cold kapılardan yeniden geçer. Rollback sırasında public repository üzerinde eski workflow tree'sine ham revert yasaktır. Zorunlu sıra progression'ı durdurmak, owner onayıyla repository'yi private yapmak, exact ID/full-name/visibility ile hosted capability'leri yeniden doğrulamak ve ancak sonra reviewed revert PR değerlendirmektir; source boundary mümkünse private durumda da korunur. Kaybolan capability `BLOCKED_EXTERNAL` olarak geri açılır. Public veya private görünürlük değişimi exact-head kanıtını geriye dönük değiştirmez.
 
+## ADR-0016 — Wave içi immutable trusted checkpoint
+
+- Durum: `Accepted`
+- Owner onayı: `2026-08-31`
+
+DEC-014'ün amacı hareket eden bir integration `HEAD`'inden farklı writer tabanları açılmasını ve ownership drift'ini engellemektir. W001'in ilk base'i `bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b` trusted R-016 runner'ını taşımazken runtime PR'ının bu runner'ı taşıyan yeni base'i kullanması güvenlik sözleşmesidir. Owner, `ac637de57d4f7c3a7f51c4933365f596e0b3817b` head'inin exact two-parent, content-identical merge'ini ve runtime'ın yeni trusted base'ten sürmesini açıkça onayladı.
+
+Bu nedenle wave start SHA/tree tarihsel provenance olarak değişmez; fakat yeni bir task fazı yalnız şu koşullarla ileri checkpoint açabilir: exact owner onayı, iki parent'lı content-identical merge, uzak `main` parent/tree doğrulaması, yerel ve hosted full-tree/R-016 `PASS`, mevcut hosted security gate'leri ve kayıtlı residual riskler. Fazdaki bütün writer'lar tek checkpoint'ten açılır; moving `HEAD`, farklı base veya unsealed branch kullanılamaz. W001 runtime checkpoint'i `1dbc81b57e4809ce7ba0f530cab946ee0540ea71`, tree `8e6973a69f8f9551a29c8f301d59961113cf4e70`'dir.
+
+API/DB/event/job davranışı veya veri migration'ı bu kararla değişmez. Rollback, runtime branch/worktree'lerini terk edip trusted `main` checkpoint'ini korumaktır; public repository'de control-plane tree'sine ham revert ADR-0015 gereği yasaktır. Yeni runtime exact head'i ayrı owner merge onayı ve trusted-base PR gate'i almadan `main`e giremez.
+
 ## Yeni ADR şablonu
 
 `templates/ADR.md` kullanılır. Yeni karar burada yalnız tek satır özetle indekslenir.
