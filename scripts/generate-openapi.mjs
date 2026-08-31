@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import { constants as fileConstants } from "node:fs";
 import {
-  chmod,
   lstat,
   mkdir,
   open,
@@ -123,6 +122,8 @@ export async function checkGeneratedArtifact(root = repositoryRoot) {
     root,
     generatedArtifactRelativePath,
     "OUTPUT_BOUNDARY_INVALID",
+    maximumGeneratedBytes,
+    "OUTPUT_LIMIT_EXCEEDED",
   );
   if (!actual.equals(expected.bytes)) {
     throw new GeneratorError(
@@ -146,6 +147,8 @@ export async function writeGeneratedArtifact(root = repositoryRoot) {
   const current = await readOptionalExactRegularFile(
     root,
     generatedArtifactRelativePath,
+    maximumGeneratedBytes,
+    "OUTPUT_LIMIT_EXCEEDED",
   );
   if (current?.equals(expected.bytes)) {
     return Object.freeze({ ...expected, changed: false });
@@ -155,6 +158,7 @@ export async function writeGeneratedArtifact(root = repositoryRoot) {
   await assertPathMissing(temporaryPath, "OUTPUT_BOUNDARY_INVALID");
 
   let temporaryCreated = false;
+  let temporaryIdentity;
   try {
     const handle = await open(
       temporaryPath,
@@ -166,17 +170,30 @@ export async function writeGeneratedArtifact(root = repositoryRoot) {
     );
     temporaryCreated = true;
     try {
+      const createdStats = await handle.stat();
+      if (!createdStats.isFile() || createdStats.nlink !== 1) {
+        throw new GeneratorError(
+          "OUTPUT_BOUNDARY_INVALID",
+          "the temporary artifact is not regular and single-linked",
+        );
+      }
+      temporaryIdentity = Object.freeze({
+        dev: createdStats.dev,
+        ino: createdStats.ino,
+      });
       await handle.writeFile(expected.bytes);
+      await handle.chmod(0o644);
       await handle.sync();
     } finally {
       await handle.close();
     }
-    await chmod(temporaryPath, 0o644);
 
     const staged = await readExactRegularPath(
       root,
       temporaryPath,
       "OUTPUT_BOUNDARY_INVALID",
+      maximumGeneratedBytes,
+      "OUTPUT_LIMIT_EXCEEDED",
     );
     if (!staged.equals(expected.bytes)) {
       throw new GeneratorError(
@@ -184,6 +201,12 @@ export async function writeGeneratedArtifact(root = repositoryRoot) {
         "the staged generated artifact failed byte verification",
       );
     }
+    await assertExactFileIdentity(
+      root,
+      temporaryPath,
+      temporaryIdentity,
+      "OUTPUT_BOUNDARY_INVALID",
+    );
 
     try {
       await rename(temporaryPath, targetPath);
@@ -199,6 +222,8 @@ export async function writeGeneratedArtifact(root = repositoryRoot) {
       root,
       generatedArtifactRelativePath,
       "OUTPUT_BOUNDARY_INVALID",
+      maximumGeneratedBytes,
+      "OUTPUT_LIMIT_EXCEEDED",
     );
     if (!written.equals(expected.bytes)) {
       throw new GeneratorError(
@@ -210,7 +235,11 @@ export async function writeGeneratedArtifact(root = repositoryRoot) {
     return Object.freeze({ ...expected, changed: true });
   } finally {
     if (temporaryCreated) {
-      await rm(temporaryPath, { force: true });
+      await removeExactTemporaryArtifact(
+        root,
+        temporaryPath,
+        temporaryIdentity,
+      );
     }
   }
 }
@@ -220,6 +249,8 @@ async function readCanonicalContract(root) {
     root,
     canonicalContractRelativePath,
     "INPUT_BOUNDARY_INVALID",
+    maximumContractBytes,
+    "SOURCE_SIZE_INVALID",
   );
 }
 
@@ -543,13 +574,30 @@ async function inspectRepositoryRoot(root) {
   return resolved;
 }
 
-async function readExactRegularFile(root, relativePath, errorCode) {
+async function readExactRegularFile(
+  root,
+  relativePath,
+  errorCode,
+  maximumBytes,
+  sizeErrorCode,
+) {
   const canonicalRoot = await inspectRepositoryRoot(root);
   const target = resolveRelative(canonicalRoot, relativePath, errorCode);
-  return readExactRegularPath(canonicalRoot, target, errorCode);
+  return readExactRegularPath(
+    canonicalRoot,
+    target,
+    errorCode,
+    maximumBytes,
+    sizeErrorCode,
+  );
 }
 
-async function readOptionalExactRegularFile(root, relativePath) {
+async function readOptionalExactRegularFile(
+  root,
+  relativePath,
+  maximumBytes,
+  sizeErrorCode,
+) {
   const canonicalRoot = await inspectRepositoryRoot(root);
   const target = resolveRelative(
     canonicalRoot,
@@ -565,10 +613,28 @@ async function readOptionalExactRegularFile(root, relativePath) {
       "the generated artifact could not be inspected",
     );
   }
-  return readExactRegularPath(canonicalRoot, target, "OUTPUT_BOUNDARY_INVALID");
+  return readExactRegularPath(
+    canonicalRoot,
+    target,
+    "OUTPUT_BOUNDARY_INVALID",
+    maximumBytes,
+    sizeErrorCode,
+  );
 }
 
-async function readExactRegularPath(root, target, errorCode) {
+async function readExactRegularPath(
+  root,
+  target,
+  errorCode,
+  maximumBytes,
+  sizeErrorCode,
+) {
+  if (!Number.isSafeInteger(maximumBytes) || maximumBytes < 0) {
+    throw new GeneratorError(
+      "INTERNAL_PROFILE_INVALID",
+      "a filesystem read limit is not a safe non-negative integer",
+    );
+  }
   assertContained(root, target, errorCode);
   let pathStats;
   try {
@@ -586,6 +652,7 @@ async function readExactRegularPath(root, target, errorCode) {
       "the required file must be regular, non-link and single-linked",
     );
   }
+  assertFileSizeWithinLimit(pathStats, maximumBytes, sizeErrorCode);
   await assertResolvedPath(target, target, errorCode);
 
   let handle;
@@ -601,6 +668,7 @@ async function readExactRegularPath(root, target, errorCode) {
         "the opened file is not regular and single-linked",
       );
     }
+    assertFileSizeWithinLimit(handleStats, maximumBytes, sizeErrorCode);
     if (
       handleStats.dev !== pathStats.dev ||
       handleStats.ino !== pathStats.ino ||
@@ -611,12 +679,114 @@ async function readExactRegularPath(root, target, errorCode) {
         "the required file changed while it was inspected",
       );
     }
-    return await handle.readFile();
+    const bytes = await readBoundedFile(handle, maximumBytes, sizeErrorCode);
+    const finalStats = await handle.stat();
+    if (
+      finalStats.dev !== handleStats.dev ||
+      finalStats.ino !== handleStats.ino ||
+      finalStats.size !== handleStats.size ||
+      bytes.length !== handleStats.size
+    ) {
+      throw new GeneratorError(
+        errorCode,
+        "the required file changed while it was read",
+      );
+    }
+    return bytes;
   } catch (error) {
     if (error instanceof GeneratorError) throw error;
     throw new GeneratorError(errorCode, "the required file could not be read");
   } finally {
     await handle?.close();
+  }
+}
+
+function assertFileSizeWithinLimit(stats, maximumBytes, sizeErrorCode) {
+  if (stats.size > maximumBytes) {
+    throw new GeneratorError(
+      sizeErrorCode,
+      "the required file exceeds its fixed byte limit",
+    );
+  }
+}
+
+async function readBoundedFile(handle, maximumBytes, sizeErrorCode) {
+  const buffer = Buffer.allocUnsafe(maximumBytes + 1);
+  let offset = 0;
+  while (offset < buffer.length) {
+    const { bytesRead } = await handle.read(
+      buffer,
+      offset,
+      buffer.length - offset,
+      null,
+    );
+    if (bytesRead === 0) break;
+    offset += bytesRead;
+  }
+  if (offset > maximumBytes) {
+    throw new GeneratorError(
+      sizeErrorCode,
+      "the required file grew beyond its fixed byte limit",
+    );
+  }
+  return Buffer.from(buffer.subarray(0, offset));
+}
+
+async function assertExactFileIdentity(root, target, identity, errorCode) {
+  if (identity === undefined) {
+    throw new GeneratorError(
+      errorCode,
+      "the temporary artifact identity was not recorded",
+    );
+  }
+  assertContained(root, target, errorCode);
+  let stats;
+  try {
+    stats = await lstat(target);
+  } catch {
+    throw new GeneratorError(
+      errorCode,
+      "the temporary artifact could not be inspected",
+    );
+  }
+  if (
+    stats.isSymbolicLink() ||
+    !stats.isFile() ||
+    stats.nlink !== 1 ||
+    stats.dev !== identity.dev ||
+    stats.ino !== identity.ino
+  ) {
+    throw new GeneratorError(
+      errorCode,
+      "the temporary artifact identity changed",
+    );
+  }
+  await assertResolvedPath(target, target, errorCode);
+}
+
+async function removeExactTemporaryArtifact(root, target, identity) {
+  try {
+    await lstat(target);
+  } catch (error) {
+    if (error?.code === "ENOENT") return;
+    throw new GeneratorError(
+      "OUTPUT_BOUNDARY_INVALID",
+      "the temporary artifact could not be inspected for cleanup",
+    );
+  }
+  await assertExactFileIdentity(
+    root,
+    target,
+    identity,
+    "OUTPUT_BOUNDARY_INVALID",
+  );
+  try {
+    await rm(target);
+  } catch {
+    throw new GeneratorError(
+      "OUTPUT_BOUNDARY_INVALID",
+      "the exact temporary artifact could not be removed",
+    );
   }
 }
 

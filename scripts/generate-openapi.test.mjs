@@ -123,6 +123,46 @@ test("encoding and resource limits reject before generation", () => {
   }
 });
 
+test("filesystem reads enforce source and output byte limits before mutation", async () => {
+  const oversizedSourceRoot = await createFixtureRepository(
+    Buffer.alloc(64 * 1024 + 1, 0x61),
+  );
+  const oversizedOutputRoot = await createFixtureRepository();
+  try {
+    await assert.rejects(
+      writeGeneratedArtifact(oversizedSourceRoot),
+      (error) =>
+        error instanceof GeneratorError && error.code === "SOURCE_SIZE_INVALID",
+    );
+    await assert.rejects(
+      readdir(path.join(oversizedSourceRoot, "internal")),
+      (error) => error?.code === "ENOENT",
+    );
+
+    await writeGeneratedArtifact(oversizedOutputRoot);
+    const artifactPath = fixturePath(
+      oversizedOutputRoot,
+      generatedArtifactRelativePath,
+    );
+    const oversizedOutput = Buffer.alloc(32 * 1024 + 1, 0x62);
+    await writeFile(artifactPath, oversizedOutput);
+    const beforeDigest = sha256(await readFile(artifactPath));
+
+    for (const operation of [checkGeneratedArtifact, writeGeneratedArtifact]) {
+      await assert.rejects(
+        operation(oversizedOutputRoot),
+        (error) =>
+          error instanceof GeneratorError &&
+          error.code === "OUTPUT_LIMIT_EXCEEDED",
+      );
+      assert.equal(sha256(await readFile(artifactPath)), beforeDigest);
+    }
+  } finally {
+    await rm(oversizedSourceRoot, { recursive: true, force: true });
+    await rm(oversizedOutputRoot, { recursive: true, force: true });
+  }
+});
+
 test("CLI accepts only one fixed mode and exposes no path override", () => {
   assert.equal(parseGeneratorMode(["--check"]), "--check");
   assert.equal(parseGeneratorMode(["--write"]), "--write");
