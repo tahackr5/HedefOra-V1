@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "0bbea9532ebf3b76d27e5dd9e7be9abaf3e7e3e2",
+  "verifiedThrough": "22394594d53541351ae99b7d3f9ffa0d814163fe",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -437,6 +437,22 @@
       "allowedPaths": [
         "scripts/generate-openapi.mjs",
         "scripts/generate-openapi.test.mjs"
+      ]
+    },
+    "W001-T04E-bounded-filesystem-read-remediation-seal": {
+      "base": "0bbea9532ebf3b76d27e5dd9e7be9abaf3e7e3e2",
+      "head": "959e128ea5fd0191b4283293fbe49f2a854b0aa6",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04E-generator-checkpoint-promotion": {
+      "base": "959e128ea5fd0191b4283293fbe49f2a854b0aa6",
+      "head": "22394594d53541351ae99b7d3f9ffa0d814163fe",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md"
       ]
     }
   }
