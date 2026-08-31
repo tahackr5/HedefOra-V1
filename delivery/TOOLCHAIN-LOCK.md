@@ -42,6 +42,8 @@ R-016 scanner ve rule ayrıntılarının makine-okunur source of truth'u `securi
 
 Redis, ikinci broker, frontend framework/router, global client-state kütüphanesi, Axios, Go web framework'ü, ORM ve `sqlc` W000'a eklenmez. Gerçek ihtiyaç ve ayrı dependency değerlendirmesi olmadan eklenemez.
 
+W001 DEC-027 exact-health Go yolu planned `oapi-codegen`, runtime veya middleware pinlerini aktive etmez. Repository-owned `scripts/generate-openapi.mjs` yalnız pinned Node `24.20.0` standard library ile exact sealed source'tan tek Go artifact üretir; yeni npm/Go dependency veya lockfile değişikliği yoktur. Bu renderer genel çözüm değildir ve ikinci operation'da genişletilemez.
+
 ## Production dependency değerlendirmesi
 
 W000 ürün runtime'ına yalnız React ve React DOM ekler:
@@ -58,6 +60,7 @@ Spectral, Vite, TypeScript, lint, format ve test paketleri development-only'dir.
 - River `0.45.0` — MPL-2.0 ve pre-1.0; tüm River modülleri aynı sürümde, migration/retry/rollback kanıtıyla tutulur.
 - oapi-codegen `2.8.0` — Apache-2.0 ve Go 1.26.7 compatibility probe'u başarılıdır; fakat official GHSA-9c2f-gr95-7wqw `HEAD` dahil etkilenmiş, patched version boş durumdadır. Exact tag source'u `x-go-type-import.name` değerini generated import'a doğrulamadan taşır. Generator, runtime ve public health slice admission'ı fail-closed blokludur; recursive extension lint yalnız defense-in-depth'tir. Patched sürüm yeniden doğrulanmadan dependency/Go tool directive eklenmez.
 - oapi-codegen runtime/middleware — Apache-2.0; generator admission'ından bağımsız compatibility PASS dependency ekleme yetkisi değildir. Generator ve runtime birlikte yükseltilir, transitive `kin-openapi` keyfî override edilmez.
+- DEC-027 local sealed renderer — repository-owned ve zero-dependency'dir; yalnız exact `/health/live` source digest'ini kabul eder. Yeni parser/template dependency'si, spec-derived code interpolation veya scope genişlemesi ayrı production/supply-chain ve security compiler admission'ı ister.
 - `openapi-fetch 0.17.0` — MIT ve pre-1.0; ince local adapter arkasında izole edilir.
 
 Bu kayıt ekleme izni değildir; W001 task'ı gerçek producer/consumer, lisans, SBOM, vulnerability ve rollback kanıtını yeniden doğrular.

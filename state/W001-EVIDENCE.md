@@ -49,6 +49,13 @@ CodeQL Default Setup ve Dependency Review kullanılabildiği sürece exact targe
 - Final read-only security re-review, staged code snapshot `379ac5c07994d1113630e773cdff74cc69b8ea81`, `.spectral.yaml` blob `3e3143e2dc46ca36cccbab185ae3562fde9ff39c` ve mutation corpus blob `6576b39f71900b002ee8df91d835e55ddf92e49c` için contract-only `PASS` verdi. İlk incelemedeki iki LOW bulgu — external server origin ve RequestId ek keyword/`x-go-type` drift'i — üç bağımsız in-memory probeda kendi exact kuralıyla exit `1` üreterek kapandı; yeni finding `0`. Reviewer Node `24.20.0` full-CI kanıtını orchestrator kanıtı olarak tuttu ve repository/index/ref'i değiştirmedi.
 - Bu contract-only preflight generated parity veya runtime PASS değildir. Runtime merge/push/PR gate'i ve public endpoint `BLOCKED_EXTERNAL` kalır; final read-only security snapshot review'u ayrı kaydedilir. VPS/SSH/DNS/Cloudflare mutation yapılmadı.
 
+### T04E exact-health sealed renderer — IN_PROGRESS
+
+- Owner 2026-08-31'de upstream patch beklemek yerine affected `oapi-codegen` hiç kullanılmadan güvenlik-kritik local generator stratejisini açıkça onayladı. DQ-007, DEC-027/ADR-0017 ile exact-health-only, zero-dependency ve tek-output sealed renderer olarak çözüldü.
+- Canonical input `contracts/openapi/openapi.yaml`: LF-only `5604` byte, SHA-256 `5d157cd1d6627d781030212454ceaa075e994cdfa22a6f1f1929d26265af85ab`. Planned output yalnız `internal/generated/openapi/openapi.gen.go`; spec kaynaklı identifier/import/path/template interpolation yasaktır.
+- Design-level architecture/security verdict koşullu `GO`'dur. Implementation, malicious corpus, deterministic/fresh-process parity, output symlink/inventory/drift, exact Go ve full-tree kapıları henüz `NOT_RUN`; bu kayıt runtime veya generated parity `PASS` iddiası değildir.
+- `oapi-codegen`, runtime ve nethttp middleware manifest/lock/tool directive'ine eklenmedi ve çağrılmayacaktır. TypeScript consumer parity ayrı task/gate'tir. VPS/SSH/DNS/Cloudflare mutation yoktur.
+
 | Gate                                    | Status           | Evidence                                                                                                                                                       |
 | --------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Wave opening identity/ownership         | PASS             | Kesintisiz ownership `bde560f` → verified implementation `37543b1`; manifest-only trailing seal `9ec363c`; pinned Go 1.26.7 repolint exit `0`                  |

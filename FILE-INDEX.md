@@ -82,6 +82,7 @@
 - `scripts/supply-chain/**` ve `scripts/fixtures/supply-chain/**`
 - `.github/workflows/ci.yml`
 - `contracts/openapi/**`, `architecture/API-AND-EVENT-CONTRACTS.md` ve `architecture/DATA-CONSISTENCY-AND-TRANSACTIONS.md`
+- `scripts/generate-openapi.mjs`, generator negative tests ve `internal/generated/openapi/openapi.gen.go` (DEC-027 exact-health sealed compiler boundary)
 - `delivery/TOOLCHAIN-LOCK.md`, `delivery/TEST-STRATEGY.md` ve `delivery/QUALITY-GATES-AND-DOD.md`
 - `cmd/hedefora/**`, `internal/platform/**`, `db/migrations/**` ve `infra/**` (T04 ownership kaydına göre hedefli okunur)
 

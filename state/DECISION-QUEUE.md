@@ -92,8 +92,9 @@
 - Security/privacy/cost/migration impact: v2.8.0, saldırgan kontrollü x-go-type-import.name üzerinden generated package compile/test aşamasında code execution üretebilir. Local generator yeni security-critical compiler/TCB ve bakım yükü yaratır. API additive contract taslağı dışında DB/veri migration etkisi yoktur.
 - Work that can continue safely: canonical OpenAPI/Spectral fail-closed preflight incelemesi; exact upstream advisory/release izlemesi; VPS/DNS/Cloudflare'a dokunmayan read-only tasarım. Generated Go dependency, generated handler ve public runtime başlatılmaz.
 - Blocking wave/gate: W001-T04B dependency admission, T04C generated Go parity ve ona bağımlı T04D public runtime.
-- Owner decision: PENDING
-- Closed commit: PENDING
+- Owner decision: `GHSA-9c2f-gr95-7wqw zafiyeti ve upstream yamanın belirsizliği nedeniyle ... güvenlik-kritik yerel generator / alternatif güvenli kod üretim stratejisinin geliştirilmesini ve değerlendirilmesini onaylıyorum.` — 2026-08-31.
+- Resolution: DEC-027 / ADR-0017, exact-health-only ve sıfır-bağımlılıklı sealed renderer yolunu kabul eder. `oapi-codegen`, runtime ve middleware dependency/tool olarak reddedilmeye devam eder; kapsam genişlemesi ayrı owner/security gate'idir.
+- Closed commit: PENDING — bu kararın implementation-range ilk commit'iyle mühürlenecek.
 
 ## Item template
 

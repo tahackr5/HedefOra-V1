@@ -105,6 +105,22 @@ Bu nedenle wave start SHA/tree tarihsel provenance olarak değişmez; fakat yeni
 
 API/DB/event/job davranışı veya veri migration'ı bu kararla değişmez. Rollback, runtime branch/worktree'lerini terk edip trusted `main` checkpoint'ini korumaktır; public repository'de control-plane tree'sine ham revert ADR-0015 gereği yasaktır. Yeni runtime exact head'i ayrı owner merge onayı ve trusted-base PR gate'i almadan `main`e giremez.
 
+## ADR-0017 — Exact-health sealed OpenAPI renderer
+
+- Durum: `Accepted`
+- Owner onayı: `2026-08-31`
+- İlgili risk: `GHSA-9c2f-gr95-7wqw`, `R-019`, `R-020`
+
+`oapi-codegen 2.8.0` ve upstream `HEAD`, spec kaynaklı `x-go-type-import.name` değerini generated Go koduna güvenli olmayan biçimde taşıyabildiği ve patched sürüm yayımlanmadığı için W001 dependency/tool admission'ı alamaz. Recursive Spectral extension yasağı defense-in-depth'tir; known-vulnerable generator'ı çalıştırma yetkisi vermez. Owner, upstream yamayı beklemek yerine ayrı güvenlik-kritik yerel generator stratejisini açıkça onaylamıştır.
+
+W001'in ilk Go üreticisi genel amaçlı YAML/OpenAPI compiler değildir. `contracts/openapi/openapi.yaml` dosyasının exact LF byte dizisini, boyutunu ve SHA-256 kimliğini kabul eden repository-owned sealed renderer yalnız `GET /health/live` profilini ve tek allowlisted `internal/generated/openapi/openapi.gen.go` artifact'ını üretir. Renderer yalnız Node standard library kullanır; YAML parser, template/plugin engine, subprocess, network, environment-derived path, stdin veya dinamik import içermez. Input/output/package/template/config yolu CLI'dan değiştirilemez. Spec metninden identifier, import, package, output path, comment veya Go source parçası interpolate edilmez; generated import ve symbol yüzeyi renderer içinde sabittir.
+
+Kanonik OpenAPI source of truth olarak kalır. Renderer önce fatal UTF-8 ve bounded lexical güvenlik preflight'ı, ardından exact source digest'i uygular. Bilinmeyen key/extension, duplicate/alias/tag/merge/multi-document biçimi, external/dynamic/recursive ref veya tek byte'lık semantik değişiklik source seal mismatch ile fail-closed olur. `--check` write-free exact byte parity ve output inventory doğrular; `--write` yalnız hardcoded regular/non-link path'e exclusive temp + atomic rename ile yazar. Generated dosya elle düzenlenmez.
+
+Üretilen Go yüzeyi yalnız contract tipleri, exact operation metadata'sı, sealed `200/503` response union'ı ve `StrictServerInterface` içerir. HTTP request ID, typed default error mapping, exact method/path dispatch, content negotiation, logging ve graceful drain T04D'nin hand-written transport boundary'sinde kalır. `http.ServeMux` GET pattern'inin HEAD'i örtük kabul etmesi nedeniyle T04D exact method/path negatifleri olmadan runtime `PASS` sayılamaz.
+
+Bu karar additive API sözleşmesini değiştirmez; DB/event/job veya veri migration etkisi yoktur. TypeScript consumer parity bu Go task'ıyla otomatik `PASS` olmaz. Ana residual risk, sealed source digest'i ile sabit Go profilinin birlikte yanlış güncellenmesidir; independent semantic parity, deterministic golden, generated drift, exact Go compile/vet/test, R-016 ve fresh security/cold review ile azaltılır. İkinci operation/schema veya dinamik identifier ihtiyacında bu renderer genişletilmez; yeni owner-approved compiler/parser admission task'ı açılır. Rollback merge öncesi task branch'ini terk etmek; patched upstream'e ileride geçiş ise public Go API ve HTTP golden parity kanıtından sonra atomik consumer migration yapmaktır.
+
 ## Yeni ADR şablonu
 
 `templates/ADR.md` kullanılır. Yeni karar burada yalnız tek satır özetle indekslenir.
