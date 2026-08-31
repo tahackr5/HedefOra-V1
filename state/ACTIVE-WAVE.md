@@ -9,7 +9,7 @@
 - Integration branch: `codex/w001-supply-chain-gates`
 - Worktree: external W001 worktree (OneDrive dışında)
 - Started at: `2026-08-28T21:50:57+03:00` (`2026-08-28T18:50:57Z`)
-- Last checkpoint: DEC-025 public use-boundary implementation commit'i `62c1f7d5201da56f240f3e04fc6f5969190320eb` / tree `4855e422bafcc7f088d480514702bdf57124e83a` olarak üretildi. Dirty-worktree ön kapıları exact Node `24.20.0` / pnpm `11.24.0` ile Node `129/129`, web `3/3`, build/audit; pinned Go `1.26.7`, Python `3.12.13`, actionlint `1.7.12`, Gitleaks `8.30.1` ve Compose exit `0` verdi. Bu sonuç ownership seal sonrası clean exact-SHA full-tree/live R-016/hosted/security/cold kanıtı değildir; o kapılar `NOT_RUN` kalır.
+- Last checkpoint: DEC-025 sealed remediation head `64817bf4168c7a75df0eb2d2d6485e2408c7755e` / tree `f7225640829423b5478d1c5af6939346bda12822`; W000/W001 ownership clean-clone exit `0`. GitHub run `33346034408` source boundary ve Dependency Review'u `PASS`, quality job'ı Node `129/129` + web `3/3` + build sonrasında evidence metnindeki literal work-marker sözcüğü nedeniyle `FAIL` verdi. Marker kaldırıldı; yeni state commit + manifest-only seal ve bütün exact gate'ler yeniden üretilecek. `64817bf` live R-016 sonucu yalnız tanısal sayılır.
 - Current objective: owner-onaylı DEC-025 public-repository use-boundary remediation'ını evidence/schema v2 ile tamamlamak, yeni exact head'i local/hosted/security/cold kapılardan geçirmek ve yeni owner merge gate'ine hazırlamak; runtime foundation bootstrap merge tamamlanana kadar başlamaz
 
 ## Active tasks
@@ -34,7 +34,7 @@
 | pnpm + Go all-scope vulnerability/license | PASS    | Exact `9ec363c`; iki pnpm lock dokümanı + Go manifest, 546 package/2 source parity, fresh npm+Go DB seal; production vulnerability/license exit `0`                                        |
 | R-016 negative fixtures                   | PASS    | Missing DB `127`; npm/Go vulnerability ve denied/unknown license canary'leri `1`; Semgrep bypass canary `1`; DB ZIP `0`; hepsi aynı canonical run içinde                                   |
 | Historical exact-target local/reviews     | PASS    | DEC-024/evidence v1 exact `9ec363c`: Node `126/126`, supply-chain `114/114`, web `3/3`; current DEC-025 remediation target yerine geçmez                                                   |
-| Public use-boundary implementation        | NOT_RUN | Implementation `62c1f7d` / tree `4855e42`; pre-commit bounded gates PASS, ownership seal sonrası exact live/full-tree/security/cold/hosted kapıları henüz koşmadı                          |
+| Public use-boundary implementation        | NOT_RUN | Implementation `62c1f7d`, seal `64817bf`; hosted run `33346034408` marker kapısında FAIL, düzeltme sonrası yeni exact head'in bütün kapıları yeniden koşacak                               |
 | R-016 trusted-base PR gate                | NOT_RUN | Wave-start base trusted workflow/runner taşımıyor; ilk control-plane bootstrap owner onayıyla iki aşamalı yapılacak, bu PR için hosted trusted `PASS` iddia edilmeyecek                    |
 | W001 runtime behavior                     | BLOCKED | Public use-boundary remediation yeni exact head/full gate/owner SHA onayı ve exact two-parent merge tamamlanmadan yeni trusted base oluşmaz                                                |
 

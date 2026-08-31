@@ -37,18 +37,19 @@ CodeQL Default Setup ve Dependency Review kullanılabildiği sürece exact targe
 | Quality evidence review                 | PASS    | Exact `9ec363c` / `1e57e62`; 187 check, 340 raw artifact, DB/source/control/process/terminal bağları; bloklayıcı bulgu yok                                     |
 | Security review                         | PASS    | Exact `9ec363c` / `1e57e62`; release-blocking bulgu yok; bir LOW future multi-module slug riski R-017 olarak izlendi                                           |
 | Cold review                             | PASS    | Fresh-context exact-tree verdict `PASS`; local blocker/finding yok; hosted/trusted-base sonuçları doğru biçimde ayrıldı                                        |
-| Public use-boundary evidence/schema v2  | NOT_RUN | Implementation `62c1f7d` / tree `4855e42`; ownership seal sonrası exact remediation head ve live R-016 henüz mühürlenmedi                                      |
-| GitHub exact-head quality               | NOT_RUN | Eski `e3ca17d` quality SUCCESS tarihsel; implementation `62c1f7d` henüz push/hosted gate almadı                                                                |
+| Public use-boundary evidence/schema v2  | NOT_RUN | Implementation `62c1f7d`, seal `64817bf`; final yeni head'in live R-016/full-tree/security/cold/hosted sonucu henüz mühürlenmedi                               |
+| GitHub exact-head quality               | FAIL    | Run `33346034408`, exact `64817bf`: boundary ve Dependency Review PASS; quality evidence metnindeki literal work-marker nedeniyle fail-closed durdu            |
 | Trusted-base PR gate                    | NOT_RUN | Wave-start base `.github/workflows/r016-trusted-pr.yml` ve trusted runner'ı taşımıyor; ilk control-plane bootstrap PR'ında hosted `PASS` iddia edilemez        |
 | Hosted security/enforcement             | NOT_RUN | Default CodeQL base `bde560f` ve Dependency Review eski `e3ca17d` için SUCCESS; remediation exact head henüz taranmadı. Branch/ruleset `BLOCKED_EXTERNAL`      |
 
 ## Public remediation implementation checkpoint
 
 - DEC-025/ADR-0015 ve evidence/schema v2 implementation commit'i `62c1f7d5201da56f240f3e04fc6f5969190320eb`; tree `4855e422bafcc7f088d480514702bdf57124e83a`.
-- Exact Node `24.20.0` / pnpm `11.24.0` dirty-worktree preflight `pnpm ci:check`: Node `129/129`, web `3/3`, build, generated/TODO/license ve production audit exit `0`.
+- Exact Node `24.20.0` / pnpm `11.24.0` dirty-worktree preflight `pnpm ci:check`: Node `129/129`, web `3/3`, build, generated/work-marker/license ve production audit exit `0`.
 - Pinned Go `1.26.7` format/module verify/vet/test; Python `3.12.13` validator `4/4`; actionlint `1.7.12`; Compose config exit `0`. Exact Gitleaks `8.30.1` history/all-refs/current diff ve tarihsel `artifacts/r016` taramalarında leak bulmadı.
 - Pre-commit architecture/contracts ve security review ilk fork-PR CI DAG açığını bloke edici bulgu olarak yakaladı. Aynı commit içinde checkout'suz push/PR boundary bütün checkout/tarama job'larının dependency'si yapıldı; hedefli exact Node suite `56/56` ve actionlint tekrarları exit `0`; güncel preliminary verdictler blocker olmadan `PASS_WITH_FINAL_GATES_PENDING` / `PASS_WITH_RESIDUALS`.
 - Bu checkpoint final kanıt değildir: ownership manifest seal, clean exact-target live R-016 evidence v2, full-tree, hosted CodeQL/Dependency Review/quality, final security ve fresh cold review `NOT_RUN` kalır.
+- İlk sealed head `64817bf` GitHub run `33346034408`: checkout'suz source boundary ve Dependency Review `PASS`; quality Node `129/129`, web `3/3` ve build sonrası `state/W001-EVIDENCE.md` içindeki literal marker'ı reddederek exit `1` verdi. Bu sonuç yeniden adlandırılmaz; metin düzeltmesi yeni exact SHA'da tüm gate'leri tekrarlar.
 
 ## Exact live PASS
 
