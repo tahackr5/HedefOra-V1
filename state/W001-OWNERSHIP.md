@@ -74,6 +74,7 @@ Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERS
 - TCB boundary: Node standard library dışında dependency yok; YAML parser, subprocess, network, environment-derived path, eval/dynamic import/plugin/template engine yok. Spec'ten source code, identifier, import, output path veya comment interpolation yok. Second operation/schema fail-closed yeni owner/security compiler task'ı ister.
 - Expected gates: fatal/bounded input preflight; 33 canonical single-mutation rejection; generator-specific injection/ref/extension/duplicate/alias/tag/merge/multi-doc/UTF-8/NUL/CR/size corpus; rejected inputte zero-output; same-process ve fresh-process deterministic byte parity; exact output inventory/symlink/non-regular/drift; gofmt, pinned Go compile/vet/test/race; no dependency/lock drift; R-016; independent security ve cold review.
 - Rollback: merge öncesi task branch'ini terk etmek. Patched upstream'e geçiş ancak generated public Go API + HTTP golden parity ve ayrı dependency/security admission sonrasında atomik yapılır.
+- Current state: exact `959e128ea5fd0191b4283293fbe49f2a854b0aa6` / tree `42069f70d14626ece232b4184c7e80f776fa8e2a` üzerinde generator/full-tree/pinned-Go/R-016/security/quality `PASS`; T04E `COMPLETED`.
 
 ## W001-T04C — Additive liveness contract ve generated parity
 
@@ -81,7 +82,7 @@ Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERS
 - Owned paths: `contracts/openapi/**`, `contracts/README.md`, `.spectral.yaml`, `scripts/fixtures/openapi-negative-mutations.mjs`, `scripts/validate-contracts.mjs`, `scripts/validate-contracts.test.mjs`, T04E generation paths, generated Go root `internal/generated/openapi/**`; generated TypeScript root `apps/web/src/generated/api/**` yalnız gerçek frontend consumer task'ında ayrıca açılır.
 - Contract: `GET /health/live`; public/no-auth, inherently idempotent, concurrency precondition'i yok, explicit health rate-limit class. Serving sırasında typed `200`; drain sırasında `service_unavailable`, `retryable: true`, bounded zorunlu retry süresi ve `Retry-After` taşıyan dedicated typed `503`.
 - Generated boundary: kanonik OpenAPI elle değiştirilir; generated dosya elle düzenlenmez. Exact sealed regeneration byte-diff, Go compile ve schema/generator negative fixture'ları zorunludur. TypeScript parity bu Go slice'ıyla `PASS` olmaz.
-- Current state: contract-only preflight `PASS`; T04E sealed renderer/generator parity `IN_PROGRESS`. Public runtime T04D HTTP acceptance tamamlanmadan T04C runtime behavior `PASS` sayılmaz.
+- Current state: contract-only preflight ve T04E sealed renderer/generated Go parity `PASS`. TypeScript consumer ve public runtime T04D HTTP acceptance tamamlanmadan daha geniş API runtime parity'si `PASS` sayılmaz.
 
 ## W001-T04D — API/config/telemetry/health runtime
 
@@ -89,6 +90,7 @@ Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERS
 - Owned paths: `cmd/hedefora/**`, `internal/platform/app/**`, `internal/platform/config/**`, `internal/platform/http/**`, `internal/platform/health/**`, `internal/platform/telemetry/**`.
 - Acceptance: explicit `api` process mode, allowlisted environment config, secret/raw-header loglamama, cryptographic request ID, structured request outcome, bounded server timeouts, graceful drain/shutdown, generated strict handler ve `200/503` unit/integration tests.
 - Boundary: PostgreSQL, River, object storage, VPS, DNS, Cloudflare ve staging mutation yoktur; readiness DB sahibi T04F'ye kadar eklenmez.
+- Current state: T04E/T04C Go checkpoint'i `PASS`; orchestrator-only writer ile `IN_PROGRESS`.
 
 ## W001-T04F — PostgreSQL 17 roles, migration ve readiness foundation
 
