@@ -6,6 +6,7 @@ import path from "node:path";
 import test from "node:test";
 import {
   allowedW001GeneratedSourceFiles,
+  allowedW001RuntimeSourceFiles,
   findGeneratedArtifacts,
   isAllowedPreRuntimeSource,
 } from "./check-generated.mjs";
@@ -183,6 +184,39 @@ test("only the exact sealed OpenAPI generated file is allowlisted", () => {
     isAllowedPreRuntimeSource("internal/generated/openapi/extra.gen.go"),
     false,
   );
+});
+
+test("only the exact T04D runtime source set is allowlisted", () => {
+  assert.deepEqual(
+    [...allowedW001RuntimeSourceFiles],
+    [
+      "cmd/hedefora/main.go",
+      "cmd/hedefora/main_test.go",
+      "internal/platform/app/api.go",
+      "internal/platform/app/api_test.go",
+      "internal/platform/config/api.go",
+      "internal/platform/config/api_test.go",
+      "internal/platform/health/service.go",
+      "internal/platform/health/service_test.go",
+      "internal/platform/http/handler.go",
+      "internal/platform/http/handler_test.go",
+      "internal/platform/http/server.go",
+      "internal/platform/http/server_test.go",
+      "internal/platform/telemetry/telemetry.go",
+      "internal/platform/telemetry/telemetry_test.go",
+    ],
+  );
+  for (const source of allowedW001RuntimeSourceFiles) {
+    assert.equal(isAllowedPreRuntimeSource(source), true, source);
+  }
+  for (const source of [
+    "cmd/hedefora/Main.go",
+    "cmd/hedefora/worker.go",
+    "internal/platform/http/middleware.go",
+    "internal/platform/postgres/postgres.go",
+  ]) {
+    assert.equal(isAllowedPreRuntimeSource(source), false, source);
+  }
 });
 
 test("force-tracked source in ignored output directories fails closed", async () => {

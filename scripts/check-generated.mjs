@@ -5,7 +5,7 @@ import { listRepositoryFiles } from "./list-repository-files.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const repositoryRoot = path.resolve(path.dirname(scriptPath), "..");
-const forbiddenRuntimeRoots = ["cmd", "db/migrations"];
+const forbiddenRuntimeRoots = ["db/migrations"];
 const generatedMarker = /(?:Code generated .* DO NOT EDIT|@generated)/i;
 const generatedFilename = /\.(?:gen|generated)(?:\.[^/]+)?$/i;
 const forbiddenHtmlBehavior =
@@ -43,6 +43,22 @@ const allowedW001SupplyChainToolSourceFiles = new Set([
 export const allowedW001GeneratedSourceFiles = new Set([
   "internal/generated/openapi/openapi.gen.go",
 ]);
+export const allowedW001RuntimeSourceFiles = new Set([
+  "cmd/hedefora/main.go",
+  "cmd/hedefora/main_test.go",
+  "internal/platform/app/api.go",
+  "internal/platform/app/api_test.go",
+  "internal/platform/config/api.go",
+  "internal/platform/config/api_test.go",
+  "internal/platform/health/service.go",
+  "internal/platform/health/service_test.go",
+  "internal/platform/http/handler.go",
+  "internal/platform/http/handler_test.go",
+  "internal/platform/http/server.go",
+  "internal/platform/http/server_test.go",
+  "internal/platform/telemetry/telemetry.go",
+  "internal/platform/telemetry/telemetry_test.go",
+]);
 const generatedMarkerDefinitionFiles = new Set([
   "scripts/check-generated.mjs",
   "scripts/check-generated.test.mjs",
@@ -53,9 +69,7 @@ if (path.resolve(process.argv[1] ?? "") === path.resolve(scriptPath)) {
   const findings = await findGeneratedArtifacts(repositoryRoot);
   if (findings.length > 0) {
     for (const finding of findings) {
-      console.error(
-        `ERROR: unexpected pre-runtime/generated artifact: ${finding}`,
-      );
+      console.error(`ERROR: unexpected runtime/generated artifact: ${finding}`);
     }
     process.exitCode = 1;
   } else {
@@ -84,7 +98,13 @@ export async function findGeneratedArtifacts(root) {
     if (!fileStats.isFile()) continue;
     const isAllowedGeneratedSource =
       allowedW001GeneratedSourceFiles.has(normalized);
-    if (normalized.startsWith("internal/") && !isAllowedGeneratedSource) {
+    const isAllowedRuntimeSource =
+      allowedW001RuntimeSourceFiles.has(normalized);
+    if (
+      normalized.startsWith("internal/") &&
+      !isAllowedGeneratedSource &&
+      !isAllowedRuntimeSource
+    ) {
       findings.push(`${normalized}#unexpected-runtime-source`);
       continue;
     }
@@ -132,6 +152,7 @@ export function isAllowedPreRuntimeSource(relativePath) {
     relativePath.startsWith("tools/repolint/") ||
     allowedW001SupplyChainToolSourceFiles.has(relativePath) ||
     allowedW001GeneratedSourceFiles.has(relativePath) ||
+    allowedW001RuntimeSourceFiles.has(relativePath) ||
     allowedW000FrontendSourceFiles.has(relativePath)
   );
 }

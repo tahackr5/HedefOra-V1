@@ -87,7 +87,7 @@ Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERS
 ## W001-T04D — API/config/telemetry/health runtime
 
 - Writer: orchestrator; ilk vertical slice boyunca T04C ile aynı integration worktree'sinde sıralı çalışır, paralel writer yoktur.
-- Owned paths: `cmd/hedefora/**`, `internal/platform/app/**`, `internal/platform/config/**`, `internal/platform/http/**`, `internal/platform/health/**`, `internal/platform/telemetry/**`.
+- Owned paths: `cmd/hedefora/**`, `internal/platform/app/**`, `internal/platform/config/**`, `internal/platform/http/**`, `internal/platform/health/**`, `internal/platform/telemetry/**`; runtime activation boundary için exact `scripts/check-generated.mjs` ve `scripts/check-generated.test.mjs`.
 - Acceptance: explicit `api` process mode, allowlisted environment config, secret/raw-header loglamama, cryptographic request ID, structured request outcome, bounded server timeouts, graceful drain/shutdown, generated strict handler ve `200/503` unit/integration tests.
 - Boundary: PostgreSQL, River, object storage, VPS, DNS, Cloudflare ve staging mutation yoktur; readiness DB sahibi T04F'ye kadar eklenmez.
 - Current state: T04E/T04C Go checkpoint'i `PASS`; orchestrator-only writer ile `IN_PROGRESS`.
