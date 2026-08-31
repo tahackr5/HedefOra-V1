@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "b25ff7d8df8690d69d7333fc7a52482de6ab1fbf",
+  "verifiedThrough": "0bbea9532ebf3b76d27e5dd9e7be9abaf3e7e3e2",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -424,6 +424,19 @@
         "state/RISK-REGISTER.md",
         "state/W001-EVIDENCE.md",
         "state/W001-OWNERSHIP.md"
+      ]
+    },
+    "W001-T04E-sealed-openapi-renderer-seal": {
+      "base": "b25ff7d8df8690d69d7333fc7a52482de6ab1fbf",
+      "head": "06aac2c89390b438cde7c8c12c91e3e228a23bf8",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04E-bounded-filesystem-read-remediation": {
+      "base": "06aac2c89390b438cde7c8c12c91e3e228a23bf8",
+      "head": "0bbea9532ebf3b76d27e5dd9e7be9abaf3e7e3e2",
+      "allowedPaths": [
+        "scripts/generate-openapi.mjs",
+        "scripts/generate-openapi.test.mjs"
       ]
     }
   }
