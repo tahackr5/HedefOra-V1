@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "10ce2312cc62f1e96eb3ca7262da3982f738628b",
+  "verifiedThrough": "b25ff7d8df8690d69d7333fc7a52482de6ab1fbf",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -394,6 +394,35 @@
         "state/RISK-REGISTER.md",
         "state/W001-EVIDENCE.md",
         "state/W001-OWNERSHIP.json",
+        "state/W001-OWNERSHIP.md"
+      ]
+    },
+    "W001-T04C-contract-security-preflight-seal": {
+      "base": "10ce2312cc62f1e96eb3ca7262da3982f738628b",
+      "head": "447cfe52dc868f5b803e628c0e866ab688697d75",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04E-sealed-openapi-renderer": {
+      "base": "447cfe52dc868f5b803e628c0e866ab688697d75",
+      "head": "b25ff7d8df8690d69d7333fc7a52482de6ab1fbf",
+      "allowedPaths": [
+        "DECISIONS.md",
+        "FILE-INDEX.md",
+        "architecture/ADR-REGISTER.md",
+        "contracts/README.md",
+        "delivery/TOOLCHAIN-LOCK.md",
+        "internal/generated/openapi/openapi.gen.go",
+        "package.json",
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "scripts/fixtures/openapi-generator-negative-mutations.mjs",
+        "scripts/generate-openapi.mjs",
+        "scripts/generate-openapi.test.mjs",
+        "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
         "state/W001-OWNERSHIP.md"
       ]
     }
