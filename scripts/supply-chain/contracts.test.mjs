@@ -1397,8 +1397,8 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
   };
   if (activeRunner.GITHUB_ACTIONS === "true") {
     golden.source.expectedCheckoutSha = golden.source.head;
-    golden.inputs.repositoryUse.authority = "github-event";
-    golden.inputs.repositoryUse.visibilityProof = true;
+    golden.inputs.repositoryUse.authority = "github-context-claim";
+    golden.inputs.repositoryUse.visibilityProof = false;
     golden.inputs.repositoryUse.eventName = "push";
   }
   golden.controlSource = structuredClone(golden.source);
@@ -1831,6 +1831,17 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     return document;
   };
   assert.equal(validate(golden), true);
+
+  const maximumSchema = structuredClone(evidenceSchema);
+  maximumSchema.properties.exitCode.maximum = -1;
+  assert.throws(() => validate(golden, maximumSchema), /schema maximum/u);
+
+  const unsupportedSchema = structuredClone(evidenceSchema);
+  unsupportedSchema.properties.exitCode.exclusiveMaximum = 0;
+  assert.throws(
+    () => validate(golden, unsupportedSchema),
+    /unsupported keyword exclusiveMaximum/u,
+  );
 
   const legacyEvidence = structuredClone(golden);
   legacyEvidence.schemaVersion = 1;

@@ -1211,6 +1211,11 @@ export function validateConfiguration(policy, scanners) {
   if (scanners.semgrep.executionMode !== "community-edition-oss-only") {
     throw new ContractError("Semgrep must be forced to the OSS-only engine");
   }
+  if (scanners.semgrep.engineLicense !== "LGPL-2.1-or-later") {
+    throw new ContractError(
+      "Semgrep engine license lock must be LGPL-2.1-or-later",
+    );
+  }
   if (
     scanners.semgrep.imageSourceRepository !==
       "https://github.com/semgrep/semgrep-proprietary" ||

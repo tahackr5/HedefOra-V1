@@ -43,6 +43,35 @@ const PASS_INPUT_NAMES = [
 ];
 const HEDEFORA_REPOSITORY_ID = 1_349_011_765;
 const HEDEFORA_REPOSITORY_FULL_NAME = "tahackr5/HedefOra-V1";
+const SUPPORTED_SCHEMA_KEYWORDS = new Set([
+  "$defs",
+  "$id",
+  "$ref",
+  "$schema",
+  "additionalProperties",
+  "allOf",
+  "const",
+  "else",
+  "enum",
+  "format",
+  "if",
+  "items",
+  "maxItems",
+  "maximum",
+  "minItems",
+  "minLength",
+  "minProperties",
+  "minimum",
+  "not",
+  "oneOf",
+  "pattern",
+  "properties",
+  "required",
+  "then",
+  "title",
+  "type",
+  "uniqueItems",
+]);
 const PASS_REQUIRED_PROCESS_IDS = [
   "PROCESS-GIT-TOP-LEVEL",
   "PROCESS-GIT-DIRECTORY",
@@ -177,14 +206,14 @@ export function validateRepositoryUseContext(context, boundary, githubActions) {
       "R-016 target must be a non-fork source in the same HedefOra repository",
     );
   }
-  if (context.authority === "github-event") {
+  if (context.authority === "github-context-claim") {
     if (
-      context.visibilityProof !== true ||
+      context.visibilityProof !== false ||
       !["push", "pull_request_target"].includes(context.eventName) ||
       githubActions !== "true"
     ) {
       throw new ContractError(
-        "hosted repository use context requires a GitHub event visibility proof",
+        "GitHub repository use context must remain an externally unverified claim",
       );
     }
   } else if (
@@ -818,7 +847,56 @@ function validateProcessArtifactLinkage(processChecks, artifactsByPath) {
 
 function validateEvidenceAgainstSchema(evidence, schema) {
   requireRecord(schema, "evidence schema");
+  validateSupportedSchemaKeywords(schema);
   validateSchemaValue(evidence, schema, "evidence", schema);
+}
+
+function validateSupportedSchemaKeywords(contract, label = "evidence schema") {
+  requireRecord(contract, label);
+  for (const keyword of Object.keys(contract)) {
+    if (!SUPPORTED_SCHEMA_KEYWORDS.has(keyword)) {
+      throw new ContractError(`${label} uses unsupported keyword ${keyword}`);
+    }
+  }
+  for (const [containerName, container] of [
+    ["$defs", contract.$defs],
+    ["properties", contract.properties],
+  ]) {
+    if (container === undefined) continue;
+    requireRecord(container, `${label} ${containerName}`);
+    for (const [name, child] of Object.entries(container)) {
+      validateSupportedSchemaKeywords(
+        child,
+        `${label} ${containerName}.${name}`,
+      );
+    }
+  }
+  if (contract.items !== undefined) {
+    validateSupportedSchemaKeywords(contract.items, `${label} items`);
+  }
+  if (
+    contract.additionalProperties !== undefined &&
+    typeof contract.additionalProperties === "object"
+  ) {
+    validateSupportedSchemaKeywords(
+      contract.additionalProperties,
+      `${label} additionalProperties`,
+    );
+  }
+  for (const keyword of ["allOf", "oneOf"]) {
+    if (contract[keyword] === undefined) continue;
+    if (!Array.isArray(contract[keyword])) {
+      throw new ContractError(`${label} ${keyword} must be an array`);
+    }
+    for (const [index, child] of contract[keyword].entries()) {
+      validateSupportedSchemaKeywords(child, `${label} ${keyword}[${index}]`);
+    }
+  }
+  for (const keyword of ["if", "then", "else", "not"]) {
+    if (contract[keyword] !== undefined) {
+      validateSupportedSchemaKeywords(contract[keyword], `${label} ${keyword}`);
+    }
+  }
 }
 
 function validateSchemaValue(value, contract, label, rootSchema) {
@@ -914,6 +992,13 @@ function validateSchemaValue(value, contract, label, rootSchema) {
     value < contract.minimum
   ) {
     throw new ContractError(`${label} violates schema minimum`);
+  }
+  if (
+    contract.maximum !== undefined &&
+    typeof value === "number" &&
+    value > contract.maximum
+  ) {
+    throw new ContractError(`${label} violates schema maximum`);
   }
   if (
     contract.minItems !== undefined &&

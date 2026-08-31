@@ -99,8 +99,8 @@ jobs:
           EXPECTED_CHECKOUT_SHA: ${{ github.event.pull_request.head.sha }}
           EXPECTED_CONTROL_SHA: ${{ github.event.pull_request.base.sha }}
           TARGET_ROOT: ${{ github.workspace }}/target
-          R016_AUTHORITY: github-event
-          R016_VISIBILITY_PROOF: "true"
+          R016_AUTHORITY: github-context-claim
+          R016_VISIBILITY_PROOF: "false"
           R016_EVENT_NAME: pull_request_target
           R016_BASE_REPOSITORY_ID: ${{ github.event.pull_request.base.repo.id }}
           R016_BASE_REPOSITORY_FULL_NAME: ${{ github.event.pull_request.base.repo.full_name }}
@@ -203,3 +203,16 @@ jobs:
           path: ${{ steps.r016.outputs.artifact_path }}
           if-no-files-found: error
           retention-days: 7
+
+  dependency-review:
+    name: Dependency review
+    needs: source-boundary
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          license-check: true
+          vulnerability-check: true

@@ -421,7 +421,7 @@
         "relation"
       ],
       "properties": {
-        "authority": { "enum": ["github-event", "local-declaration"] },
+        "authority": { "enum": ["github-context-claim", "local-declaration"] },
         "visibilityProof": { "type": "boolean" },
         "eventName": { "enum": ["push", "pull_request_target", "local"] },
         "base": { "$ref": "#/$defs/repositoryUseBase" },
@@ -431,12 +431,12 @@
       "allOf": [
         {
           "if": {
-            "properties": { "authority": { "const": "github-event" } },
+            "properties": { "authority": { "const": "github-context-claim" } },
             "required": ["authority"]
           },
           "then": {
             "properties": {
-              "visibilityProof": { "const": true },
+              "visibilityProof": { "const": false },
               "eventName": { "enum": ["push", "pull_request_target"] }
             }
           },

@@ -138,13 +138,18 @@ test("repository use context accepts only first-party public/private sources", (
   );
   const hosted = {
     ...localContext("public"),
-    authority: "github-event",
-    visibilityProof: true,
+    authority: "github-context-claim",
+    visibilityProof: false,
     eventName: "pull_request_target",
   };
   assert.deepEqual(
     validateRepositoryUseContext(hosted, boundary, "true"),
     hosted,
+  );
+  const forgedHostedProof = { ...hosted, visibilityProof: true };
+  assert.throws(
+    () => validateRepositoryUseContext(forgedHostedProof, boundary, "true"),
+    /externally unverified claim/u,
   );
 
   for (const [mutate, message] of [
@@ -161,11 +166,11 @@ test("repository use context accepts only first-party public/private sources", (
     [(value) => (value.relation = "foreign-repository"), /non-fork source/u],
     [
       (value) => {
-        value.authority = "github-event";
-        value.visibilityProof = true;
+        value.authority = "github-context-claim";
+        value.visibilityProof = false;
         value.eventName = "push";
       },
-      /GitHub event visibility proof/u,
+      /externally unverified claim/u,
     ],
   ]) {
     const invalid = localContext();
@@ -177,10 +182,10 @@ test("repository use context accepts only first-party public/private sources", (
   }
 });
 
-test("repository use environment parser preserves hosted proof provenance", () => {
+test("repository use environment parser preserves an unverified GitHub claim", () => {
   const context = repositoryUseContextFromEnvironment({
-    R016_AUTHORITY: "github-event",
-    R016_VISIBILITY_PROOF: "true",
+    R016_AUTHORITY: "github-context-claim",
+    R016_VISIBILITY_PROOF: "false",
     R016_EVENT_NAME: "push",
     R016_BASE_REPOSITORY_ID: "1349011765",
     R016_BASE_REPOSITORY_FULL_NAME: "tahackr5/HedefOra-V1",
@@ -191,13 +196,13 @@ test("repository use environment parser preserves hosted proof provenance", () =
     R016_TARGET_REPOSITORY_FORK: "false",
     R016_REPOSITORY_RELATION: "same-repository",
   });
-  assert.equal(context.visibilityProof, true);
+  assert.equal(context.visibilityProof, false);
   assert.equal(context.base.repositoryId, 1_349_011_765);
   assert.equal(context.target.fork, false);
   assert.throws(
     () =>
       repositoryUseContextFromEnvironment({
-        R016_AUTHORITY: "github-event",
+        R016_AUTHORITY: "github-context-claim",
         R016_VISIBILITY_PROOF: "yes",
       }),
     /literal true or false/u,
@@ -239,10 +244,7 @@ test("CI R-016 step binds the exact checkout and hard-pinned trusted Node", asyn
   assert.notEqual(gateStart, -1);
   assert.notEqual(gateEnd, -1);
   const gateStep = workflow.slice(gateStart, gateEnd);
-  assert.match(
-    gateStep,
-    /EXPECTED_CHECKOUT_SHA: \$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/u,
-  );
+  assert.match(gateStep, /EXPECTED_CHECKOUT_SHA: \$\{\{ github\.sha \}\}/u);
   assert.match(gateStep, /realpath "\$\{RUNNER_TOOL_CACHE\}"/u);
   assert.match(gateStep, /node_entry="\$\(command -v node\)"/u);
   assert.match(
@@ -276,13 +278,13 @@ test("CI R-016 step binds the exact checkout and hard-pinned trusted Node", asyn
   );
   const supplyChainJob = workflow.slice(
     workflow.indexOf("  supply-chain:\n"),
-    workflow.indexOf("\n  dependency-review:\n"),
+    workflow.length,
   );
   assert.match(supplyChainJob, /if: github\.event_name == 'push'/u);
   assert.match(supplyChainJob, /needs: r016-source-boundary/u);
   for (const expected of [
-    /R016_AUTHORITY: github-event/u,
-    /R016_VISIBILITY_PROOF: "true"/u,
+    /R016_AUTHORITY: github-context-claim/u,
+    /R016_VISIBILITY_PROOF: "false"/u,
     /R016_EVENT_NAME: push/u,
     /R016_BASE_REPOSITORY_ID: \$\{\{ github\.event\.repository\.id \}\}/u,
     /R016_TARGET_REPOSITORY_FORK: "false"/u,
@@ -292,7 +294,7 @@ test("CI R-016 step binds the exact checkout and hard-pinned trusted Node", asyn
   assert.doesNotMatch(supplyChainJob, /pnpm\/setup|node-version-file/u);
   assert.match(
     supplyChainJob,
-    /- name: Upload R-016 evidence\n\s+if: always\(\)\n\s+uses: actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7\.0\.1\n\s+with:\n\s+name: r016-\$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}\n\s+path: \$\{\{ steps\.r016\.outputs\.artifact_path \}\}\n\s+if-no-files-found: error\n\s+retention-days: 7/u,
+    /- name: Upload R-016 evidence\n\s+if: always\(\)\n\s+uses: actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7\.0\.1\n\s+with:\n\s+name: r016-\$\{\{ github\.sha \}\}\n\s+path: \$\{\{ steps\.r016\.outputs\.artifact_path \}\}\n\s+if-no-files-found: error\n\s+retention-days: 7/u,
   );
   const boundaryOffset = workflow.indexOf("  r016-source-boundary:\n");
   const checkoutOffset = workflow.indexOf(
@@ -304,14 +306,13 @@ test("CI R-016 step binds the exact checkout and hard-pinned trusted Node", asyn
     workflow.indexOf("\n  quality:\n", boundaryOffset),
   );
   assert.match(boundaryJob, /permissions: \{\}/u);
-  assert.doesNotMatch(boundaryJob, /if: github\.event_name == 'push'/u);
   assert.match(
     boundaryJob,
     /EVENT_REPOSITORY_ID.*github\.event\.repository\.id/u,
   );
   assert.match(boundaryJob, /EVENT_NAME: \$\{\{ github\.event_name \}\}/u);
-  assert.match(boundaryJob, /TARGET_REPOSITORY_FORK/u);
-  assert.match(boundaryJob, /"\$\{TARGET_REPOSITORY_FORK\}" == "false"/u);
+  assert.match(boundaryJob, /"\$\{EVENT_NAME\}" == "push"/u);
+  assert.doesNotMatch(boundaryJob, /TARGET_REPOSITORY_FORK/u);
   assert.match(boundaryJob, /"1349011765"/u);
   assert.match(boundaryJob, /"tahackr5\/HedefOra-V1"/u);
   assert.doesNotMatch(boundaryJob, /actions\/checkout|docker|node /u);
@@ -321,11 +322,13 @@ test("CI R-016 step binds the exact checkout and hard-pinned trusted Node", asyn
   );
   assert.match(qualityJob, /needs: r016-source-boundary/u);
   assert.match(qualityJob, /run: pnpm ci:check/u);
-  const dependencyReviewJob = workflow.slice(
-    workflow.indexOf("  dependency-review:\n"),
+  assert.doesNotMatch(workflow, /\n  pull_request:\s*(?:\n|$)/u);
+  assert.match(
+    workflow,
+    /\non:\n  push:\n    branches:\n      - main\n      - codex\/\*\*/u,
   );
-  assert.match(dependencyReviewJob, /needs: r016-source-boundary/u);
-  assert.match(dependencyReviewJob, /actions\/checkout/u);
+  assert.doesNotMatch(workflow, /\n  dependency-review:\n/u);
+  assert.doesNotMatch(workflow, /github\.event\.pull_request/u);
   const packageDocument = parseStrictJson(
     await readFile(path.join(repositoryRoot, "package.json"), "utf8"),
     "package.json",
@@ -377,8 +380,8 @@ test("trusted PR gate keeps control code on the immutable base checkout", async 
     /await import\(pathToFileURL\(process\.env\.CONTROL_RUNNER\)\.href\)/u,
   );
   for (const expected of [
-    /R016_AUTHORITY: github-event/u,
-    /R016_VISIBILITY_PROOF: "true"/u,
+    /R016_AUTHORITY: github-context-claim/u,
+    /R016_VISIBILITY_PROOF: "false"/u,
     /R016_EVENT_NAME: pull_request_target/u,
     /R016_REPOSITORY_RELATION: same-repository/u,
   ]) {
@@ -485,6 +488,43 @@ test("trusted PR gate keeps control code on the immutable base checkout", async 
   assert.match(
     workflow,
     /- name: Upload exact R-016 evidence\n\s+if: always\(\)\n\s+uses: actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7\.0\.1\n\s+with:\n\s+name: r016-\$\{\{ github\.event\.pull_request\.head\.sha \}\}\n\s+path: \$\{\{ steps\.r016\.outputs\.artifact_path \}\}\n\s+if-no-files-found: error\n\s+retention-days: 7/u,
+  );
+  const dependencyReviewJob = workflow.slice(
+    workflow.indexOf("  dependency-review:\n"),
+  );
+  assert.match(dependencyReviewJob, /needs: source-boundary/u);
+  assert.doesNotMatch(dependencyReviewJob, /actions\/checkout/u);
+  assert.match(
+    dependencyReviewJob,
+    /actions\/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294/u,
+  );
+});
+
+test("public rollback remains private-first and forbids a raw workflow revert", async () => {
+  const ownership = (
+    await readFile(
+      path.join(repositoryRoot, "state", "W001-OWNERSHIP.md"),
+      "utf8",
+    )
+  ).replaceAll("\r\n", "\n");
+  assert.match(
+    ownership,
+    /repository public iken eski workflow tree'sine ham revert yasaktır/u,
+  );
+  const rollback = ownership.slice(ownership.indexOf("## Merge ve rollback"));
+  const progressionOffset = rollback.indexOf("progression durdurulur");
+  const privateOffset = rollback.indexOf("repository private yapılır");
+  const verificationOffset = rollback.indexOf(
+    "exact ID/full-name/visibility ve hosted capability yeniden doğrulanır",
+  );
+  const revertOffset = rollback.indexOf(
+    "reviewed revert PR değerlendirilebilir",
+  );
+  assert.ok(
+    progressionOffset >= 0 &&
+      progressionOffset < privateOffset &&
+      privateOffset < verificationOffset &&
+      verificationOffset < revertOffset,
   );
 });
 
@@ -851,6 +891,15 @@ test("wrong offline cache path and mutable image reference fail closed", () => {
     () => validateConfiguration(policy, mutableImage),
     /must end with its index digest/u,
   );
+
+  for (const invalidLicense of [undefined, "Proprietary", 42]) {
+    const scannerLicense = structuredClone(scanners);
+    scannerLicense.semgrep.engineLicense = invalidLicense;
+    assert.throws(
+      () => validateConfiguration(policy, scannerLicense),
+      /engine license lock/u,
+    );
+  }
 
   const privateOnlyLicense = structuredClone(scanners);
   privateOnlyLicense.semgrepRules.license.usage = "private-internal-ci-only";
