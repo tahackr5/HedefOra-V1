@@ -83,7 +83,17 @@
 
 ## Open
 
-Açık karar yoktur.
+### DQ-007 — Unpatched oapi-codegen ve W001 generated-Go yolu
+
+- Opened by / date: orchestrator + dependency compatibility + security review / 2026-08-31
+- Conflicting files/sections: delivery/TOOLCHAIN-LOCK.md planned oapi-codegen 2.8.0; state/W001-OWNERSHIP.md T04C generated strict Go handler acceptance; DECISIONS.md DEC-019 production dependency risk gate; official GHSA-9c2f-gr95-7wqw
+- Decision needed: Patched upstream release oluşana kadar generated-Go/public health runtime'ını durdurmak ile ayrı bir owner-approved local generator/security-compiler task'ı açmak arasında seçim yap.
+- Options: önerilen seçenek, patched ve yeniden doğrulanmış upstream sürümü beklemek; alternatif, mevcut T04C'den ayrı ve silinebilir bir task'ta exact-health-only local generator, bağımsız negatif corpus ve security review tasarlamak. Known-vulnerable v2.8.0 admission veya lint-only risk acceptance seçenek değildir.
+- Security/privacy/cost/migration impact: v2.8.0, saldırgan kontrollü x-go-type-import.name üzerinden generated package compile/test aşamasında code execution üretebilir. Local generator yeni security-critical compiler/TCB ve bakım yükü yaratır. API additive contract taslağı dışında DB/veri migration etkisi yoktur.
+- Work that can continue safely: canonical OpenAPI/Spectral fail-closed preflight incelemesi; exact upstream advisory/release izlemesi; VPS/DNS/Cloudflare'a dokunmayan read-only tasarım. Generated Go dependency, generated handler ve public runtime başlatılmaz.
+- Blocking wave/gate: W001-T04B dependency admission, T04C generated Go parity ve ona bağımlı T04D public runtime.
+- Owner decision: PENDING
+- Closed commit: PENDING
 
 ## Item template
 

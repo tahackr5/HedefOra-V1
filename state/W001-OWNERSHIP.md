@@ -64,13 +64,15 @@ Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERS
 - Writers: none; architecture/backend/quality/security read-only proposal verir.
 - Scope: official exact version, license, maintenance, vulnerability/SBOM ve exit planı; OpenAPI 3.1 generator compatibility; additive API sınıflaması; ilerideki DB/River migration/replay penceresi.
 - Boundary: `delivery/TOOLCHAIN-LOCK.md` içindeki planned W001 sürümleri ekleme izni değildir. İlk health dilimi yalnız gerçek producer/consumer'ı olan minimum generator/runtime dependency'lerini ekler; pgx/River/migrate/Testcontainers sonraki owning task'a kadar eklenmez.
+- Current verdict: `BLOCKED_EXTERNAL`. `oapi-codegen 2.8.0`, unpatched `GHSA-9c2f-gr95-7wqw` nedeniyle dependency admission alamaz; recursive extension lint yalnız defense-in-depth'tir. Patched exact upstream veya DQ-007 owner-approved ayrı local-generator task'ı olmadan generated Go ve public runtime üretilmez.
 
 ## W001-T04C — Additive liveness contract ve generated parity
 
 - Writer/merge/stage sahibi: orchestrator; builder ajanlar yalnız proposal verir.
-- Owned paths: `contracts/openapi/**` (exact Go config `contracts/openapi/oapi-codegen.yaml` dahil), `contracts/README.md`, `.spectral.yaml`, `scripts/validate-contracts.mjs`, `scripts/check-generated.mjs`, `scripts/check-generated.test.mjs`, `scripts/generate-openapi.mjs`, generated Go root `internal/generated/openapi/**`, generated TypeScript root `apps/web/src/generated/api/**`, `go.mod`, `go.sum`, `package.json`, `pnpm-lock.yaml`, `apps/web/package.json`.
-- Contract: `GET /health/live`; public/no-auth, inherently idempotent, concurrency precondition'i yok, explicit health rate-limit class. Serving sırasında typed `200`, drain sırasında stable error envelope ile typed `503`.
+- Owned paths: `contracts/openapi/**` (exact Go config `contracts/openapi/oapi-codegen.yaml` dahil), `contracts/README.md`, `.spectral.yaml`, `scripts/fixtures/openapi-negative-mutations.mjs`, `scripts/validate-contracts.mjs`, `scripts/validate-contracts.test.mjs`, `scripts/check-generated.mjs`, `scripts/check-generated.test.mjs`, `scripts/generate-openapi.mjs`, generated Go root `internal/generated/openapi/**`, generated TypeScript root `apps/web/src/generated/api/**`, `go.mod`, `go.sum`, `package.json`, `pnpm-lock.yaml`, `apps/web/package.json`.
+- Contract: `GET /health/live`; public/no-auth, inherently idempotent, concurrency precondition'i yok, explicit health rate-limit class. Serving sırasında typed `200`; drain sırasında `service_unavailable`, `retryable: true`, bounded zorunlu retry süresi ve `Retry-After` taşıyan dedicated typed `503`.
 - Generated boundary: kanonik OpenAPI elle değiştirilir; generated dosyalar elle düzenlenmez. Temp regeneration byte-diff, Go/TypeScript compile ve schema negative fixture'ları zorunludur.
+- Safe blocked-state work: canonical contract/Spectral/single-mutation negative preflight contract-only local checkpoint olarak doğrulanabilir; generator config/dependency/output ve runtime merge edilmez, T04C generated parity veya runtime `PASS` sayılmaz.
 
 ## W001-T04D — API/config/telemetry/health runtime
 
