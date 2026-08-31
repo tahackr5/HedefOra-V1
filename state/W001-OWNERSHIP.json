@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "a378a98fcfe0715dfcf45e500d87e056c5928718",
+  "verifiedThrough": "8c25694be0ba16d8167527347e5d186110937cdd",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -206,6 +206,38 @@
         "scripts/supply-chain/contracts.test.mjs",
         "scripts/supply-chain/run.mjs",
         "scripts/supply-chain/run.test.mjs"
+      ]
+    },
+    "W001-T02-linux-ci-portability-seal": {
+      "base": "a378a98fcfe0715dfcf45e500d87e056c5928718",
+      "head": "e3ca17d9ed000f7758cdb43d28dd22862b20cdd3",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T02-public-repository-boundary": {
+      "base": "e3ca17d9ed000f7758cdb43d28dd22862b20cdd3",
+      "head": "8c25694be0ba16d8167527347e5d186110937cdd",
+      "allowedPaths": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/codeql.yml",
+        ".github/workflows/r016-trusted-pr.yml",
+        "DECISIONS.md",
+        "architecture/ADR-REGISTER.md",
+        "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
+        "delivery/WORKTREE-OWNERSHIP-AND-MERGE.md",
+        "operations/REPOSITORY-BACKUP-POLICY.md",
+        "scripts/supply-chain/contracts.mjs",
+        "scripts/supply-chain/contracts.test.mjs",
+        "scripts/supply-chain/run.mjs",
+        "scripts/supply-chain/run.test.mjs",
+        "security/r016-evidence.schema.json",
+        "security/scanners.lock.json",
+        "security/supply-chain-policy.json",
+        "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md"
       ]
     }
   }
