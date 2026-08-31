@@ -602,8 +602,8 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
   ];
   const goEnvironment = {
     ...goModuleEnvironment(),
-    GOCACHE: "/gocache",
-    GOMODCACHE: "/gomodcache",
+    GOCACHE: "/tmp/gocache",
+    GOMODCACHE: "/tmp/gomodcache",
   };
   const dockerRun = (
     id,
@@ -999,8 +999,6 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
           mounts: [
             ["dbcheck-source", "/validator", true],
             ["osv-cache", "/db", true],
-            ["dbcheck-build-cache", "/gocache", false],
-            ["dbcheck-module-cache", "/gomodcache", false],
           ],
           temporaryStorage: "512m",
           tmpfsExecutable: true,
@@ -1022,11 +1020,7 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
         {
           environment: goEnvironment,
           memory: "768m",
-          mounts: [
-            ["scan-input/go-module-1", "/module", true],
-            ["go-module-cache", "/gomodcache", false],
-            ["go-build-cache", "/gocache", false],
-          ],
+          mounts: [["scan-input/go-module-1", "/module", true]],
           network: id.includes("LIST") ? "bridge" : "none",
           user: "65534:65534",
           workdir: "/module",

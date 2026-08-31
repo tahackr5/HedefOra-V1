@@ -2029,11 +2029,11 @@ function expectedDockerRunContract(id, evidence, configuration, temporaryRoot) {
     SEMGREP_SEND_METRICS: "off",
   };
   const goEnvironment = {
-    GOCACHE: "/gocache",
+    GOCACHE: "/tmp/gocache",
     GOENV: "off",
     GOFLAGS: "-mod=readonly",
     GOINSECURE: "",
-    GOMODCACHE: "/gomodcache",
+    GOMODCACHE: "/tmp/gomodcache",
     GONOPROXY: "",
     GONOSUMDB: "",
     GOPRIVATE: "",
@@ -2258,16 +2258,6 @@ function expectedDockerRunContract(id, evidence, configuration, temporaryRoot) {
       mounts: [
         { source: "dbcheck-source", destination: "/validator", readOnly: true },
         { source: "osv-cache", destination: "/db", readOnly: true },
-        {
-          source: "dbcheck-build-cache",
-          destination: "/gocache",
-          readOnly: false,
-        },
-        {
-          source: "dbcheck-module-cache",
-          destination: "/gomodcache",
-          readOnly: false,
-        },
       ],
       temporaryStorage: "512m",
       tmpfsExecutable: true,
@@ -2300,12 +2290,6 @@ function expectedDockerRunContract(id, evidence, configuration, temporaryRoot) {
           destination: "/module",
           readOnly: true,
         },
-        {
-          source: "go-module-cache",
-          destination: "/gomodcache",
-          readOnly: false,
-        },
-        { source: "go-build-cache", destination: "/gocache", readOnly: false },
       ],
       network: goProcess[1] === "LIST" ? "bridge" : "none",
       user: "65534:65534",

@@ -37,10 +37,10 @@ CodeQL Default Setup ve Dependency Review kullanılabildiği sürece exact targe
 | Quality evidence review                 | PASS    | Exact `9ec363c` / `1e57e62`; 187 check, 340 raw artifact, DB/source/control/process/terminal bağları; bloklayıcı bulgu yok                                     |
 | Security review                         | PASS    | Exact `9ec363c` / `1e57e62`; release-blocking bulgu yok; bir LOW future multi-module slug riski R-017 olarak izlendi                                           |
 | Cold review                             | PASS    | Fresh-context exact-tree verdict `PASS`; local blocker/finding yok; hosted/trusted-base sonuçları doğru biçimde ayrıldı                                        |
-| Public use-boundary evidence/schema v2  | FAIL    | Sealed `c59a46e` local/live/hosted kaliteyi geçti; final security review `F01`–`F03` nedeniyle merge'i reddetti. Yeni remediation head'i henüz mühürlenmedi      |
-| GitHub exact-head quality               | PASS    | Run `33346361363`, exact `c59a46e`: checkout'suz boundary, quality Node `129/129` + web `3/3` + build ve Dependency Review `SUCCESS`; R-016 PR job skipped        |
+| Public use-boundary evidence/schema v2  | FAIL    | Sealed `f435545` local R-016 `PASS`; hosted run `33348065572` branch merge-wrapper ve Linux temporary cleanup hatalarını fail-closed yakaladı. Yeni seal bekleniyor |
+| GitHub exact-head quality               | FAIL    | Run `33348065572`, exact `f435545`: source boundary `PASS`; quality tek-parent branch push'ında merge-wrapper istediği için, R-016 Linux cleanup nedeniyle `FAIL` |
 | Trusted-base PR gate                    | NOT_RUN | Wave-start base `.github/workflows/r016-trusted-pr.yml` ve trusted runner'ı taşımıyor; ilk control-plane bootstrap PR'ında hosted `PASS` iddia edilemez        |
-| Hosted security/enforcement             | FAIL    | Default CodeQL exact `c59a46e` dört dilde `SUCCESS`/0 alert; CI başarılı. Buna rağmen head-kontrollü normal PR workflow güvenlik boundary'si olamaz; yeni exact head bekleniyor. Branch/ruleset `BLOCKED_EXTERNAL` |
+| Hosted security/enforcement             | FAIL    | `f435545` hosted CI fail-closed kaldı; current remediation exact head'i henüz yok. Default CodeQL ve authenticated hosted provenance yeni seal'de tekrarlanacak; branch/ruleset `BLOCKED_EXTERNAL` |
 
 ## Public remediation implementation checkpoint
 
@@ -61,6 +61,15 @@ CodeQL Default Setup ve Dependency Review kullanılabildiği sürece exact targe
 - Remediation normal `pull_request` tetikleyicisini kaldırır; CI yalnız owner repository `main` + `codex/**` push'larında çalışır. PR enforcement default-branch kontrollü `pull_request_target` boundary'sidir; Dependency Review head checkout etmeden API karşılaştırması yapar. Artifact authority `github-context-claim`/`visibilityProof=false` olur ve hosted verdict dış authenticated provenance bağı ister. Rollback public durumda yasaktır; private-first sırası zorunludur. Schema `maximum` ve supported-keyword parity'si ile exact Semgrep engine-license lock'u enforce edilir.
 - Dirty-worktree preflight: targeted exact Node `57/57`; full `pnpm ci:check` repository `130/130`, web `3/3`, build/generated/marker/license/production audit exit `0`; `git diff --check` exit `0`. Bu preflight yeni commit/seal/full review yerine geçmez.
 - Security remediation implementation commit'i `26a8515ee008c34a551d172abc7646c3ce8f74b3`; tree `dd506acfb39cc494fdde9e65d2f11d7021c13c20`. Commit, normal PR trigger'ını kaldırır; base-controlled Dependency Review'u checkout'suz yapar; artifact authority'sini claim'e düşürür; private-first rollback, schema `maximum`/keyword parity ve Semgrep engine-license lock'unu enforce eder. Bookkeeping/manifest-only seal ve bu seal üzerindeki exact local/hosted/security/cold kanıtı `NOT_RUN` kalır.
+
+## Sealed `f435545` Linux hosted tanısı
+
+- Exact target `f43554592428a2a0d779a110c66bff2af9c68d6a`; tree `85f4d99d96bd60e9759b6db10fa542fd67a26634`; security remediation ownership seal'i ve clean detached clone doğrulandı.
+- Clean detached local R-016 run `20260831T013636767Z-17728-b1f5ba0c`: `PASS/0`; canonical evidence SHA-256 `fe566e2f04ba32443205c2066df22b869b12ebe7db8d8d8942b70ff5210f9723`; exact source/control SHA/tree, `local-declaration`, public, same-repository/non-fork; `188` check ve `340` raw artifact. Bu yerel tanı hosted sonucu yeniden adlandırmaz.
+- GitHub push run `33348065572` exact head'de `FAIL`: checkout'suz source boundary `PASS`; quality job `99355934319` tek-parent branch push'ına `-merge-wrapper` uyguladığı için ownership doğrulamasında bloklandı; supply-chain job `99355934326` gate'i çalıştırdı ve artifact yükledi, fakat final temporary cleanup host `osv-empty-cache` dizinini `0555` yaptığı için Linux `EACCES` ile başarısız oldu.
+- Pinned-image Linux ownership probu, Go ve DB validator cache host bind'lerine UID/GID `65534:65534` ile yazılan nested `0755`/`0644` girdilerin de runner tarafından recursive silinemeyeceğini doğruladı. Yalnız ilk görülen empty-cache hatasını düzeltmek yeterli değildir.
+- Remediation quality merge-wrapper'ını yalnız `refs/heads/main` için etkinleştirir; empty cache'i deterministik host-owned `0755` tutup container'a read-only bağlar; `go-module-cache`, `go-build-cache`, `dbcheck-build-cache` ve `dbcheck-module-cache` host RW bind'lerini kaldırır. `GOCACHE=/tmp/gocache` ve `GOMODCACHE=/tmp/gomodcache`; Go inventory mevcut bounded `128m/noexec`, DB `go run` mevcut `512m/exec` tmpfs'i kullanır. Sabit nonroot UID ve read-only source/DB mount'ları korunur.
+- Dirty-worktree targeted exact Node `59/59`, pinned actionlint ve `git diff --check` exit `0`. `f435545` hosted sonucu `FAIL` kalır; remediation implementation/bookkeeping commit'i, manifest-only seal, clean exact local/full-tree/hosted/security/cold sonuçları `NOT_RUN`dır.
 
 ## Exact live PASS
 

@@ -142,7 +142,7 @@ jobs:
             -base bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b
             -head HEAD
           )
-          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
             ownership_args+=(-merge-wrapper)
           fi
           go run ./tools/repolint/cmd/repolint "${ownership_args[@]}"

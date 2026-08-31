@@ -2057,13 +2057,6 @@ async function resolveGoInventory(
   scanInputRoot,
 ) {
   const scanners = configuration.scanners;
-  const moduleCache = path.join(context.temporaryRoot, "go-module-cache");
-  const buildCache = path.join(context.temporaryRoot, "go-build-cache");
-  await Promise.all([
-    mkdir(moduleCache, { recursive: false }),
-    mkdir(buildCache, { recursive: false }),
-  ]);
-  await Promise.all([chmod(moduleCache, 0o777), chmod(buildCache, 0o777)]);
   const resolved = [];
   for (const [manifestIndex, manifest] of manifests.entries()) {
     const stagedDirectoryName = `go-module-${manifestIndex + 1}`;
@@ -2089,15 +2082,11 @@ async function resolveGoInventory(
       timeoutMs: configuration.policy.timeoutsSeconds.scanner * 1_000,
       user: "65534:65534",
       workdir: "/module",
-      mounts: [
-        dockerMount(stagedDirectory, "/module", true),
-        dockerMount(moduleCache, "/gomodcache", false),
-        dockerMount(buildCache, "/gocache", false),
-      ],
+      mounts: [dockerMount(stagedDirectory, "/module", true)],
       env: {
         ...goModuleEnvironment(),
-        GOCACHE: "/gocache",
-        GOMODCACHE: "/gomodcache",
+        GOCACHE: "/tmp/gocache",
+        GOMODCACHE: "/tmp/gomodcache",
       },
     };
     const editResult = await runDocker(
@@ -2282,7 +2271,7 @@ async function runOsvMissingDatabaseNegativeGate(
     mkdir(path.join(emptyCache, "osv-scalibr", "npm"), { recursive: true }),
     mkdir(path.join(emptyCache, "osv-scalibr", "Go"), { recursive: true }),
   ]);
-  await chmod(emptyCache, 0o555);
+  await chmod(emptyCache, 0o755);
   const result = await runDocker(
     context,
     "osv-missing-database-negative",
@@ -3113,13 +3102,6 @@ async function validateDatabaseArchives(context, configuration, databases) {
   const scanners = configuration.scanners;
   const cacheRoot = databases[0].cacheRoot;
   const validatorSource = await stageDatabaseValidatorSources(context);
-  const buildCache = path.join(context.temporaryRoot, "dbcheck-build-cache");
-  const moduleCache = path.join(context.temporaryRoot, "dbcheck-module-cache");
-  await Promise.all([
-    mkdir(buildCache, { recursive: false }),
-    mkdir(moduleCache, { recursive: false }),
-  ]);
-  await Promise.all([chmod(buildCache, 0o777), chmod(moduleCache, 0o777)]);
   const databaseArguments = databases.map(
     ({ locked }) => `/db/${locked.cachePath}`,
   );
@@ -3145,13 +3127,11 @@ async function validateDatabaseArchives(context, configuration, databases) {
       mounts: [
         dockerMount(validatorSource.root, "/validator", true),
         dockerMount(cacheRoot, "/db", true),
-        dockerMount(buildCache, "/gocache", false),
-        dockerMount(moduleCache, "/gomodcache", false),
       ],
       env: {
         ...goModuleEnvironment(),
-        GOCACHE: "/gocache",
-        GOMODCACHE: "/gomodcache",
+        GOCACHE: "/tmp/gocache",
+        GOMODCACHE: "/tmp/gomodcache",
       },
     },
   );

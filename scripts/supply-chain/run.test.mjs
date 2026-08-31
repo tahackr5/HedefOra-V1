@@ -232,6 +232,58 @@ test("repository use validation precedes every scanner and rule acquisition", as
   }
 });
 
+test("missing-database cache is container-read-only but host-cleanable", async () => {
+  const source = await readFile(
+    path.join(repositoryRoot, "scripts", "supply-chain", "run.mjs"),
+    "utf8",
+  );
+  const start = source.indexOf(
+    "async function runOsvMissingDatabaseNegativeGate(",
+  );
+  const end = source.indexOf(
+    "\nexport function assertOsvMissingDatabaseFailure",
+    start,
+  );
+  const gate = source.slice(start, end);
+  assert.match(gate, /dockerMount\(emptyCache, "\/cache", true\)/u);
+  assert.match(gate, /chmod\(emptyCache, 0o755\)/u);
+  assert.doesNotMatch(gate, /chmod\(emptyCache, 0o555\)/u);
+});
+
+test("Go caches stay in bounded container tmpfs and never write to host binds", async () => {
+  const source = await readFile(
+    path.join(repositoryRoot, "scripts", "supply-chain", "run.mjs"),
+    "utf8",
+  );
+  const inventoryStart = source.indexOf("async function resolveGoInventory(");
+  const inventoryEnd = source.indexOf(
+    "\nfunction validateGoModEdit",
+    inventoryStart,
+  );
+  const databaseStart = source.indexOf(
+    "async function validateDatabaseArchives(",
+  );
+  const databaseEnd = source.indexOf(
+    "\nexport function validateDatabaseArchiveReport",
+    databaseStart,
+  );
+  for (const gate of [
+    source.slice(inventoryStart, inventoryEnd),
+    source.slice(databaseStart, databaseEnd),
+  ]) {
+    assert.match(gate, /GOCACHE: "\/tmp\/gocache"/u);
+    assert.match(gate, /GOMODCACHE: "\/tmp\/gomodcache"/u);
+    assert.doesNotMatch(
+      gate,
+      /(?:go-module-cache|go-build-cache|dbcheck-build-cache|dbcheck-module-cache)/u,
+    );
+    assert.doesNotMatch(
+      gate,
+      /dockerMount\([^\n]+, "\/(?:gocache|gomodcache)", false\)/u,
+    );
+  }
+});
+
 test("CI R-016 step binds the exact checkout and hard-pinned trusted Node", async () => {
   const workflow = (
     await readFile(
@@ -322,6 +374,10 @@ test("CI R-016 step binds the exact checkout and hard-pinned trusted Node", asyn
   );
   assert.match(qualityJob, /needs: r016-source-boundary/u);
   assert.match(qualityJob, /run: pnpm ci:check/u);
+  assert.match(
+    qualityJob,
+    /if \[\[ "\$\{GITHUB_REF\}" == "refs\/heads\/main" \]\]; then\n\s+ownership_args\+=\(-merge-wrapper\)/u,
+  );
   assert.doesNotMatch(workflow, /\n  pull_request:\s*(?:\n|$)/u);
   assert.match(
     workflow,
