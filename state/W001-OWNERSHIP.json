@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "43d7c02bdf718704dd64aab22cdfa3a23ca5a10a",
+  "verifiedThrough": "8207f974efd803a0d0a3b149540b5d1e7c6aa0d5",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -298,6 +298,91 @@
         "state/ACTIVE-WAVE.md",
         "state/RELEASE-LEDGER.md",
         "state/W001-EVIDENCE.md"
+      ]
+    },
+    "W001-T02-public-linux-portability-seal": {
+      "base": "43d7c02bdf718704dd64aab22cdfa3a23ca5a10a",
+      "head": "ac637de57d4f7c3a7f51c4933365f596e0b3817b",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T03-bootstrap-merge-wrapper": {
+      "base": "ac637de57d4f7c3a7f51c4933365f596e0b3817b",
+      "head": "1dbc81b57e4809ce7ba0f530cab946ee0540ea71",
+      "allowedPaths": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/codeql.yml",
+        ".github/workflows/r016-trusted-pr.yml",
+        "DECISIONS.md",
+        "FILE-INDEX.md",
+        "architecture/ADR-REGISTER.md",
+        "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
+        "delivery/TOOLCHAIN-LOCK.md",
+        "delivery/WORKTREE-OWNERSHIP-AND-MERGE.md",
+        "operations/REPOSITORY-BACKUP-POLICY.md",
+        "package.json",
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "scripts/fixtures/supply-chain/go-license-denied.mod.txt",
+        "scripts/fixtures/supply-chain/license-denied-pnpm-lock.yaml.txt",
+        "scripts/fixtures/supply-chain/license-unknown-pnpm-lock.yaml.txt",
+        "scripts/fixtures/supply-chain/sast-go-blocking.go.txt",
+        "scripts/fixtures/supply-chain/sast-typescript-blocking.ts.txt",
+        "scripts/fixtures/supply-chain/vulnerable-development-pnpm-lock.yaml.txt",
+        "scripts/fixtures/supply-chain/vulnerable-go.mod.txt",
+        "scripts/fixtures/supply-chain/vulnerable-pnpm-lock.yaml.txt",
+        "scripts/supply-chain/contracts.mjs",
+        "scripts/supply-chain/contracts.test.mjs",
+        "scripts/supply-chain/database.mjs",
+        "scripts/supply-chain/database.test.mjs",
+        "scripts/supply-chain/inventory.mjs",
+        "scripts/supply-chain/inventory.test.mjs",
+        "scripts/supply-chain/policy.mjs",
+        "scripts/supply-chain/policy.test.mjs",
+        "scripts/supply-chain/process.mjs",
+        "scripts/supply-chain/process.test.mjs",
+        "scripts/supply-chain/run.mjs",
+        "scripts/supply-chain/run.test.mjs",
+        "security/osv-scanner.toml",
+        "security/r016-evidence.schema.json",
+        "security/scanners.lock.json",
+        "security/supply-chain-policy.json",
+        "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.json",
+        "state/W001-OWNERSHIP.md",
+        "tools/osvdbcheck/cmd/osvdbcheck/main.go",
+        "tools/osvdbcheck/cmd/osvdbcheck/main_test.go",
+        "tools/repolint/cmd/repolint/main.go",
+        "tools/repolint/cmd/repolint/main_test.go"
+      ]
+    },
+    "W001-T03A-gitleaks-control-remediation": {
+      "base": "1dbc81b57e4809ce7ba0f530cab946ee0540ea71",
+      "head": "b930446ce3abe9a18e8656faa6ebfe81680e677c",
+      "allowedPaths": [
+        ".gitleaksignore",
+        "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
+        "scripts/supply-chain/contracts.mjs",
+        "scripts/supply-chain/contracts.test.mjs",
+        "scripts/supply-chain/run.mjs",
+        "scripts/supply-chain/run.test.mjs",
+        "state/ACTIVE-WAVE.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md"
+      ]
+    },
+    "W001-T03A-gitleaks-control-promotion": {
+      "base": "b930446ce3abe9a18e8656faa6ebfe81680e677c",
+      "head": "8207f974efd803a0d0a3b149540b5d1e7c6aa0d5",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md"
       ]
     }
   }
