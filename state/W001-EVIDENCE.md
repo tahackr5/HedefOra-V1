@@ -58,6 +58,13 @@ CodeQL Default Setup ve Dependency Review kullanılabildiği sürece exact targe
 - Testcontainers-Go `v0.44.0` ve golang-migrate `v4.19.1` exact closure'ları current all-scope R-016 bulguları nedeniyle `NO-GO`; dependency, lock veya OCI image eklenmedi. Compose/CLI real-PostgreSQL harness ve immutable SQL/checksum/advisory-lock tabanlı minimal migration yolu yalnız dependency-free proposal/implementation olarak ilerleyebilir.
 - `/health/ready` ikinci OpenAPI operation'dır; DEC-027 exact `/health/live` renderer'ı genişletilemez. DQ-009 ayrı owner/security compiler admission'ı bekler. OpenAPI, generator, generated Go ve mevcut runtime HTTP yolları değiştirilmedi.
 
+## W001-T04F governance correction checkpoint
+
+- Task-open commit `1aa09c174f8fbbfd96e9027426a27413423c8a25` ve manifest seal `fc69dc4dd78206c4106d2c8d8c528aa08c198a8c`; pinned Go `1.26.7` repolint bütün ownership zincirini ve merge wrapper'ın exact `43` first-parent path endpoint'ini doğruladı.
+- Independent read-only yüzey incelemesi `fc69dc4` üzerinde üç blocking documentation bulgusu verdi: append-only release ledger'ın tarihsel satırlarında biçimsel byte drift'i, gate sözlüğünde olmayan `BLOCKED_OWNER`, ayrıca tarihsel `1dbc81b` runtime-foundation checkpoint'i ile current `cd81ee7` T04F task-phase base'inin belirsiz yazımı ve T04H'nin erken kapanması.
+- Corrective commit `92be98e2e949904f15ff3b1ff72d783f6c80b475`, tree `3443944dcff3d2abbbc67ec0e01cd35d5e489b34`: `cd81ee7:state/RELEASE-LEDGER.md` blob `eb4963a9d5088172b94690af974cd1b86e56bf75` exact `10063` byte prefix olarak geri getirildi ve yalnız yeni event satırları eklendi; gate'ler kanonik durumlara ayrıldı; DEC-026/ADR-0016 historical/current checkpoint ayrımı netleştirildi; T04H, T04F/T04G post-merge exit'lerine kadar `PENDING` yapıldı.
+- Governance validator, historical ledger prefix byte karşılaştırması, canonical gate-status araması ve `git diff --check` exit `0`. Dependency, OpenAPI, generated/runtime source, VPS, SSH, DNS, Cloudflare veya veri mutation yapılmadı.
+
 ## Opening identity
 
 - Immutable start commit: `bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b`
