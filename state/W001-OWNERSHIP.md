@@ -4,6 +4,8 @@
 
 Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERSHIP.json` içindedir. Manifest schema v2 kullanır; son self-referential seal commit'inde yalnız bu JSON değişebilir. Tarihsel `state/W000-*` dosyaları W001 boyunca değiştirilemez.
 
+- Current runtime code ownership seal: manifest `verifiedThrough` F3 `759e338cbc868e63bc10d0b70ae4fe2836f4cc83`; yalnız ownership JSON'unu değiştiren seal S3 `057a1976dd157b0225e3e7530998e7ac6abae217`, tree `a6cd96a1b9721b75fc222d11b97289457ae3ce05`.
+
 ## W001-T00 — Wave open ve governance state
 
 - Writer: orchestrator.
@@ -82,15 +84,15 @@ Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERS
 - Owned paths: `contracts/openapi/**`, `contracts/README.md`, `.spectral.yaml`, `scripts/fixtures/openapi-negative-mutations.mjs`, `scripts/validate-contracts.mjs`, `scripts/validate-contracts.test.mjs`, T04E generation paths, generated Go root `internal/generated/openapi/**`; generated TypeScript root `apps/web/src/generated/api/**` yalnız gerçek frontend consumer task'ında ayrıca açılır.
 - Contract: `GET /health/live`; public/no-auth, inherently idempotent, concurrency precondition'i yok, explicit health rate-limit class. Serving sırasında typed `200`; drain sırasında `service_unavailable`, `retryable: true`, bounded zorunlu retry süresi ve `Retry-After` taşıyan dedicated typed `503`.
 - Generated boundary: kanonik OpenAPI elle değiştirilir; generated dosya elle düzenlenmez. Exact sealed regeneration byte-diff, Go compile ve schema/generator negative fixture'ları zorunludur. TypeScript parity bu Go slice'ıyla `PASS` olmaz.
-- Current state: contract-only preflight ve T04E sealed renderer/generated Go parity `PASS`. TypeScript consumer ve public runtime T04D HTTP acceptance tamamlanmadan daha geniş API runtime parity'si `PASS` sayılmaz.
+- Current state: contract preflight, T04E sealed generated Go parity ve T04D HTTP integration exact S3 üzerinde `PASS`; bounded T04C Go/HTTP dilimi `COMPLETED`. Gerçek TypeScript consumer task/gate'i açılmadı ve `NOT_RUN`; TypeScript parity `PASS` değildir.
 
 ## W001-T04D — API/config/telemetry/health runtime
 
 - Writer: orchestrator; ilk vertical slice boyunca T04C ile aynı integration worktree'sinde sıralı çalışır, paralel writer yoktur.
-- Owned paths: `cmd/hedefora/**`, `internal/platform/app/**`, `internal/platform/config/**`, `internal/platform/http/**`, `internal/platform/health/**`, `internal/platform/telemetry/**`; runtime activation boundary için exact `scripts/check-generated.mjs` ve `scripts/check-generated.test.mjs`.
+- Owned paths: `cmd/hedefora/**`, `internal/platform/app/**`, `internal/platform/config/**`, `internal/platform/http/**`, `internal/platform/health/**`, `internal/platform/telemetry/**`; runtime activation boundary için exact `scripts/check-generated.mjs`, `scripts/check-generated.test.mjs` ve `scripts/list-repository-files.mjs`.
 - Acceptance: explicit `api` process mode, allowlisted environment config, secret/raw-header loglamama, cryptographic request ID, structured request outcome, bounded server timeouts, graceful drain/shutdown, generated strict handler ve `200/503` unit/integration tests.
 - Boundary: PostgreSQL, River, object storage, VPS, DNS, Cloudflare ve staging mutation yoktur; readiness DB sahibi T04F'ye kadar eklenmez.
-- Current state: T04E/T04C Go checkpoint'i `PASS`; orchestrator-only writer ile `IN_PROGRESS`.
+- Current state: implementation/remediation head F3 `759e338cbc868e63bc10d0b70ae4fe2836f4cc83`; manifest-only ownership seal S3 `057a1976dd157b0225e3e7530998e7ac6abae217`, tree `a6cd96a1b9721b75fc222d11b97289457ae3ce05`. Exact S3 local ownership/full-tree/pinned-Go/R-016/security/cold kapıları ve T04D vertical slice `PASS`; T04D `COMPLETED`. Runtime trusted-base PR/R-016, hosted Dependency Review ve hosted CodeQL `NOT_RUN`; exact-head owner merge gate'i pending; R-014 branch/ruleset enforcement `BLOCKED_EXTERNAL`.
 
 ## W001-T04F — PostgreSQL 17 roles, migration ve readiness foundation
 
