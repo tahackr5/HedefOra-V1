@@ -307,6 +307,97 @@ test("ignored cmd files cannot bypass the exact runtime source boundary", async 
   }
 });
 
+test("ignored internal files cannot bypass the exact runtime source boundary", async () => {
+  const root = await mkdtemp(
+    path.join(os.tmpdir(), "hedefora-ignored-internal-runtime-"),
+  );
+  try {
+    runGit(root, "init", "--quiet");
+    const packageRoot = path.join(root, "internal", "platform", "http");
+    await mkdir(packageRoot, { recursive: true });
+    await writeFile(
+      path.join(root, ".gitignore"),
+      "internal/platform/http/ignored-*\n",
+    );
+    await writeFile(
+      path.join(packageRoot, "handler.go"),
+      'package httpapi\n\nimport _ "embed"\n\n//go:embed ignored-embedded.bin\nvar embedded []byte\n',
+    );
+    await writeFile(
+      path.join(packageRoot, "handler_test.go"),
+      "package httpapi\n",
+    );
+    runGit(
+      root,
+      "add",
+      ".gitignore",
+      "internal/platform/http/handler.go",
+      "internal/platform/http/handler_test.go",
+    );
+    assert.deepEqual(await findGeneratedArtifacts(root), []);
+
+    const ignoredFiles = [
+      "ignored-assembly-lower.s",
+      "ignored-assembly-upper.S",
+      "ignored-embedded.bin",
+      "ignored-extensionless",
+      "ignored-object.syso",
+    ];
+    for (const filename of ignoredFiles) {
+      await writeFile(path.join(packageRoot, filename), "fixture\n");
+    }
+    const symlinkFindings = [];
+    try {
+      await symlink(
+        path.join(packageRoot, "handler.go"),
+        path.join(packageRoot, "ignored-link.s"),
+      );
+      symlinkFindings.push(
+        "internal/platform/http/ignored-link.s#symbolic-link",
+      );
+    } catch (error) {
+      if (!new Set(["EACCES", "EPERM"]).has(error?.code)) throw error;
+    }
+
+    assert.deepEqual(
+      await findGeneratedArtifacts(root),
+      [
+        ...ignoredFiles.map(
+          (filename) =>
+            `internal/platform/http/${filename}#unexpected-runtime-source`,
+        ),
+        ...symlinkFindings,
+      ].sort(),
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test(
+  "literal backslash cmd paths cannot alias an exact runtime source",
+  { skip: process.platform === "win32" },
+  async () => {
+    const root = await mkdtemp(
+      path.join(os.tmpdir(), "hedefora-backslash-runtime-command-"),
+    );
+    try {
+      const commandRoot = path.join(root, "cmd");
+      await mkdir(commandRoot, { recursive: true });
+      await writeFile(
+        path.join(commandRoot, "hedefora\\main.go"),
+        "package main\n",
+      );
+
+      assert.deepEqual(await findGeneratedArtifacts(root), [
+        "cmd/hedefora\\main.go#unexpected-runtime-source",
+      ]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  },
+);
+
 test("force-tracked source in ignored output directories fails closed", async () => {
   const root = await mkdtemp(
     path.join(os.tmpdir(), "hedefora-tracked-output-"),

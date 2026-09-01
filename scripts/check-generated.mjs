@@ -59,6 +59,11 @@ export const allowedW001RuntimeSourceFiles = new Set([
   "internal/platform/telemetry/telemetry.go",
   "internal/platform/telemetry/telemetry_test.go",
 ]);
+const runtimeFilesystemRoots = new Set(["cmd", "internal"]);
+const allowedW001RuntimeFilesystemFiles = new Set([
+  ...allowedW001GeneratedSourceFiles,
+  ...allowedW001RuntimeSourceFiles,
+]);
 const generatedMarkerDefinitionFiles = new Set([
   "scripts/check-generated.mjs",
   "scripts/check-generated.test.mjs",
@@ -86,13 +91,13 @@ export async function findGeneratedArtifacts(root) {
       findings.push(runtimeRoot);
     }
   }
-  findings.push(...(await findRuntimeCommandArtifacts(root)));
+  findings.push(...(await findRuntimeFilesystemArtifacts(root)));
 
   const files = await listRepositoryFiles(root);
   for (const relativePath of files) {
-    const normalized = relativePath.replaceAll("\\", "/");
+    const normalized = relativePath;
     const pathParts = normalized.split("/");
-    if (pathParts[0]?.toLowerCase() === "cmd") {
+    if (runtimeFilesystemRoots.has(pathParts[0]?.toLowerCase())) {
       continue;
     }
     const fileStats = await lstat(path.join(root, relativePath));
@@ -148,12 +153,12 @@ export async function findGeneratedArtifacts(root) {
   return [...new Set(findings)].sort();
 }
 
-async function findRuntimeCommandArtifacts(root) {
+async function findRuntimeFilesystemArtifacts(root) {
   const findings = [];
   const rootEntries = await readdir(root, { withFileTypes: true });
   for (const entry of rootEntries) {
-    if (entry.name.toLowerCase() !== "cmd") continue;
-    await inspectRuntimeCommandPath(
+    if (!runtimeFilesystemRoots.has(entry.name.toLowerCase())) continue;
+    await inspectRuntimeFilesystemPath(
       path.join(root, entry.name),
       entry.name,
       findings,
@@ -162,22 +167,26 @@ async function findRuntimeCommandArtifacts(root) {
   return findings;
 }
 
-async function inspectRuntimeCommandPath(absolutePath, relativePath, findings) {
-  const normalized = relativePath.replaceAll("\\", "/");
+async function inspectRuntimeFilesystemPath(
+  absolutePath,
+  relativePath,
+  findings,
+) {
+  const normalized = relativePath;
   const fileStats = await lstat(absolutePath);
   if (fileStats.isSymbolicLink()) {
     findings.push(`${normalized}#symbolic-link`);
     return;
   }
   if (fileStats.isDirectory()) {
-    if (allowedW001RuntimeSourceFiles.has(normalized)) {
+    if (allowedW001RuntimeFilesystemFiles.has(normalized)) {
       findings.push(`${normalized}#unexpected-runtime-source`);
       return;
     }
     const entries = await readdir(absolutePath, { withFileTypes: true });
     entries.sort((left, right) => left.name.localeCompare(right.name, "en"));
     for (const entry of entries) {
-      await inspectRuntimeCommandPath(
+      await inspectRuntimeFilesystemPath(
         path.join(absolutePath, entry.name),
         `${relativePath}/${entry.name}`,
         findings,
@@ -185,7 +194,10 @@ async function inspectRuntimeCommandPath(absolutePath, relativePath, findings) {
     }
     return;
   }
-  if (!fileStats.isFile() || !allowedW001RuntimeSourceFiles.has(normalized)) {
+  if (
+    !fileStats.isFile() ||
+    !allowedW001RuntimeFilesystemFiles.has(normalized)
+  ) {
     findings.push(`${normalized}#unexpected-runtime-source`);
   }
 }
