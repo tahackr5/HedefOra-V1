@@ -79,7 +79,7 @@
 - Work that can continue safely: Read-only scope/dependency araştırması ve exact post-merge verification.
 - Blocking wave/gate: W001-T04 writer worktree'lerinin açılması.
 - Owner decision: `... yeni trusted base üzerinden runtime geliştirme aşamasına otonom olarak devam edin.` — 2026-08-31; exact merge ayrıca owner tarafından onaylandı.
-- Resolution: DEC-026 / ADR-0016 wave start'ı tarihsel provenance olarak korur; `1dbc81b57e4809ce7ba0f530cab946ee0540ea71` W001 runtime fazının tek immutable base'idir. Exact uygulama aralığı `state/W001-OWNERSHIP.json` içinde `W001-T04A-trusted-runtime-checkpoint` olarak mühürlenir.
+- Resolution: DEC-026 / ADR-0016 wave start'ı tarihsel provenance olarak korur; `1dbc81b57e4809ce7ba0f530cab946ee0540ea71` W001 T04C/T04D/T04I runtime-foundation fazının immutable base'idir. Exact uygulama aralığı `state/W001-OWNERSHIP.json` içinde mühürlenir; sonraki task-phase checkpoint'leri ancak DEC-026 koşullarıyla ilerler.
 
 ## Open
 

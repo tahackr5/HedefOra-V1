@@ -124,16 +124,19 @@ Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERS
 - Readiness HTTP/compiler owner: `contracts/openapi/**`, sealed generator/generated roots ve mevcut `cmd`/`internal/platform/{app,config,health,http}` yolları bu task'a örtük dahil değildir. `/health/ready` ikinci operation'ı DQ-009 owner/security compiler admission'ı olmadan uygulanmaz.
 - Acceptance: migration/app/worker/read-only roller ayrı; runtime DB owner değil; empty/up/down/upgrade ve privilege-negative PostgreSQL 17 testleri; TLS/timeout/pool; generic DB detail sızdırmayan `/health/ready`. Phase A yalnız role/migration/infra/test contract'ını karşılar; backend pool ve HTTP readiness tamamlanmadan T04F `COMPLETED` olamaz.
 - Dependency verdict: PostgreSQL `17.11` exact OCI identity `CONDITIONAL`; daha yeni stable pgx yok. `pgx v5.10.0`, Testcontainers `v0.44.0` ve golang-migrate `v4.19.1` mevcut kanıtla default `NO-GO`; R-016 policy veya test eşiği düşürülemez. River T04G dışında tutulur.
+- Exit: exact ownership seal; full-tree; migration/privilege/TLS/pool; local/hosted R-016; trusted-base PR; Dependency Review; CodeQL; fresh security/cold; ayrı exact-head owner merge ve post-merge doğrulama zorunludur. T04G ancak bu merge'in açtığı yeni immutable checkpoint'ten başlar.
 
 ## W001-T04G — River ve process baseline
 
 - Future disjoint owners: architecture `contracts/jobs/**`; backend `internal/platform/jobs/**`; quality `tests/integration/river/**`.
+- Base/exit: yalnız T04F owner merge ve post-merge kapılarının açtığı tek immutable checkpoint'ten başlar; kendi exact ownership seal/review/owner merge/post-merge exit'ini taşır.
 - Acceptance: versioned payload/catalog parity, exact queue/process subscriptions, transactional enqueue/rollback, retry/restart/failure injection. Test-only probe River mekaniğini doğrulayabilir; fake production job üretmez. Gerçek product job yokken production catalog boş kalır.
 
 ## W001-T04H — Integrated review ve runtime owner merge gate
 
 - State/evidence writer: orchestrator; security ve cold reviewer fresh-context/read-only.
-- Required: full-tree + generated drift + migration/River applicability, local/hosted R-016, trusted-base PR gate, Dependency Review, CodeQL, exact ownership seal, security/cold verdict ve ayrı exact-head owner merge onayı.
+- State: `PENDING`; yalnız T04F ve T04G owner merge/post-merge checkpoint'lerinden sonra final W001 integrated exit olarak açılır.
+- Required: full-tree + generated drift + migration/River applicability, local/hosted R-016, hosted security, exact ownership seal, final security/cold verdict ve gerekiyorsa state-only ayrı exact-head owner merge onayı.
 - Protected R-016 control-plane path'i değişirse runtime target ile karıştırılmaz; ayrı control-only bootstrap ve owner gate'i gerekir.
 
 ## Merge ve rollback
