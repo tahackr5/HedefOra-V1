@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "47ae6a21484c26e22fc25be48fbadce032ae6dab",
+  "verifiedThrough": "e2c4ffd5dfe3767ef3ceadd4fa54b9264ce7a2d5",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -492,6 +492,19 @@
     "W001-T04D-runtime-source-boundary-remediation": {
       "base": "23b1e58d3b9061a67fa72bbcc2e24c10a85d32a6",
       "head": "47ae6a21484c26e22fc25be48fbadce032ae6dab",
+      "allowedPaths": [
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs"
+      ]
+    },
+    "W001-T04D-runtime-source-boundary-remediation-seal": {
+      "base": "47ae6a21484c26e22fc25be48fbadce032ae6dab",
+      "head": "3fe3955ff4d4f17f3c30266e9e1bfc1e75c81e91",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04D-runtime-source-boundary-followup": {
+      "base": "3fe3955ff4d4f17f3c30266e9e1bfc1e75c81e91",
+      "head": "e2c4ffd5dfe3767ef3ceadd4fa54b9264ce7a2d5",
       "allowedPaths": [
         "scripts/check-generated.mjs",
         "scripts/check-generated.test.mjs"
