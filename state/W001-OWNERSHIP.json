@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "8948294dc12f139d307b5d3d18e84507d15722ab",
+  "verifiedThrough": "4cacb40d178f3e79f04cc0a5d5ece09ba6962f0f",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -518,6 +518,45 @@
       "base": "92be98e2e949904f15ff3b1ff72d783f6c80b475",
       "head": "8948294dc12f139d307b5d3d18e84507d15722ab",
       "allowedPaths": ["state/RELEASE-LEDGER.md", "state/W001-EVIDENCE.md"]
+    },
+    "W001-T04F-governance-correction-seal": {
+      "base": "8948294dc12f139d307b5d3d18e84507d15722ab",
+      "head": "948f7a1c3ba97ef586cad9d0347696f2e026b6d8",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04F-phase-a-implementation": {
+      "base": "948f7a1c3ba97ef586cad9d0347696f2e026b6d8",
+      "head": "b101c7cf17e71c37d2c8048451c2ba8e119cee1e",
+      "allowedPaths": [
+        "contracts/database/README.md",
+        "contracts/database/migrations.yaml",
+        "contracts/database/roles.yaml",
+        "db/migrations/000001_database_foundation.down.sql",
+        "db/migrations/000001_database_foundation.up.sql",
+        "db/migrations/SHA256SUMS",
+        "infra/compose.dev.yml",
+        "infra/postgres/README.md",
+        "infra/postgres/initdb/010_roles.sql",
+        "package.json",
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "tests/integration/postgres/run.mjs",
+        "tests/integration/postgres/run.test.mjs"
+      ]
+    },
+    "W001-T04F-phase-a-static-evidence": {
+      "base": "b101c7cf17e71c37d2c8048451c2ba8e119cee1e",
+      "head": "4cacb40d178f3e79f04cc0a5d5ece09ba6962f0f",
+      "allowedPaths": [
+        "FILE-INDEX.md",
+        "delivery/TOOLCHAIN-LOCK.md",
+        "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md"
+      ]
     }
   }
 }
