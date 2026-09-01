@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "8a716b3ac5038cdcb13595dbe97241b3156989a4",
+  "verifiedThrough": "b88b64f31c8f6fcbaab95bff1ee7383cfd2f30c7",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -539,6 +539,16 @@
         "state/W001-EVIDENCE.md",
         "state/W001-OWNERSHIP.md"
       ]
+    },
+    "W001-T04D-runtime-checkpoint-promotion-seal": {
+      "base": "8a716b3ac5038cdcb13595dbe97241b3156989a4",
+      "head": "a46cfe54c379a054a00a54a32fbbf2b151c3c95c",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04D-release-ledger-prefix-remediation": {
+      "base": "a46cfe54c379a054a00a54a32fbbf2b151c3c95c",
+      "head": "b88b64f31c8f6fcbaab95bff1ee7383cfd2f30c7",
+      "allowedPaths": ["state/RELEASE-LEDGER.md"]
     }
   }
 }
