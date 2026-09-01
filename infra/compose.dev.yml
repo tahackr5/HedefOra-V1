@@ -1,23 +1,52 @@
-services:
-  postgres:
+# Inert contract only. No PostgreSQL service can be created from this file until
+# a canonical exact-digest scan and owner/security admission promote a reviewed
+# candidate into `services`.
+x-hedefora-postgres-candidate:
+  admission: BLOCKED_SECURITY
+  blocked_reason: exact_digest_vulnerability_admission_pending
+  planned-service:
     image: postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
-    environment:
-      POSTGRES_DB: hedefora_dev
-      POSTGRES_INITDB_ARGS: --data-checksums --encoding=UTF8
-      POSTGRES_PASSWORD: ${HEDEFORA_DEV_POSTGRES_PASSWORD:-local-dev-only-not-a-secret}
-      POSTGRES_USER: hedefora_dev
-    ports:
-      - 127.0.0.1:${HEDEFORA_DEV_POSTGRES_PORT:-5432}:5432
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - pg_isready --host=127.0.0.1 --username=$$POSTGRES_USER --dbname=$$POSTGRES_DB
+    platform: linux/amd64
+    command:
+      - postgres
+      - -c
+      - password_encryption=scram-sha-256
+    postgres:
+      database: hedefora_dev
+      bootstrap-admin-role: hedefora_dev
+      initdb-arguments:
+        - --auth-host=scram-sha-256
+        - --data-checksums
+        - --encoding=UTF8
+    credential-policy:
+      source: environment
+      minimum-bytes: 12
+      required-variable-names:
+        - HEDEFORA_DEV_POSTGRES_PASSWORD
+        - HEDEFORA_DEV_POSTGRES_MIGRATION_PASSWORD
+        - HEDEFORA_DEV_POSTGRES_APP_PASSWORD
+        - HEDEFORA_DEV_POSTGRES_WORKER_PASSWORD
+        - HEDEFORA_DEV_POSTGRES_READONLY_PASSWORD
+    network-boundary:
+      host-address: 127.0.0.1
+      host-port-variable-name: HEDEFORA_DEV_POSTGRES_PORT
+      container-port: 5432
+    storage-contract:
+      data-volume-name: postgres_data
+      data-target: /var/lib/postgresql/data
+      read-only-bind-targets:
+        ./postgres/initdb/010_roles.sql: /docker-entrypoint-initdb.d/010_roles.sql
+        ../db/migrations: /opt/hedefora/migrations
+    healthcheck-contract:
+      authentication: scram-sha-256
       interval: 5s
       timeout: 5s
       retries: 12
-      start_period: 10s
+      start-period: 10s
+      validates:
+        - tcp-accepting-connections
+        - managed-role-attributes
+        - managed-role-scram-verifiers
     security_opt:
       - no-new-privileges:true
     shm_size: 128mb
@@ -28,5 +57,4 @@ services:
         max-file: "3"
         max-size: 10m
 
-volumes:
-  postgres_data:
+services: {}

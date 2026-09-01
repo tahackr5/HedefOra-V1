@@ -5,7 +5,10 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import {
+  allowedW001DatabaseFiles,
   allowedW001GeneratedSourceFiles,
+  allowedW001InfrastructureFiles,
+  allowedW001PostgresTestSourceFiles,
   allowedW001RuntimeSourceFiles,
   findGeneratedArtifacts,
   isAllowedPreRuntimeSource,
@@ -219,6 +222,75 @@ test("only the exact T04D runtime source set is allowlisted", () => {
     "internal/platform/postgres/postgres.go",
   ]) {
     assert.equal(isAllowedPreRuntimeSource(source), false, source);
+  }
+});
+
+test("only the exact T04F database, infrastructure and PostgreSQL test files are allowlisted", async () => {
+  assert.deepEqual(
+    [...allowedW001DatabaseFiles],
+    [
+      "db/migrations/000001_database_foundation.down.sql",
+      "db/migrations/000001_database_foundation.up.sql",
+      "db/migrations/SHA256SUMS",
+    ],
+  );
+  assert.deepEqual(
+    [...allowedW001InfrastructureFiles],
+    [
+      "infra/README.md",
+      "infra/compose.dev.yml",
+      "infra/postgres/README.md",
+      "infra/postgres/initdb/010_roles.sql",
+    ],
+  );
+  assert.deepEqual(
+    [...allowedW001PostgresTestSourceFiles],
+    [
+      "tests/integration/postgres/run.mjs",
+      "tests/integration/postgres/run.test.mjs",
+    ],
+  );
+  for (const source of [
+    ...allowedW001DatabaseFiles,
+    ...allowedW001InfrastructureFiles,
+    ...allowedW001PostgresTestSourceFiles,
+  ]) {
+    assert.equal(isAllowedPreRuntimeSource(source), true, source);
+  }
+  for (const source of [
+    "db/migrations/000001_database_foundation.UP.sql",
+    "db/migrations/000002_unreviewed.up.sql",
+    "infra/postgres/bootstrap.sh",
+    "tests/integration/postgres/Run.mjs",
+    "tests/integration/postgres/helper.mjs",
+  ]) {
+    assert.equal(isAllowedPreRuntimeSource(source), false, source);
+  }
+
+  const root = await mkdtemp(
+    path.join(os.tmpdir(), "hedefora-postgres-foundation-boundary-"),
+  );
+  try {
+    await seedExactRuntimeInventory(root);
+    await writeFile(
+      path.join(root, "db", "migrations", "000002_unreviewed.up.sql"),
+      "select 1;\n",
+    );
+    await writeFile(
+      path.join(root, "infra", "postgres", "bootstrap.sh"),
+      "#!/bin/sh\nexit 0\n",
+    );
+    await writeFile(
+      path.join(root, "tests", "integration", "postgres", "helper.mjs"),
+      "export {};\n",
+    );
+    assert.deepEqual(await findGeneratedArtifacts(root), [
+      "db/migrations/000002_unreviewed.up.sql#unexpected-runtime-source",
+      "infra/postgres/bootstrap.sh#unexpected-runtime-source",
+      "tests/integration/postgres/helper.mjs#unexpected-runtime-source",
+    ]);
+  } finally {
+    await rm(root, { recursive: true, force: true });
   }
 });
 
@@ -646,7 +718,10 @@ function runGitOutput(root, ...arguments_) {
 
 function exactRuntimeInventory() {
   return [
+    ...allowedW001DatabaseFiles,
     ...allowedW001GeneratedSourceFiles,
+    ...allowedW001InfrastructureFiles,
+    ...allowedW001PostgresTestSourceFiles,
     ...allowedW001RuntimeSourceFiles,
   ].sort();
 }

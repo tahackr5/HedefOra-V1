@@ -1,0 +1,123 @@
+contract_version: 1
+postgresql_major: 17
+
+database:
+  owner: environment_bootstrap_admin
+  runtime_must_not_own_database: true
+  public_privileges:
+    connect: false
+    temporary: false
+
+roles:
+  migration:
+    name: hedefora_migration
+    login: true
+    inherit: false
+    superuser: false
+    create_database: false
+    create_role: false
+    replication: false
+    bypass_row_level_security: false
+    memberships: []
+    credential_source: environment_secret
+    runtime: false
+    database_privileges: [connect, create]
+    owns:
+      - schema: hedefora
+      - schema: hedefora_meta
+      - relation: hedefora_meta.schema_migrations
+
+  app:
+    name: hedefora_app
+    login: true
+    inherit: false
+    superuser: false
+    create_database: false
+    create_role: false
+    replication: false
+    bypass_row_level_security: false
+    memberships: []
+    credential_source: environment_secret
+    runtime: true
+    database_privileges: [connect]
+    owns: []
+
+  worker:
+    name: hedefora_worker
+    login: true
+    inherit: false
+    superuser: false
+    create_database: false
+    create_role: false
+    replication: false
+    bypass_row_level_security: false
+    memberships: []
+    credential_source: environment_secret
+    runtime: true
+    database_privileges: [connect]
+    owns: []
+
+  readonly:
+    name: hedefora_readonly
+    login: true
+    inherit: false
+    superuser: false
+    create_database: false
+    create_role: false
+    replication: false
+    bypass_row_level_security: false
+    memberships: []
+    credential_source: environment_secret
+    runtime: true
+    default_transaction_read_only: true
+    database_privileges: [connect]
+    owns: []
+
+schemas:
+  hedefora:
+    owner: hedefora_migration
+    public_privileges: []
+    role_privileges:
+      hedefora_app: [usage]
+      hedefora_worker: [usage]
+      hedefora_readonly: [usage]
+    default_object_privileges:
+      tables:
+        hedefora_app: [select, insert, update, delete]
+        hedefora_worker: [select, insert, update, delete]
+        hedefora_readonly: [select]
+      sequences:
+        hedefora_app: [usage, select]
+        hedefora_worker: [usage, select]
+        hedefora_readonly: []
+      functions:
+        hedefora_app: [execute]
+        hedefora_worker: [execute]
+        hedefora_readonly: []
+      types:
+        hedefora_app: [usage]
+        hedefora_worker: [usage]
+        hedefora_readonly: [usage]
+
+  hedefora_meta:
+    owner: hedefora_migration
+    public_privileges: []
+    role_privileges:
+      hedefora_app: []
+      hedefora_worker: []
+      hedefora_readonly: []
+    runtime_relation_privileges: []
+
+migration_creator_public_defaults:
+  tables: []
+  sequences: []
+  functions: []
+  types: []
+
+required_negative_assertions:
+  - runtime_roles_do_not_own_database_or_objects
+  - runtime_roles_cannot_create_in_hedefora
+  - runtime_roles_cannot_access_hedefora_meta
+  - readonly_cannot_insert_update_or_delete
+  - app_and_worker_cannot_change_schema_or_role_policy
+  - public_cannot_connect_or_access_application_schemas

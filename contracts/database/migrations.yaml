@@ -1,0 +1,63 @@
+contract_version: 1
+postgresql_major: 17
+compatibility_classification: additive
+current_version: 1
+previous_release_version: 0
+required_extensions: []
+
+runner:
+  client: psql
+  client_major: 17
+  psqlrc: disabled
+  on_error_stop: required
+  connection_role: hedefora_migration
+  transaction_owner: migration_file
+  pending_versions_only: true
+  verify_before_connect: true
+  checksum:
+    algorithm: sha256
+    encoding: lowercase_hex
+    manifest: db/migrations/SHA256SUMS
+    exact_inventory: true
+    reject_symlink_or_non_regular: true
+  advisory_lock:
+    function: pg_catalog.pg_advisory_xact_lock
+    scope: transaction
+    key: 5216686130049544801
+  transaction_timeouts:
+    enforcement: set_local_before_advisory_lock
+    lock: 3s
+    statement: 15s
+    idle_in_transaction_session: 15s
+  failure_behavior:
+    partial_commit: forbidden
+    continue_after_error: forbidden
+    checksum_mismatch: fail_closed
+    lock_bypass: forbidden
+
+ledger:
+  relation: hedefora_meta.schema_migrations
+  owner: hedefora_migration
+  runtime_access: none
+  primary_key: version
+  recorded_fields:
+    - version
+    - name
+    - up_checksum_sha256
+    - applied_at
+    - applied_by
+
+migrations:
+  - version: 1
+    name: database_foundation
+    previous_version: 0
+    up: db/migrations/000001_database_foundation.up.sql
+    down: db/migrations/000001_database_foundation.down.sql
+    up_checksum_sha256: 86768275fac32ba13bb235f9a10599e430e3b4f5bd6fec3a1f27c6403256bea7
+    down_checksum_sha256: 25360d8052134a0678329398f8f3a14837f699ff7eb83ac7327fe1a277f7dbf0
+    transaction: required
+    advisory_lock: required
+    immutable_after_merge: true
+    destructive_up: false
+    down_policy: only_when_latest_and_application_schema_empty
+    upgrade_from: [0]
