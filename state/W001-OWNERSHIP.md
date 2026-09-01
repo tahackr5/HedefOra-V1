@@ -4,7 +4,7 @@
 
 Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERSHIP.json` içindedir. Manifest schema v2 kullanır; son self-referential seal commit'inde yalnız bu JSON değişebilir. Tarihsel `state/W000-*` dosyaları W001 boyunca değiştirilemez.
 
-- Current runtime code ownership seal: manifest `verifiedThrough` F3 `759e338cbc868e63bc10d0b70ae4fe2836f4cc83`; yalnız ownership JSON'unu değiştiren seal S3 `057a1976dd157b0225e3e7530998e7ac6abae217`, tree `a6cd96a1b9721b75fc222d11b97289457ae3ce05`.
+- Historical runtime ownership seal: manifest `verifiedThrough` `b88b64f31c8f6fcbaab95bff1ee7383cfd2f30c7`; yalnız ownership JSON'unu değiştiren exact runtime input seal `ccb345dd529da6baa7537e516eba205476cec6b2`, tree `e63bb7d32f017f67bede63bc1c707275b9d7f8ed`. Trusted-control integration/promotion için yeni final seal pending.
 
 ## W001-T00 — Wave open ve governance state
 
@@ -103,6 +103,16 @@ Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERS
 - Acceptance: explicit `api` process mode, allowlisted environment config, secret/raw-header loglamama, cryptographic request ID, structured request outcome, bounded server timeouts, graceful drain/shutdown, generated strict handler ve `200/503` unit/integration tests.
 - Boundary: PostgreSQL, River, object storage, VPS, DNS, Cloudflare ve staging mutation yoktur; readiness DB sahibi T04F'ye kadar eklenmez.
 - Current state: implementation/remediation head F3 `759e338cbc868e63bc10d0b70ae4fe2836f4cc83`; manifest-only ownership seal S3 `057a1976dd157b0225e3e7530998e7ac6abae217`, tree `a6cd96a1b9721b75fc222d11b97289457ae3ce05`. Exact S3 local ownership/full-tree/pinned-Go/R-016/security/cold kapıları ve T04D vertical slice `PASS`; T04D `COMPLETED`. Runtime trusted-base PR/R-016, hosted Dependency Review ve hosted CodeQL `NOT_RUN`; exact-head owner merge gate'i pending; R-014 branch/ruleset enforcement `BLOCKED_EXTERNAL`.
+
+## W001-T04I — Trusted-control graph integration ve CodeQL fixture remediation
+
+- Writer/merge/stage sahibi: orchestrator; security ve quality reviewer'lar read-only.
+- Immutable inputs: sealed runtime `ccb345dd529da6baa7537e516eba205476cec6b2`; owner-approved trusted control merge `ecf71c0eb8139c0d7ff911ebb9f33afa6a1164ee`.
+- Integration: `54a7b709bcda9ceecccb6898c23e3e19f65dcea2`, ordered parents `ccb345dd` + `ecf71c0`; rebase/cherry-pick/history rewrite yok. Protected `.gitleaksignore`, R-016 runner/contracts/fixtures ve tool byte'ları `ecf71c0` ile exact kalır.
+- Graph-reconciliation envelope: living schema-v2 manifest ortak prefix'i `W001-T03-bootstrap-merge-wrapper` dahil korur; `1dbc81b → 54a7b709` aralığını yalnız gerçek endpoint union'ındaki exact 49 path ile doğrular. Bu aggregate kayıt, tarihsel T03A/T04 dar sealed manifestlerini Git tarihinden silmez ve gelecekte aynı 49 path'e yazma yetkisi vermez.
+- CodeQL remediation: `54a7b709 → 8a007b12e39478932387c2107c6dfc8665c0fea8` yalnız `scripts/generate-openapi.test.mjs`; complete CRLF fixture exact `SOURCE_CARRIAGE_RETURN_FORBIDDEN` ile fail-closed kalır. Production generator/runtime path'i değişmez.
+- State promotion owned paths: `state/ACTIVE-WAVE.md`, `state/RELEASE-LEDGER.md`, `state/RISK-REGISTER.md`, `state/W001-EVIDENCE.md`, `state/W001-OWNERSHIP.md`. Final seal yalnız `state/W001-OWNERSHIP.json` değiştirebilir.
+- Required gates: exact sealed head'de ownership, Node/pnpm full-tree, generated/OpenAPI drift, pinned Go build/vet/shuffle/race, pinned Gitleaks history+sibling canary, local R-016, fresh security/cold; PR #4 üzerinde trusted-base R-016, Dependency Review ve CodeQL. Ayrı owner exact-head onayı olmadan merge yoktur.
 
 ## W001-T04F — PostgreSQL 17 roles, migration ve readiness foundation
 
