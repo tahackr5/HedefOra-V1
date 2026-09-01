@@ -9,8 +9,8 @@
 - Integration branch: `codex/w001-gitleaks-control-plane`
 - Worktree: `C:\Users\ihsan\.codex\worktrees\HedefOra\W001\GITLEAKS-CONTROL`
 - Started at: `2026-08-28T21:50:57+03:00` (`2026-08-28T18:50:57Z`)
-- Last checkpoint: ilk R-016 control plane owner-controlled two-parent/content-identical merge ile `1dbc81b57e4809ce7ba0f530cab946ee0540ea71` trusted base'ine alındı ve post-merge full-tree/hosted kapıları geçti. Runtime PR #4 exact `ccb345dd529da6baa7537e516eba205476cec6b2` üzerinde trusted R-016, Dependency Review ve CodeQL `PASS`; push quality ise üç public UUIDv4 RequestID fixture'ını Gitleaks `generic-api-key` false-positive'i olarak fail-closed yakaladı. Target-controlled ignore+test yaklaşımı security review'da reddedildi; protected control-plane remediation ayrı task olarak açıldı.
-- Current objective: yalnız üç exact fingerprint'i kabul eden `.gitleaksignore` girdisini base-controlled R-016 protected parity'ye bağlamak; control-plane-only exact head'i ownership/full-tree/Gitleaks/R-016/security/cold ve uygulanabilir hosted kapılardan geçirip ayrı owner SHA gate'ine hazırlamak; bundan sonra runtime PR'ı yeni trusted base üzerinde yeniden doğrulamak
+- Last checkpoint: W001-T03A control implementation `b930446ce3abe9a18e8656faa6ebfe81680e677c` / tree `b1703d9a7327dbe3341f037646ba87b8af820c29` olarak committed. `.gitleaksignore` yalnız üç exact dört-parçalı fingerprint taşır ve base-controlled R-016 protected path/mode/stage/OID parity'sine bağlandı. Clean clone pinned Gitleaks full-history/all-refs `109 commits / no leaks`, aynı rule sibling canary `exit 1`; exact Node `24.20.0`/pnpm `11.24.0` full-tree `132/132` + web `3/3`, pinned Go `1.26.7` build/vet/shuffle/race `PASS`. Ownership promotion/seal, final exact R-016, security/cold ve hosted kapılar henüz tamamlanmadı.
+- Current objective: W001-T03A state promotion ve ownership manifest-only seal'ini tamamlamak; sealed control-plane-only exact head'i full-tree/Gitleaks/R-016/security/cold ve uygulanabilir hosted kapılardan geçirip ayrı owner SHA gate'ine hazırlamak; bundan sonra runtime PR'ı yeni trusted base üzerinde yeniden doğrulamak
 
 ## Active tasks
 
@@ -36,7 +36,7 @@
 | R-016 negative fixtures                   | PASS    | Missing DB `127`; npm/Go vulnerability ve denied/unknown license canary'leri `1`; Semgrep bypass canary `1`; DB ZIP `0`; hepsi aynı canonical run içinde                                   |
 | Historical exact-target local/reviews     | PASS    | DEC-024/evidence v1 exact `9ec363c`: Node `126/126`, supply-chain `114/114`, web `3/3`; current DEC-025 remediation target yerine geçmez                                                   |
 | Public use-boundary implementation        | PASS    | Owner-approved exact `ac637de` head two-parent/content-identical `1dbc81b` merge'i ve post-merge doğrulamasıyla tamamlandı                                                               |
-| Gitleaks fingerprint protected control    | NOT_RUN | Exact üç fingerprint, protected parity ve ownership seal implementationı hazırlanıyor; full-tree/R-016/security/cold ve hosted sonuçlar henüz final head için yok                       |
+| Gitleaks fingerprint protected control    | IN_PROGRESS | Implementation `b930446` üzerinde exact üç fingerprint/protected parity, Node/Go ve Gitleaks history+sibling canary PASS; promotion/seal, final R-016/security/cold/hosted bekleniyor      |
 | R-016 trusted-base PR gate                | PASS    | Runtime PR #4 exact `ccb345dd` run `33540214177`; source boundary, trusted-base R-016 ve Dependency Review success. Bu sonuç yeni control-plane veya sonraki runtime head'e taşınmaz       |
 | W001 runtime behavior                     | BLOCKED | PR #4 exact `ccb345dd`: CodeQL ve trusted R-016 PASS, push R-016 PASS; quality run `33539918465` Gitleaks false-positive nedeniyle FAIL. T03A iki-aşamalı control merge'i ve exact rerun gerekir |
 

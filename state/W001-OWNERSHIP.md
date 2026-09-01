@@ -50,6 +50,7 @@ Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERS
 - Compatibility: public `GET /health/live`, RequestID üretimi ve test fixture davranışı değişmez; OpenAPI, DB, event ve River sözleşmesi etkilenmez. Pinned Gitleaks full-history taraması gerçek/sibling finding'lerde fail-closed kalmalıdır.
 - Owner gate: protected kontrol değişikliği eski base ile trusted `PASS` sayılmaz. Control-plane-only exact head local/full-tree/security/cold ve uygulanabilir hosted kapılardan sonra ayrı owner SHA onayıyla birleşir; runtime PR ancak yeni post-merge trusted base üzerinde yeniden bütünleştirilip bütün exact-head kapıları tekrar geçtiğinde ilerler.
 - Rollback: merge öncesi PR'ı birleştirmemek; public repository'de merge sonrası ham control-plane revert yapmamak, progression stop + owner-approved private-first rollback sözleşmesini uygulamak.
+- Implementation checkpoint: `b930446ce3abe9a18e8656faa6ebfe81680e677c` / tree `b1703d9a7327dbe3341f037646ba87b8af820c29`; parent `1dbc81b57e4809ce7ba0f530cab946ee0540ea71`. Promotion commit'i yalnız atanmış state/evidence yollarını, ardından gelen self-referential seal yalnız `state/W001-OWNERSHIP.json` yolunu değiştirebilir.
 
 ## W001-T02B — Public repository use-boundary remediation
 
