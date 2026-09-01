@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "b88b64f31c8f6fcbaab95bff1ee7383cfd2f30c7",
+  "verifiedThrough": "a393f2dcdf4220eda4e14b280342a4dc8f2ff72d",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -359,113 +359,26 @@
         "tools/repolint/cmd/repolint/main_test.go"
       ]
     },
-    "W001-T04A-trusted-runtime-checkpoint": {
+    "W001-T04I-control-runtime-graph-integration": {
       "base": "1dbc81b57e4809ce7ba0f530cab946ee0540ea71",
-      "head": "77524d802239650f4437a4779e849bfccda9b183",
+      "head": "54a7b709bcda9ceecccb6898c23e3e19f65dcea2",
       "allowedPaths": [
+        ".gitleaksignore",
+        ".spectral.yaml",
         "AGENTS.md",
         "DECISIONS.md",
         "FILE-INDEX.md",
         "architecture/ADR-REGISTER.md",
-        "delivery/WORKTREE-OWNERSHIP-AND-MERGE.md",
-        "state/ACTIVE-WAVE.md",
-        "state/DECISION-QUEUE.md",
-        "state/RELEASE-LEDGER.md",
-        "state/RISK-REGISTER.md",
-        "state/W001-EVIDENCE.md",
-        "state/W001-OWNERSHIP.md"
-      ]
-    },
-    "W001-T04C-contract-security-preflight": {
-      "base": "77524d802239650f4437a4779e849bfccda9b183",
-      "head": "10ce2312cc62f1e96eb3ca7262da3982f738628b",
-      "allowedPaths": [
-        ".spectral.yaml",
+        "cmd/hedefora/main.go",
+        "cmd/hedefora/main_test.go",
         "contracts/README.md",
         "contracts/openapi/fixtures/reject-path-operation.yaml",
         "contracts/openapi/fixtures/reject-webhook.yaml",
         "contracts/openapi/openapi.yaml",
+        "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
         "delivery/TOOLCHAIN-LOCK.md",
-        "scripts/fixtures/openapi-negative-mutations.mjs",
-        "scripts/validate-contracts.mjs",
-        "scripts/validate-contracts.test.mjs",
-        "state/ACTIVE-WAVE.md",
-        "state/DECISION-QUEUE.md",
-        "state/RISK-REGISTER.md",
-        "state/W001-EVIDENCE.md",
-        "state/W001-OWNERSHIP.json",
-        "state/W001-OWNERSHIP.md"
-      ]
-    },
-    "W001-T04C-contract-security-preflight-seal": {
-      "base": "10ce2312cc62f1e96eb3ca7262da3982f738628b",
-      "head": "447cfe52dc868f5b803e628c0e866ab688697d75",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
-    },
-    "W001-T04E-sealed-openapi-renderer": {
-      "base": "447cfe52dc868f5b803e628c0e866ab688697d75",
-      "head": "b25ff7d8df8690d69d7333fc7a52482de6ab1fbf",
-      "allowedPaths": [
-        "DECISIONS.md",
-        "FILE-INDEX.md",
-        "architecture/ADR-REGISTER.md",
-        "contracts/README.md",
-        "delivery/TOOLCHAIN-LOCK.md",
+        "delivery/WORKTREE-OWNERSHIP-AND-MERGE.md",
         "internal/generated/openapi/openapi.gen.go",
-        "package.json",
-        "scripts/check-generated.mjs",
-        "scripts/check-generated.test.mjs",
-        "scripts/fixtures/openapi-generator-negative-mutations.mjs",
-        "scripts/generate-openapi.mjs",
-        "scripts/generate-openapi.test.mjs",
-        "state/ACTIVE-WAVE.md",
-        "state/DECISION-QUEUE.md",
-        "state/RELEASE-LEDGER.md",
-        "state/RISK-REGISTER.md",
-        "state/W001-EVIDENCE.md",
-        "state/W001-OWNERSHIP.md"
-      ]
-    },
-    "W001-T04E-sealed-openapi-renderer-seal": {
-      "base": "b25ff7d8df8690d69d7333fc7a52482de6ab1fbf",
-      "head": "06aac2c89390b438cde7c8c12c91e3e228a23bf8",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
-    },
-    "W001-T04E-bounded-filesystem-read-remediation": {
-      "base": "06aac2c89390b438cde7c8c12c91e3e228a23bf8",
-      "head": "0bbea9532ebf3b76d27e5dd9e7be9abaf3e7e3e2",
-      "allowedPaths": [
-        "scripts/generate-openapi.mjs",
-        "scripts/generate-openapi.test.mjs"
-      ]
-    },
-    "W001-T04E-bounded-filesystem-read-remediation-seal": {
-      "base": "0bbea9532ebf3b76d27e5dd9e7be9abaf3e7e3e2",
-      "head": "959e128ea5fd0191b4283293fbe49f2a854b0aa6",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
-    },
-    "W001-T04E-generator-checkpoint-promotion": {
-      "base": "959e128ea5fd0191b4283293fbe49f2a854b0aa6",
-      "head": "22394594d53541351ae99b7d3f9ffa0d814163fe",
-      "allowedPaths": [
-        "state/ACTIVE-WAVE.md",
-        "state/RELEASE-LEDGER.md",
-        "state/RISK-REGISTER.md",
-        "state/W001-EVIDENCE.md",
-        "state/W001-OWNERSHIP.md"
-      ]
-    },
-    "W001-T04E-generator-checkpoint-promotion-seal": {
-      "base": "22394594d53541351ae99b7d3f9ffa0d814163fe",
-      "head": "f9dbf65c767d2f19a5381fff8607536239c3a4a9",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
-    },
-    "W001-T04D-api-runtime-foundation": {
-      "base": "f9dbf65c767d2f19a5381fff8607536239c3a4a9",
-      "head": "dbfa70715f5b684b34d743ecd05e2827fe8a60e9",
-      "allowedPaths": [
-        "cmd/hedefora/main.go",
-        "cmd/hedefora/main_test.go",
         "internal/platform/app/api.go",
         "internal/platform/app/api_test.go",
         "internal/platform/config/api.go",
@@ -478,60 +391,39 @@
         "internal/platform/http/server_test.go",
         "internal/platform/telemetry/telemetry.go",
         "internal/platform/telemetry/telemetry_test.go",
+        "package.json",
         "scripts/check-generated.mjs",
         "scripts/check-generated.test.mjs",
+        "scripts/fixtures/openapi-generator-negative-mutations.mjs",
+        "scripts/fixtures/openapi-negative-mutations.mjs",
+        "scripts/generate-openapi.mjs",
+        "scripts/generate-openapi.test.mjs",
+        "scripts/list-repository-files.mjs",
+        "scripts/supply-chain/contracts.mjs",
+        "scripts/supply-chain/contracts.test.mjs",
+        "scripts/supply-chain/run.mjs",
+        "scripts/supply-chain/run.test.mjs",
+        "scripts/validate-contracts.mjs",
+        "scripts/validate-contracts.test.mjs",
         "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.json",
         "state/W001-OWNERSHIP.md"
       ]
     },
-    "W001-T04D-api-runtime-foundation-seal": {
-      "base": "dbfa70715f5b684b34d743ecd05e2827fe8a60e9",
-      "head": "23b1e58d3b9061a67fa72bbcc2e24c10a85d32a6",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
-    },
-    "W001-T04D-runtime-source-boundary-remediation": {
-      "base": "23b1e58d3b9061a67fa72bbcc2e24c10a85d32a6",
-      "head": "47ae6a21484c26e22fc25be48fbadce032ae6dab",
+    "W001-T04I-codeql-fixture-remediation": {
+      "base": "54a7b709bcda9ceecccb6898c23e3e19f65dcea2",
+      "head": "8a007b12e39478932387c2107c6dfc8665c0fea8",
       "allowedPaths": [
-        "scripts/check-generated.mjs",
-        "scripts/check-generated.test.mjs"
+        "scripts/generate-openapi.test.mjs"
       ]
     },
-    "W001-T04D-runtime-source-boundary-remediation-seal": {
-      "base": "47ae6a21484c26e22fc25be48fbadce032ae6dab",
-      "head": "3fe3955ff4d4f17f3c30266e9e1bfc1e75c81e91",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
-    },
-    "W001-T04D-runtime-source-boundary-followup": {
-      "base": "3fe3955ff4d4f17f3c30266e9e1bfc1e75c81e91",
-      "head": "e2c4ffd5dfe3767ef3ceadd4fa54b9264ce7a2d5",
-      "allowedPaths": [
-        "scripts/check-generated.mjs",
-        "scripts/check-generated.test.mjs"
-      ]
-    },
-    "W001-T04D-runtime-source-boundary-followup-seal": {
-      "base": "e2c4ffd5dfe3767ef3ceadd4fa54b9264ce7a2d5",
-      "head": "19e1eb2fd2f6ece8062fa8fb5154938a36b9da0e",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
-    },
-    "W001-T04D-runtime-source-boundary-parity": {
-      "base": "19e1eb2fd2f6ece8062fa8fb5154938a36b9da0e",
-      "head": "759e338cbc868e63bc10d0b70ae4fe2836f4cc83",
-      "allowedPaths": [
-        "scripts/check-generated.mjs",
-        "scripts/check-generated.test.mjs",
-        "scripts/list-repository-files.mjs"
-      ]
-    },
-    "W001-T04D-runtime-source-boundary-parity-seal": {
-      "base": "759e338cbc868e63bc10d0b70ae4fe2836f4cc83",
-      "head": "057a1976dd157b0225e3e7530998e7ac6abae217",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
-    },
-    "W001-T04D-runtime-checkpoint-promotion": {
-      "base": "057a1976dd157b0225e3e7530998e7ac6abae217",
-      "head": "8a716b3ac5038cdcb13595dbe97241b3156989a4",
+    "W001-T04I-graph-integration-promotion": {
+      "base": "8a007b12e39478932387c2107c6dfc8665c0fea8",
+      "head": "a393f2dcdf4220eda4e14b280342a4dc8f2ff72d",
       "allowedPaths": [
         "state/ACTIVE-WAVE.md",
         "state/RELEASE-LEDGER.md",
@@ -539,16 +431,6 @@
         "state/W001-EVIDENCE.md",
         "state/W001-OWNERSHIP.md"
       ]
-    },
-    "W001-T04D-runtime-checkpoint-promotion-seal": {
-      "base": "8a716b3ac5038cdcb13595dbe97241b3156989a4",
-      "head": "a46cfe54c379a054a00a54a32fbbf2b151c3c95c",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
-    },
-    "W001-T04D-release-ledger-prefix-remediation": {
-      "base": "a46cfe54c379a054a00a54a32fbbf2b151c3c95c",
-      "head": "b88b64f31c8f6fcbaab95bff1ee7383cfd2f30c7",
-      "allowedPaths": ["state/RELEASE-LEDGER.md"]
     }
   }
 }
