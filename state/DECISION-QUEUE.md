@@ -120,6 +120,18 @@
 - Owner decision: PENDING.
 - Closed commit: PENDING.
 
+### DQ-010 — W001-T04F PostgreSQL image execution admission
+
+- Opened by / date: orchestrator + independent T04F contract/security review / 2026-09-02
+- Conflicting files/sections: PostgreSQL 17 local integration acceptance; `delivery/TOOLCHAIN-LOCK.md` exact official image identity; R-018 image-level security gate; `infra/compose.dev.yml` fail-closed execution boundary.
+- Decision needed: Canlı PostgreSQL 17 testini hangi kanonik, exact-digest ve vulnerability-admitted execution kaynağıyla açacağımıza owner/security kararı ver.
+- Options: (A, önerilen) kritik/yüksek eşiği geçen yeni official PostgreSQL 17 rebuild'ini bekleyip pinned scanner/advisory DB ile exact digest'i yeniden doğrulamak; (B) pinned base, repository-owned Dockerfile, SBOM/provenance ve ayrı security review taşıyan owner-approved hardened derived image üretmek; (C) eşdeğer provenance/vulnerability kapıları olan pinned native/package PostgreSQL 17 harness'ı tasarlamak. Mevcut Bookworm/Trixie/Alpine digest'lerini çalıştırmak, yalnız profile/comment ile engel koymak veya unpinned Scout çıktısını kanonik `PASS` saymak seçenek değildir.
+- Security/privacy/cost/migration impact: Supplemental registry scan'leri official varyantlarda critical/high OS-package bulguları gösterdi. A gecikme yaratır fakat en küçük bakım yüzeyidir. B ayrı image bakım/patch/SBOM yükü ve registry provenance gerektirir. C CI/host drift'i ve paket kaynağı bakım yükü doğurur. Hiçbir seçenek production/staging credential veya veri migration yetkisi vermez.
+- Work that can continue safely: Inert image metadata, immutable SQL/checksum/timeout sözleşmesi, rol/ACL contract'ı, Docker'sız statik parity/negative testleri, DQ-008/DQ-009 için read-only tasarım. Compose aktif service taşımaz; image pull/run/start yapılmaz.
+- Blocking wave/gate: T04F canlı empty/up/down/upgrade/privilege testi, PostgreSQL adapter/pool doğrulaması ve T04F completion. Production/staging deploy ayrıca owner gate'idir.
+- Owner decision: PENDING.
+- Closed commit: PENDING.
+
 ## Item template
 
 - ID:
