@@ -107,11 +107,20 @@ test("generator-specific parser, reference and code-poison mutations reject", ()
 });
 
 test("encoding and resource limits reject before generation", () => {
+  const crlfSource = Buffer.from(
+    canonicalSource.toString("utf8").replaceAll("\n", "\r\n"),
+  );
+  assert.throws(
+    () => generateArtifactFromSource(crlfSource),
+    (error) =>
+      error instanceof GeneratorError &&
+      error.code === "SOURCE_CARRIAGE_RETURN_FORBIDDEN",
+  );
+
   const cases = [
     Buffer.from([0xc3, 0x28]),
     Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), canonicalSource]),
     Buffer.concat([canonicalSource, Buffer.from("\0")]),
-    Buffer.from(canonicalSource.toString("utf8").replace("\n", "\r\n")),
     Buffer.from(canonicalSource.toString("utf8").replace("  title", "\ttitle")),
     Buffer.alloc(64 * 1024 + 1, 0x61),
   ];
