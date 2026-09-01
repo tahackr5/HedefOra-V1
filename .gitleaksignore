@@ -1,0 +1,4 @@
+# Verified historical request-ID test fixtures; keep fingerprints exact.
+dbfa70715f5b684b34d743ecd05e2827fe8a60e9:internal/platform/health/service_test.go:generic-api-key:13
+dbfa70715f5b684b34d743ecd05e2827fe8a60e9:internal/platform/http/handler_test.go:generic-api-key:20
+dbfa70715f5b684b34d743ecd05e2827fe8a60e9:internal/platform/telemetry/telemetry_test.go:generic-api-key:80

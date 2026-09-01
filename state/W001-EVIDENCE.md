@@ -16,6 +16,13 @@ CodeQL Default Setup ve Dependency Review kullanılabildiği sürece exact targe
 
 > 2026-08-31 geçiş notu: Aşağıdaki `9ec363c`/evidence v1 PASS kayıtları DEC-024 private-only bağlamının tarihsel kanıtıdır. Repository public olduktan sonra bu kayıtlar DEC-025 public use-boundary gate'ini karşılamaz. Evidence/schema v2 remediation exact head'i ve yeni local/hosted/security/cold sonuçları oluşana kadar current verdict `NOT_RUN`dır.
 
+## Gitleaks fingerprint protected-control remediation
+
+- Runtime PR [#4](https://github.com/tahackr5/HedefOra-V1/pull/4) exact `ccb345dd529da6baa7537e516eba205476cec6b2` için push CI run `33539918465`: R-016 first-party source boundary ve supply-chain job'ları `SUCCESS`; `W001 quality gates` yalnız pinned Gitleaks `v8.30.1` full-history taramasında `101 commits scanned`, `leaks found: 3`, exit `1` nedeniyle `FAIL`. Aynı head için trusted PR run `33540214177` ve CodeQL run `33540211506` `SUCCESS`; bu sonuçlar farklı bir head'e taşınmaz.
+- Redacted exact-finding replay, üç bulgunun `dbfa70715f5b684b34d743ecd05e2827fe8a60e9` commit'indeki aynı public UUIDv4 RequestID fixture'ı olduğunu doğruladı: `internal/platform/health/service_test.go:13`, `internal/platform/http/handler_test.go:20`, `internal/platform/telemetry/telemetry_test.go:80`; rule `generic-api-key`. Değer authentication/authorization/entitlement/credential akışına ulaşmaz; güvenlik etkisi `INFO`, CI bloke etkisi `MEDIUM`, confidence `HIGH` olarak sınıflandırıldı. Hosted FAIL, patch öncesinde PASS olarak yeniden adlandırılmadı.
+- İlk target-controlled `.gitleaksignore` + standalone test adayı full-history scan'i temizledi; fresh bypass review bu iki girdinin birlikte genişletilebildiğini `FAIL` buldu ve aday runtime worktree'den kaldırıldı. R-022, exact ignore byte'larının R-016 base-controlled protected path/mode/stage/OID parity'sine alınmasını ve control-plane-only iki-aşamalı owner gate'ini zorunlu kılar.
+- W001-T03A canonical patch yalnız üç exact commit:path:rule:line fingerprint'i, protected `run/contracts` parity listeleri ve protected exact-byte/mutation testlerini kapsar. OpenAPI/runtime/DB/event/job davranışı değişmez. Yeni implementation/seal SHA'ları, pinned Node/full-tree, Gitleaks history+sibling canary, ownership, local R-016, security/cold ve uygulanabilir hosted sonuçlar oluşana kadar final verdict `NOT_RUN`dır.
+
 ## Opening identity
 
 - Immutable start commit: `bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b`

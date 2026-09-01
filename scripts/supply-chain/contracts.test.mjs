@@ -369,6 +369,10 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     policy: configurationInput("security/supply-chain-policy.json"),
     scanners: configurationInput("security/scanners.lock.json"),
   };
+  const gitleaksIgnoreInput = registerTrackedFile(
+    ".gitleaksignore",
+    await readFile(path.join(repositoryRoot, ".gitleaksignore")),
+  );
   const pnpmInput = {
     source: withoutGitObject(registerTrackedFile("pnpm-lock.yaml")),
     documentCount: 2,
@@ -470,6 +474,7 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     ...semgrepSourceFiles.map(({ path: repositoryPath }) => repositoryPath),
   ]);
   const controlInputPaths = new Set([
+    gitleaksIgnoreInput.path,
     ...Object.values(configurationInputs).map(
       ({ path: repositoryPath }) => repositoryPath,
     ),
@@ -1241,6 +1246,7 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
   }
   const isProtectedControlPath = (repositoryPath) =>
     [
+      ".gitleaksignore",
       "security/supply-chain-policy.json",
       "security/scanners.lock.json",
       "security/osv-scanner.toml",
