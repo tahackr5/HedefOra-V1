@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "759e338cbc868e63bc10d0b70ae4fe2836f4cc83",
+  "verifiedThrough": "8a716b3ac5038cdcb13595dbe97241b3156989a4",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -522,6 +522,22 @@
         "scripts/check-generated.mjs",
         "scripts/check-generated.test.mjs",
         "scripts/list-repository-files.mjs"
+      ]
+    },
+    "W001-T04D-runtime-source-boundary-parity-seal": {
+      "base": "759e338cbc868e63bc10d0b70ae4fe2836f4cc83",
+      "head": "057a1976dd157b0225e3e7530998e7ac6abae217",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04D-runtime-checkpoint-promotion": {
+      "base": "057a1976dd157b0225e3e7530998e7ac6abae217",
+      "head": "8a716b3ac5038cdcb13595dbe97241b3156989a4",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md"
       ]
     }
   }
