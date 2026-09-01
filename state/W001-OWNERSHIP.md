@@ -1,10 +1,11 @@
 # W001 Yazma Sahipliği ve Birleştirme Planı
 
-> Historical `WAVE_START_COMMIT` `bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b` olarak değişmez. DEC-026/ADR-0016 uyarınca W001 runtime task fazının tek immutable base'i post-merge doğrulanmış `1dbc81b57e4809ce7ba0f530cab946ee0540ea71`'dir. Path başına tek writer korunur; shared dosyaları yalnız orchestrator birleştirir.
+> Historical `WAVE_START_COMMIT` `bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b` olarak değişmez. T04C/T04D/T04I runtime fazı `1dbc81b57e4809ce7ba0f530cab946ee0540ea71` checkpoint'inden üretildi. DEC-026/ADR-0016 uyarınca owner-onaylı ve post-merge doğrulanmış `cd81ee7b36d5bc647bb297e8ede13b21a7f1c8f1`, W001-T04F'nin yeni immutable task-phase base'idir. Path başına tek writer korunur; shared dosyaları yalnız orchestrator birleştirir.
 
 Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERSHIP.json` içindedir. Manifest schema v2 kullanır; son self-referential seal commit'inde yalnız bu JSON değişebilir. Tarihsel `state/W000-*` dosyaları W001 boyunca değiştirilemez.
 
-- Historical runtime ownership seal: manifest `verifiedThrough` `b88b64f31c8f6fcbaab95bff1ee7383cfd2f30c7`; yalnız ownership JSON'unu değiştiren exact runtime input seal `ccb345dd529da6baa7537e516eba205476cec6b2`, tree `e63bb7d32f017f67bede63bc1c707275b9d7f8ed`. Trusted-control integration/promotion için yeni final seal pending.
+- Historical runtime ownership seal: manifest `verifiedThrough` `b88b64f31c8f6fcbaab95bff1ee7383cfd2f30c7`; yalnız ownership JSON'unu değiştiren exact runtime input seal `ccb345dd529da6baa7537e516eba205476cec6b2`, tree `e63bb7d32f017f67bede63bc1c707275b9d7f8ed`.
+- T04I reviewed seal `89d9632b1fefdd8b0cd2e6c5e9e432076f63836b`; owner-controlled merge `cd81ee7b36d5bc647bb297e8ede13b21a7f1c8f1`. Living manifest, reviewed seal aralığını, 43-path content-identical merge wrapper'ını ve T04F task-open state aralığını bir sonraki manifest-only seal'de kesintisiz kaydeder.
 
 ## W001-T00 — Wave open ve governance state
 
@@ -116,9 +117,13 @@ Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERS
 
 ## W001-T04F — PostgreSQL 17 roles, migration ve readiness foundation
 
-- Future disjoint owners: architecture `contracts/database/**` + `db/migrations/**`; infra `infra/compose.dev.yml` + `infra/postgres/**`; backend `internal/platform/postgres/**`; quality `tests/integration/postgres/**`.
-- Acceptance: migration/app/worker/read-only roller ayrı; runtime DB owner değil; empty/up/down/upgrade ve privilege-negative PostgreSQL 17 testleri; TLS/timeout/pool; generic DB detail sızdırmayan `/health/ready`.
-- Bu task T04C/T04D exact merged checkpoint'i ve ayrı dependency evaluation olmadan writer açmaz.
+- Immutable task-phase base: `cd81ee7b36d5bc647bb297e8ede13b21a7f1c8f1`; tree `ce3cf10a186071f1f7c3fcb91347651fe0408b0d`. Branch/worktree: `codex/w001-t04f-postgres-foundation` / `C:\Users\ihsan\.codex\worktrees\HedefOra\W001\T04F`.
+- Orchestrator task-open/state owner: `delivery/TOOLCHAIN-LOCK.md`, `state/ACTIVE-WAVE.md`, `state/DECISION-QUEUE.md`, `state/RELEASE-LEDGER.md`, `state/RISK-REGISTER.md`, `state/W001-EVIDENCE.md`, `state/W001-OWNERSHIP.md`, `state/W001-OWNERSHIP.json`.
+- Dependency-free Phase A disjoint owners: architecture `contracts/database/**` + `db/migrations/**`; infra `infra/compose.dev.yml` + `infra/postgres/**`; quality `tests/integration/postgres/**`. Shared source-boundary değişikliği yalnız orchestrator: `scripts/check-generated.mjs` + `scripts/check-generated.test.mjs`.
+- Dependency-gated backend owner: `internal/platform/postgres/**`; dependency manifests `go.mod` + `go.sum` yalnız orchestrator. DQ-008 owner/security kararı ve exact dependency R-016 admission'ı olmadan bu yollar için writer açılmaz.
+- Readiness HTTP/compiler owner: `contracts/openapi/**`, sealed generator/generated roots ve mevcut `cmd`/`internal/platform/{app,config,health,http}` yolları bu task'a örtük dahil değildir. `/health/ready` ikinci operation'ı DQ-009 owner/security compiler admission'ı olmadan uygulanmaz.
+- Acceptance: migration/app/worker/read-only roller ayrı; runtime DB owner değil; empty/up/down/upgrade ve privilege-negative PostgreSQL 17 testleri; TLS/timeout/pool; generic DB detail sızdırmayan `/health/ready`. Phase A yalnız role/migration/infra/test contract'ını karşılar; backend pool ve HTTP readiness tamamlanmadan T04F `COMPLETED` olamaz.
+- Dependency verdict: PostgreSQL `17.11` exact OCI identity `CONDITIONAL`; daha yeni stable pgx yok. `pgx v5.10.0`, Testcontainers `v0.44.0` ve golang-migrate `v4.19.1` mevcut kanıtla default `NO-GO`; R-016 policy veya test eşiği düşürülemez. River T04G dışında tutulur.
 
 ## W001-T04G — River ve process baseline
 

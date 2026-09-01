@@ -28,17 +28,17 @@ R-016 scanner ve rule ayrıntılarının makine-okunur source of truth'u `securi
 
 ## Bilinçli olarak sonraki wave'e ertelenenler
 
-| Bileşen                                   |     Planlanan kilit | Sahip wave / neden                                                     |
-| ----------------------------------------- | ------------------: | ---------------------------------------------------------------------- |
-| River ve `riverpgxv5`                     |            `0.45.0` | W001; job/process sözleşmesi ve migration kanıtıyla birlikte.          |
-| pgx                                       |            `5.10.0` | W001; PostgreSQL repository ve River ile aynı dependency hattı.        |
-| oapi-codegen                              | `2.8.0` — `BLOCKED_SECURITY` | W001 compatibility probe geçti; GHSA-9c2f-gr95-7wqw için patched version olmadığından admission yoktur. |
-| oapi-codegen runtime / nethttp middleware |   `1.7.0` / `1.2.0` | W001; generated server ve gerçek request/security validation birlikte. |
-| openapi-typescript                        |            `7.13.0` | W001; boş contract'tan anlamsız generated artifact üretilmez.          |
-| openapi-fetch                             |            `0.17.0` | W001; generated `paths` oluşmadan runtime dependency eklenmez.         |
-| Testcontainers-Go                         |            `0.44.0` | W001; gerçek PostgreSQL integration suite.                             |
-| golang-migrate                            |            `4.19.1` | W001; migration sözleşmesi ve up/down/upgrade testleri.                |
-| Playwright / axe                          | `1.62.1` / `4.13.0` | Ürün akışı oluştuğunda E2E/accessibility gate'i.                       |
+| Bileşen                                   |               Planlanan kilit | Sahip wave / neden                                                                                                                          |
+| ----------------------------------------- | ----------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| River ve `riverpgxv5`                     |                      `0.45.0` | W001; job/process sözleşmesi ve migration kanıtıyla birlikte.                                                                               |
+| pgx                                       |    `5.10.0` — `BLOCKED_OWNER` | W001-T04F; newer stable yok. Yalnız bounded pgxpool admission veya owner-approved alternatif driver kararıyla eklenebilir.                  |
+| oapi-codegen                              |  `2.8.0` — `BLOCKED_SECURITY` | W001 compatibility probe geçti; GHSA-9c2f-gr95-7wqw için patched version olmadığından admission yoktur.                                     |
+| oapi-codegen runtime / nethttp middleware |             `1.7.0` / `1.2.0` | W001; generated server ve gerçek request/security validation birlikte.                                                                      |
+| openapi-typescript                        |                      `7.13.0` | W001; boş contract'tan anlamsız generated artifact üretilmez.                                                                               |
+| openapi-fetch                             |                      `0.17.0` | W001; generated `paths` oluşmadan runtime dependency eklenmez.                                                                              |
+| Testcontainers-Go                         | `0.44.0` — `BLOCKED_SECURITY` | W001-T04F; mevcut all-scope R-016 closure bulguları nedeniyle eklenmez; pinned Compose/CLI harness değerlendirilir.                         |
+| golang-migrate                            | `4.19.1` — `BLOCKED_SECURITY` | W001-T04F; library/image closure bulguları nedeniyle eklenmez; repository-owned minimal runner veya pinned `psql` tasarımı değerlendirilir. |
+| Playwright / axe                          |           `1.62.1` / `4.13.0` | Ürün akışı oluştuğunda E2E/accessibility gate'i.                                                                                            |
 
 Redis, ikinci broker, frontend framework/router, global client-state kütüphanesi, Axios, Go web framework'ü, ORM ve `sqlc` W000'a eklenmez. Gerçek ihtiyaç ve ayrı dependency değerlendirmesi olmadan eklenemez.
 
@@ -64,6 +64,16 @@ Spectral, Vite, TypeScript, lint, format ve test paketleri development-only'dir.
 - `openapi-fetch 0.17.0` — MIT ve pre-1.0; ince local adapter arkasında izole edilir.
 
 Bu kayıt ekleme izni değildir; W001 task'ı gerçek producer/consumer, lisans, SBOM, vulnerability ve rollback kanıtını yeniden doğrular.
+
+## W001-T04F PostgreSQL dependency admission — 2026-09-02
+
+- PostgreSQL `17.11-bookworm` exact index `sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0` ve linux/amd64 `sha256:7bade6d532592ca8ce7ee32def7399dad2607c4ea5583839fc4352a095a11ea6` resmi Docker Library kaynağı/SPDX attestation ile eşleşir. Identity/provenance `PASS`; R-016 OCI OS-package taramadığı için exact-digest image vulnerability scan'i tamamlanana kadar admission `CONDITIONAL`.
+- `github.com/jackc/pgx/v5 v5.10.0` 2026-09-02 itibarıyla en yeni stable etikettir; daha yeni fix pin'i yoktur. Exact commit `7293fb11125be0373a92f716683f2d494f6fd4b0`, module sum `h1:VhSvgU2jSli8o3AqIEOTJr7rZwAEUVo4E4XhR94Zfr0=`, go.mod sum `h1:mal1tBGAFfLHvZzaYh77YS/eC6IX9OWbRV1QIIM0Jn4=` ve MIT lisans doğrulandı. Tag imzasız; upstream SBOM/SLSA asset'i yoktur.
+- pgx issue `#2622` açık, fakat reproducer documented concurrency sınırını ve `database/sql.Conn.Raw` lifetime sözleşmesini ihlal eder; fix PR `#2624` kapalı/unmerged'dir. Bounded pgx seçeneği yalnız pgxpool, acquired connection için tek-goroutine sahipliği, `Conn.Raw`/raw shared `*pgx.Conn`/ilk dilimde COPY yasağı, upstream misuse expected-fail ve intended-use cancel/close stress + race kanıtıyla değerlendirilebilir. Bare graph R-016'yı geçmez; aday security override'ları `golang.org/x/text v0.41.0`, `golang.org/x/mod v0.40.0`, `github.com/yuin/goldmark v1.7.17` olsa da exact-head SBOM/license/R-016 sonucu owner kararından önce `PASS` sayılamaz.
+- Minimal alternatif `github.com/lib/pq v1.12.3`: verified-signed commit `1f3e3d92865dd313b4e146968684d7e3836c76e8`, module sum `h1:tTWxr2YLKwIvK90ZXEw8GP7UFHtcbTtty8zsI+YjrfQ=`, go.mod sum `h1:/p+8NSbOcwzAEI7wiMXFlgydTwcgTr3OSKMsD2BitpA=`, MIT, sıfır declared dependency ve araştırma anında OSV finding `0`. Ancak pgx/River ortak hattını böler; silent substitution değildir ve DQ-008 architecture/owner kararı ister.
+- Testcontainers-Go `v0.44.0` closure'ı `compress`, `moby/go-archive`, `x/crypto` ve no-fixed-version advisory nedeniyle current all-scope R-016'yı geçmez. Pin eklenmez; exact PostgreSQL digest'li Compose/CLI integration harness önerilir.
+- golang-migrate `v4.19.1` standalone closure'ı pgx/v4, pgproto, grpc, OTel, Docker ve `x/*` bulguları taşır; resmi image için ayrıca upstream security issue `#1381` açıktır. Library ve OCI pin'i eklenmez; immutable SQL/checksum/advisory-lock sözleşmeli minimal repository runner veya pinned `psql` yolu ayrı architecture/security review ister.
+- DQ-008 çözülmeden `go.mod`, `go.sum` veya `internal/platform/postgres/**` writer'ı açılmaz. DQ-009 çözülmeden ikinci OpenAPI operation ve sealed renderer kapsamı genişletilmez. River `0.45.0` bu admission'ın dışında, W001-T04G'dedir.
 
 ## Supply-chain gate'leri
 
