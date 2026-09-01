@@ -58,7 +58,7 @@ Ana oturum `agents/00-ORCHESTRATOR.md` rolündedir.
 - Aynı anda en fazla dört yazan ajan çalışır.
 - Aynı dosyanın aynı wave içinde yalnız bir yazma sahibi vardır.
 - Security ve cold-review ajanları read-only çalışır.
-- Tüm worktree'ler aynı immutable `WAVE_START_COMMIT` üzerinden açılır.
+- Wave start tarihsel provenance olarak değişmez. Aynı task fazındaki tüm writer worktree'leri `state/ACTIVE-WAVE.md` içinde kayıtlı tek immutable base'ten açılır. Base yalnız owner-onaylı exact-head, two-parent, content-identical merge; ordered parent/tree doğrulaması; local+hosted full-tree ve R-016 `PASS`; uygulanabilir hosted security gate'leri sonrası ilerletilebilir. İlk control-plane bootstrap'ının trusted-PR `NOT_RUN` sonucu tek seferlik ve kayıtlı istisnadır, runtime target'ta tekrarlanamaz; hareket eden `HEAD` base olamaz.
 - Shared dosyalar yalnız orchestrator tarafından birleştirilir.
 - Bir ajan kendisine atanmayan dosyayı değiştirmez; önerisini structured proposal olarak verir.
 

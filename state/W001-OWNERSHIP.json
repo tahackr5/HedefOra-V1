@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "8207f974efd803a0d0a3b149540b5d1e7c6aa0d5",
+  "verifiedThrough": "a393f2dcdf4220eda4e14b280342a4dc8f2ff72d",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -359,28 +359,75 @@
         "tools/repolint/cmd/repolint/main_test.go"
       ]
     },
-    "W001-T03A-gitleaks-control-remediation": {
+    "W001-T04I-control-runtime-graph-integration": {
       "base": "1dbc81b57e4809ce7ba0f530cab946ee0540ea71",
-      "head": "b930446ce3abe9a18e8656faa6ebfe81680e677c",
+      "head": "54a7b709bcda9ceecccb6898c23e3e19f65dcea2",
       "allowedPaths": [
         ".gitleaksignore",
+        ".spectral.yaml",
+        "AGENTS.md",
+        "DECISIONS.md",
+        "FILE-INDEX.md",
+        "architecture/ADR-REGISTER.md",
+        "cmd/hedefora/main.go",
+        "cmd/hedefora/main_test.go",
+        "contracts/README.md",
+        "contracts/openapi/fixtures/reject-path-operation.yaml",
+        "contracts/openapi/fixtures/reject-webhook.yaml",
+        "contracts/openapi/openapi.yaml",
         "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
+        "delivery/TOOLCHAIN-LOCK.md",
+        "delivery/WORKTREE-OWNERSHIP-AND-MERGE.md",
+        "internal/generated/openapi/openapi.gen.go",
+        "internal/platform/app/api.go",
+        "internal/platform/app/api_test.go",
+        "internal/platform/config/api.go",
+        "internal/platform/config/api_test.go",
+        "internal/platform/health/service.go",
+        "internal/platform/health/service_test.go",
+        "internal/platform/http/handler.go",
+        "internal/platform/http/handler_test.go",
+        "internal/platform/http/server.go",
+        "internal/platform/http/server_test.go",
+        "internal/platform/telemetry/telemetry.go",
+        "internal/platform/telemetry/telemetry_test.go",
+        "package.json",
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "scripts/fixtures/openapi-generator-negative-mutations.mjs",
+        "scripts/fixtures/openapi-negative-mutations.mjs",
+        "scripts/generate-openapi.mjs",
+        "scripts/generate-openapi.test.mjs",
+        "scripts/list-repository-files.mjs",
         "scripts/supply-chain/contracts.mjs",
         "scripts/supply-chain/contracts.test.mjs",
         "scripts/supply-chain/run.mjs",
         "scripts/supply-chain/run.test.mjs",
+        "scripts/validate-contracts.mjs",
+        "scripts/validate-contracts.test.mjs",
         "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/RELEASE-LEDGER.md",
         "state/RISK-REGISTER.md",
         "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.json",
         "state/W001-OWNERSHIP.md"
       ]
     },
-    "W001-T03A-gitleaks-control-promotion": {
-      "base": "b930446ce3abe9a18e8656faa6ebfe81680e677c",
-      "head": "8207f974efd803a0d0a3b149540b5d1e7c6aa0d5",
+    "W001-T04I-codeql-fixture-remediation": {
+      "base": "54a7b709bcda9ceecccb6898c23e3e19f65dcea2",
+      "head": "8a007b12e39478932387c2107c6dfc8665c0fea8",
+      "allowedPaths": [
+        "scripts/generate-openapi.test.mjs"
+      ]
+    },
+    "W001-T04I-graph-integration-promotion": {
+      "base": "8a007b12e39478932387c2107c6dfc8665c0fea8",
+      "head": "a393f2dcdf4220eda4e14b280342a4dc8f2ff72d",
       "allowedPaths": [
         "state/ACTIVE-WAVE.md",
         "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
         "state/W001-EVIDENCE.md",
         "state/W001-OWNERSHIP.md"
       ]

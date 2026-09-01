@@ -94,6 +94,33 @@ Etki: API, DB, event, job, kullanıcı verisi veya production migration etkisi y
 
 Migration: DEC-024'ün private-only varsayımı, scanner lock/policy/evidence schema/runner/workflow ve W001 kanıtında public/private owner-repository sözleşmesine taşınır; exact yeni head tüm local/hosted/security/cold kapılardan yeniden geçer. Rollback sırasında public repository üzerinde eski workflow tree'sine ham revert yasaktır. Zorunlu sıra progression'ı durdurmak, owner onayıyla repository'yi private yapmak, exact ID/full-name/visibility ile hosted capability'leri yeniden doğrulamak ve ancak sonra reviewed revert PR değerlendirmektir; source boundary mümkünse private durumda da korunur. Kaybolan capability `BLOCKED_EXTERNAL` olarak geri açılır. Public veya private görünürlük değişimi exact-head kanıtını geriye dönük değiştirmez.
 
+## ADR-0016 — Wave içi immutable trusted checkpoint
+
+- Durum: `Accepted`
+- Owner onayı: `2026-08-31`
+
+DEC-014'ün amacı hareket eden bir integration `HEAD`'inden farklı writer tabanları açılmasını ve ownership drift'ini engellemektir. W001'in ilk base'i `bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b` trusted R-016 runner'ını taşımazken runtime PR'ının bu runner'ı taşıyan yeni base'i kullanması güvenlik sözleşmesidir. Owner, `ac637de57d4f7c3a7f51c4933365f596e0b3817b` head'inin exact two-parent, content-identical merge'ini ve runtime'ın yeni trusted base'ten sürmesini açıkça onayladı.
+
+Bu nedenle wave start SHA/tree tarihsel provenance olarak değişmez; fakat yeni bir task fazı yalnız şu koşullarla ileri checkpoint açabilir: exact owner onayı, iki parent'lı content-identical merge, uzak `main` parent/tree doğrulaması, yerel ve hosted full-tree/R-016 `PASS`, mevcut hosted security gate'leri ve kayıtlı residual riskler. Fazdaki bütün writer'lar tek checkpoint'ten açılır; moving `HEAD`, farklı base veya unsealed branch kullanılamaz. W001 runtime checkpoint'i `1dbc81b57e4809ce7ba0f530cab946ee0540ea71`, tree `8e6973a69f8f9551a29c8f301d59961113cf4e70`'dir.
+
+API/DB/event/job davranışı veya veri migration'ı bu kararla değişmez. Rollback, runtime branch/worktree'lerini terk edip trusted `main` checkpoint'ini korumaktır; public repository'de control-plane tree'sine ham revert ADR-0015 gereği yasaktır. Yeni runtime exact head'i ayrı owner merge onayı ve trusted-base PR gate'i almadan `main`e giremez.
+
+## ADR-0017 — Exact-health sealed OpenAPI renderer
+
+- Durum: `Accepted`
+- Owner onayı: `2026-08-31`
+- İlgili risk: `GHSA-9c2f-gr95-7wqw`, `R-019`, `R-020`
+
+`oapi-codegen 2.8.0` ve upstream `HEAD`, spec kaynaklı `x-go-type-import.name` değerini generated Go koduna güvenli olmayan biçimde taşıyabildiği ve patched sürüm yayımlanmadığı için W001 dependency/tool admission'ı alamaz. Recursive Spectral extension yasağı defense-in-depth'tir; known-vulnerable generator'ı çalıştırma yetkisi vermez. Owner, upstream yamayı beklemek yerine ayrı güvenlik-kritik yerel generator stratejisini açıkça onaylamıştır.
+
+W001'in ilk Go üreticisi genel amaçlı YAML/OpenAPI compiler değildir. `contracts/openapi/openapi.yaml` dosyasının exact LF byte dizisini, boyutunu ve SHA-256 kimliğini kabul eden repository-owned sealed renderer yalnız `GET /health/live` profilini ve tek allowlisted `internal/generated/openapi/openapi.gen.go` artifact'ını üretir. Renderer yalnız Node standard library kullanır; YAML parser, template/plugin engine, subprocess, network, environment-derived path, stdin veya dinamik import içermez. Input/output/package/template/config yolu CLI'dan değiştirilemez. Spec metninden identifier, import, package, output path, comment veya Go source parçası interpolate edilmez; generated import ve symbol yüzeyi renderer içinde sabittir.
+
+Kanonik OpenAPI source of truth olarak kalır. Renderer önce fatal UTF-8 ve bounded lexical güvenlik preflight'ı, ardından exact source digest'i uygular. Bilinmeyen key/extension, duplicate/alias/tag/merge/multi-document biçimi, external/dynamic/recursive ref veya tek byte'lık semantik değişiklik source seal mismatch ile fail-closed olur. `--check` write-free exact byte parity ve output inventory doğrular; `--write` yalnız hardcoded regular/non-link path'e exclusive temp + atomic rename ile yazar. Generated dosya elle düzenlenmez.
+
+Üretilen Go yüzeyi yalnız contract tipleri, exact operation metadata'sı, sealed `200/503` response union'ı ve `StrictServerInterface` içerir. HTTP request ID, typed default error mapping, exact method/path dispatch, content negotiation, logging ve graceful drain T04D'nin hand-written transport boundary'sinde kalır. `http.ServeMux` GET pattern'inin HEAD'i örtük kabul etmesi nedeniyle T04D exact method/path negatifleri olmadan runtime `PASS` sayılamaz.
+
+Bu karar additive API sözleşmesini değiştirmez; DB/event/job veya veri migration etkisi yoktur. TypeScript consumer parity bu Go task'ıyla otomatik `PASS` olmaz. Ana residual risk, sealed source digest'i ile sabit Go profilinin birlikte yanlış güncellenmesidir; independent semantic parity, deterministic golden, generated drift, exact Go compile/vet/test, R-016 ve fresh security/cold review ile azaltılır. İkinci operation/schema veya dinamik identifier ihtiyacında bu renderer genişletilmez; yeni owner-approved compiler/parser admission task'ı açılır. Rollback merge öncesi task branch'ini terk etmek; patched upstream'e ileride geçiş ise public Go API ve HTTP golden parity kanıtından sonra atomik consumer migration yapmaktır.
+
 ## Yeni ADR şablonu
 
 `templates/ADR.md` kullanılır. Yeni karar burada yalnız tek satır özetle indekslenir.

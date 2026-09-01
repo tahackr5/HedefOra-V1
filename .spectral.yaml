@@ -1,22 +1,938 @@
 extends:
   - spectral:oas
 
-# W000 has no public/runtime API endpoint, legal entity or license decision yet.
-# These three metadata rules become applicable when W001 introduces operations.
 rules:
-  info-contact: off
-  info-license: off
-  oas3-api-servers: off
-  w000-no-path-operations:
-    description: W000 must not define HTTP operations.
+  info-contact: error
+  info-license: error
+  oas3-api-servers: error
+  w001-server-origin:
+    description: W001 server metadata must remain one same-origin root.
+    severity: error
+    given: $.servers
+    then:
+      function: schema
+      functionOptions:
+        dialect: draft2020-12
+        allErrors: true
+        schema:
+          type: array
+          minItems: 1
+          maxItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - url
+              - description
+            properties:
+              url:
+                const: /
+              description:
+                type: string
+                minLength: 1
+  w001-operation-auth:
+    description: Every HTTP operation must declare its authentication class.
+    severity: error
+    given:
+      - $.paths.*.get
+      - $.paths.*.put
+      - $.paths.*.post
+      - $.paths.*.delete
+      - $.paths.*.options
+      - $.paths.*.head
+      - $.paths.*.patch
+      - $.paths.*.trace
+    then:
+      - field: x-hedefora-auth
+        function: defined
+      - field: x-hedefora-auth
+        function: enumeration
+        functionOptions:
+          values:
+            - public
+            - authenticated
+  w001-operation-idempotency:
+    description: Every HTTP operation must declare its idempotency behavior.
+    severity: error
+    given:
+      - $.paths.*.get
+      - $.paths.*.put
+      - $.paths.*.post
+      - $.paths.*.delete
+      - $.paths.*.options
+      - $.paths.*.head
+      - $.paths.*.patch
+      - $.paths.*.trace
+    then:
+      - field: x-hedefora-idempotency
+        function: defined
+      - field: x-hedefora-idempotency
+        function: enumeration
+        functionOptions:
+          values:
+            - inherent
+            - required
+            - non-idempotent
+  w001-operation-concurrency:
+    description: Every HTTP operation must declare its concurrency precondition.
+    severity: error
+    given:
+      - $.paths.*.get
+      - $.paths.*.put
+      - $.paths.*.post
+      - $.paths.*.delete
+      - $.paths.*.options
+      - $.paths.*.head
+      - $.paths.*.patch
+      - $.paths.*.trace
+    then:
+      - field: x-hedefora-concurrency
+        function: defined
+      - field: x-hedefora-concurrency
+        function: enumeration
+        functionOptions:
+          values:
+            - none
+            - if-match
+  w001-operation-rate-limit:
+    description: Every HTTP operation must declare a stable rate-limit class.
+    severity: error
+    given:
+      - $.paths.*.get
+      - $.paths.*.put
+      - $.paths.*.post
+      - $.paths.*.delete
+      - $.paths.*.options
+      - $.paths.*.head
+      - $.paths.*.patch
+      - $.paths.*.trace
+    then:
+      - field: x-hedefora-rate-limit
+        function: defined
+      - field: x-hedefora-rate-limit
+        function: pattern
+        functionOptions:
+          match: ^[a-z][a-z0-9-]{1,31}$
+  w001-operation-typed-default-error:
+    description: Every HTTP operation must expose a typed default error response.
+    severity: error
+    resolved: false
+    given:
+      - $.paths.*.get.responses
+      - $.paths.*.put.responses
+      - $.paths.*.post.responses
+      - $.paths.*.delete.responses
+      - $.paths.*.options.responses
+      - $.paths.*.head.responses
+      - $.paths.*.patch.responses
+      - $.paths.*.trace.responses
+    then:
+      - field: default.content.application/json.schema.$ref
+        function: defined
+      - field: default.content.application/json.schema.$ref
+        function: pattern
+        functionOptions:
+          match: ^#/components/schemas/ErrorEnvelope$
+  w001-health-operation:
+    description: The canonical liveness GET operation must exist.
     severity: error
     given: $.paths
     then:
-      function: length
+      function: schema
       functionOptions:
-        max: 0
-  w000-no-webhook-operations:
-    description: W000 must not define webhook operations.
+        dialect: draft2020-12
+        allErrors: true
+        schema:
+          type: object
+          required:
+            - /health/live
+  w001-only-health-path:
+    description: No route outside the canonical liveness path is admitted in W001.
+    severity: error
+    given: $.paths
+    then:
+      function: schema
+      functionOptions:
+        dialect: draft2020-12
+        allErrors: true
+        schema:
+          type: object
+          properties:
+            /health/live:
+              type: object
+          additionalProperties: false
+  w001-health-get-only:
+    description: The liveness path may expose only its canonical GET operation.
+    severity: error
+    given: $.paths['/health/live']
+    then:
+      function: schema
+      functionOptions:
+        dialect: draft2020-12
+        allErrors: true
+        schema:
+          type: object
+          required:
+            - get
+          properties:
+            get:
+              type: object
+          additionalProperties: false
+  w001-health-operation-shape:
+    description: The liveness operation surface must remain exact and callback-free.
+    severity: error
+    given: $.paths['/health/live'].get
+    then:
+      function: schema
+      functionOptions:
+        dialect: draft2020-12
+        allErrors: true
+        schema:
+          type: object
+          additionalProperties: false
+          properties:
+            operationId:
+              type: string
+            summary:
+              type: string
+            description:
+              type: string
+            tags:
+              type: array
+            security:
+              type: array
+            x-hedefora-auth:
+              type: string
+            x-hedefora-idempotency:
+              type: string
+            x-hedefora-concurrency:
+              type: string
+            x-hedefora-rate-limit:
+              type: string
+            responses:
+              type: object
+  w001-health-public:
+    description: The liveness operation must remain explicitly public.
+    severity: error
+    given: $.paths['/health/live'].get
+    then:
+      - field: security
+        function: defined
+      - field: security
+        function: length
+        functionOptions:
+          max: 0
+      - field: x-hedefora-auth
+        function: enumeration
+        functionOptions:
+          values:
+            - public
+  w001-health-semantics:
+    description: The liveness operation must keep its exact safety metadata.
+    severity: error
+    given: $.paths['/health/live'].get
+    then:
+      - field: x-hedefora-idempotency
+        function: enumeration
+        functionOptions:
+          values:
+            - inherent
+      - field: x-hedefora-concurrency
+        function: enumeration
+        functionOptions:
+          values:
+            - none
+      - field: x-hedefora-rate-limit
+        function: enumeration
+        functionOptions:
+          values:
+            - health
+  w001-health-responses:
+    description: The liveness operation must retain typed 200 and 503 responses.
+    severity: error
+    resolved: false
+    given: $.paths['/health/live'].get.responses
+    then:
+      - field: 200.content.application/json.schema.$ref
+        function: pattern
+        functionOptions:
+          match: ^#/components/schemas/HealthLiveResponse$
+      - field: 503.content.application/json.schema.$ref
+        function: pattern
+        functionOptions:
+          match: ^#/components/schemas/ServiceUnavailableError$
+  w001-health-response-surface:
+    description: Health responses may expose only the canonical status and fields.
+    severity: error
+    given: $.paths['/health/live'].get.responses
+    then:
+      - function: schema
+        functionOptions:
+          dialect: draft2020-12
+          allErrors: true
+          schema:
+            type: object
+            additionalProperties: false
+            required:
+              - "200"
+              - "503"
+              - default
+            properties:
+              "200":
+                type: object
+              "503":
+                type: object
+              default:
+                type: object
+      - field: "200"
+        function: schema
+        functionOptions:
+          dialect: draft2020-12
+          allErrors: true
+          schema:
+            type: object
+            additionalProperties: false
+            required:
+              - description
+              - headers
+              - content
+            properties:
+              description:
+                type: string
+                minLength: 1
+              headers:
+                type: object
+              content:
+                type: object
+      - field: "503"
+        function: schema
+        functionOptions:
+          dialect: draft2020-12
+          allErrors: true
+          schema:
+            type: object
+            additionalProperties: false
+            required:
+              - description
+              - headers
+              - content
+            properties:
+              description:
+                type: string
+                minLength: 1
+              headers:
+                type: object
+              content:
+                type: object
+      - field: default
+        function: schema
+        functionOptions:
+          dialect: draft2020-12
+          allErrors: true
+          schema:
+            type: object
+            additionalProperties: false
+            required:
+              - description
+              - headers
+              - content
+            properties:
+              description:
+                type: string
+                minLength: 1
+              headers:
+                type: object
+              content:
+                type: object
+  w001-health-json-only:
+    description: Every health response must expose only its JSON reference schema.
+    severity: error
+    resolved: false
+    given:
+      - $.paths['/health/live'].get.responses['200'].content
+      - $.paths['/health/live'].get.responses['503'].content
+      - $.paths['/health/live'].get.responses.default.content
+    then:
+      function: schema
+      functionOptions:
+        dialect: draft2020-12
+        allErrors: true
+        schema:
+          type: object
+          additionalProperties: false
+          required:
+            - application/json
+          properties:
+            application/json:
+              type: object
+              additionalProperties: false
+              required:
+                - schema
+              properties:
+                schema:
+                  type: object
+                  additionalProperties: false
+                  required:
+                    - $ref
+                  properties:
+                    $ref:
+                      type: string
+  w001-health-standard-headers:
+    description: Success and default health responses must retain safe headers.
+    severity: error
+    resolved: false
+    given:
+      - $.paths['/health/live'].get.responses['200'].headers
+      - $.paths['/health/live'].get.responses.default.headers
+    then:
+      function: schema
+      functionOptions:
+        dialect: draft2020-12
+        allErrors: true
+        schema:
+          type: object
+          additionalProperties: false
+          required:
+            - X-Request-ID
+            - Cache-Control
+            - X-Content-Type-Options
+            - Vary
+          properties:
+            X-Request-ID:
+              const:
+                $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              const:
+                $ref: "#/components/headers/CacheControl"
+            X-Content-Type-Options:
+              const:
+                $ref: "#/components/headers/ContentTypeOptions"
+            Vary:
+              const:
+                $ref: "#/components/headers/VaryAccept"
+  w001-health-draining-headers:
+    description: Draining health responses must also expose bounded Retry-After.
+    severity: error
+    resolved: false
+    given: $.paths['/health/live'].get.responses['503'].headers
+    then:
+      function: schema
+      functionOptions:
+        dialect: draft2020-12
+        allErrors: true
+        schema:
+          type: object
+          additionalProperties: false
+          required:
+            - X-Request-ID
+            - Retry-After
+            - Cache-Control
+            - X-Content-Type-Options
+            - Vary
+          properties:
+            X-Request-ID:
+              const:
+                $ref: "#/components/headers/RequestId"
+            Retry-After:
+              const:
+                $ref: "#/components/headers/RetryAfter"
+            Cache-Control:
+              const:
+                $ref: "#/components/headers/CacheControl"
+            X-Content-Type-Options:
+              const:
+                $ref: "#/components/headers/ContentTypeOptions"
+            Vary:
+              const:
+                $ref: "#/components/headers/VaryAccept"
+  w001-error-envelope-shape:
+    description: The shared error envelope must preserve its closed required shape.
+    severity: error
+    resolved: false
+    given: $.components.schemas.ErrorEnvelope
+    then:
+      function: schema
+      functionOptions:
+        dialect: draft2020-12
+        allErrors: true
+        schema:
+          type: object
+          additionalProperties: false
+          required:
+            - type
+            - additionalProperties
+            - required
+            - properties
+          properties:
+            type:
+              const: object
+            additionalProperties:
+              const: false
+            required:
+              type: array
+              minItems: 4
+              maxItems: 4
+              uniqueItems: true
+              allOf:
+                - contains:
+                    const: code
+                - contains:
+                    const: message
+                - contains:
+                    const: request_id
+                - contains:
+                    const: retryable
+            properties:
+              type: object
+              additionalProperties: false
+              required:
+                - code
+                - message
+                - request_id
+                - retryable
+                - retry_after_seconds
+              properties:
+                code:
+                  type: object
+                  additionalProperties: false
+                  required:
+                    - $ref
+                  properties:
+                    $ref:
+                      const: "#/components/schemas/ErrorCode"
+                message:
+                  type: object
+                  additionalProperties: false
+                  required:
+                    - type
+                    - minLength
+                    - maxLength
+                  properties:
+                    type:
+                      const: string
+                    minLength:
+                      const: 1
+                    maxLength:
+                      const: 200
+                request_id:
+                  type: object
+                  additionalProperties: false
+                  required:
+                    - $ref
+                  properties:
+                    $ref:
+                      const: "#/components/schemas/RequestId"
+                retryable:
+                  type: object
+                  additionalProperties: false
+                  required:
+                    - type
+                  properties:
+                    type:
+                      const: boolean
+                retry_after_seconds:
+                  type: object
+                  additionalProperties: false
+                  required:
+                    - type
+                    - minimum
+                    - maximum
+                  properties:
+                    type:
+                      const: integer
+                    minimum:
+                      const: 1
+                    maximum:
+                      const: 60
+  w001-health-response-shape:
+    description: The liveness response must preserve its exact closed shape.
+    severity: error
+    resolved: false
+    given: $.components.schemas.HealthLiveResponse
+    then:
+      function: schema
+      functionOptions:
+        dialect: draft2020-12
+        allErrors: true
+        schema:
+          type: object
+          additionalProperties: false
+          required:
+            - type
+            - additionalProperties
+            - required
+            - properties
+          properties:
+            type:
+              const: object
+            additionalProperties:
+              const: false
+            required:
+              const:
+                - status
+            properties:
+              type: object
+              additionalProperties: false
+              required:
+                - status
+              properties:
+                status:
+                  type: object
+                  additionalProperties: false
+                  required:
+                    - type
+                    - enum
+                  properties:
+                    type:
+                      const: string
+                    enum:
+                      const:
+                        - live
+  w001-service-unavailable-shape:
+    description: The draining response must remain retryable and service-specific.
+    severity: error
+    resolved: false
+    given: $.components.schemas.ServiceUnavailableError
+    then:
+      function: schema
+      functionOptions:
+        dialect: draft2020-12
+        allErrors: true
+        schema:
+          type: object
+          additionalProperties: false
+          required:
+            - type
+            - additionalProperties
+            - required
+            - properties
+          properties:
+            type:
+              const: object
+            additionalProperties:
+              const: false
+            required:
+              type: array
+              minItems: 5
+              maxItems: 5
+              uniqueItems: true
+              allOf:
+                - contains:
+                    const: code
+                - contains:
+                    const: message
+                - contains:
+                    const: request_id
+                - contains:
+                    const: retryable
+                - contains:
+                    const: retry_after_seconds
+            properties:
+              type: object
+              additionalProperties: false
+              required:
+                - code
+                - message
+                - request_id
+                - retryable
+                - retry_after_seconds
+              properties:
+                code:
+                  const:
+                    type: string
+                    enum:
+                      - service_unavailable
+                message:
+                  const:
+                    type: string
+                    minLength: 1
+                    maxLength: 200
+                request_id:
+                  const:
+                    $ref: "#/components/schemas/RequestId"
+                retryable:
+                  const:
+                    type: boolean
+                    enum:
+                      - true
+                retry_after_seconds:
+                  const:
+                    type: integer
+                    minimum: 1
+                    maximum: 60
+  w001-component-surface:
+    description: W001 may expose only schema and header component categories.
+    severity: error
+    given: $.components
+    then:
+      function: schema
+      functionOptions:
+        dialect: draft2020-12
+        allErrors: true
+        schema:
+          type: object
+          additionalProperties: false
+          required:
+            - headers
+            - schemas
+          properties:
+            headers:
+              type: object
+            schemas:
+              type: object
+  w001-header-component-surface:
+    description: W001 may expose only its five canonical response headers.
+    severity: error
+    given: $.components.headers
+    then:
+      function: schema
+      functionOptions:
+        dialect: draft2020-12
+        allErrors: true
+        schema:
+          type: object
+          additionalProperties: false
+          required:
+            - CacheControl
+            - ContentTypeOptions
+            - RequestId
+            - RetryAfter
+            - VaryAccept
+          properties:
+            CacheControl:
+              type: object
+            ContentTypeOptions:
+              type: object
+            RequestId:
+              type: object
+            RetryAfter:
+              type: object
+            VaryAccept:
+              type: object
+  w001-schema-component-surface:
+    description: W001 may expose only its five canonical response schemas.
+    severity: error
+    given: $.components.schemas
+    then:
+      function: schema
+      functionOptions:
+        dialect: draft2020-12
+        allErrors: true
+        schema:
+          type: object
+          additionalProperties: false
+          required:
+            - RequestId
+            - HealthLiveResponse
+            - ErrorEnvelope
+            - ServiceUnavailableError
+            - ErrorCode
+          properties:
+            RequestId:
+              type: object
+            HealthLiveResponse:
+              type: object
+            ErrorEnvelope:
+              type: object
+            ServiceUnavailableError:
+              type: object
+            ErrorCode:
+              type: object
+  w001-header-component-shapes:
+    description: Referenced safety and retry headers must retain exact bounded schemas.
+    severity: error
+    resolved: false
+    given: $.components.headers
+    then:
+      function: schema
+      functionOptions:
+        dialect: draft2020-12
+        allErrors: true
+        schema:
+          type: object
+          properties:
+            CacheControl:
+              type: object
+              additionalProperties: false
+              required:
+                - description
+                - required
+                - schema
+              properties:
+                description:
+                  type: string
+                  minLength: 1
+                required:
+                  const: true
+                schema:
+                  const:
+                    type: string
+                    enum:
+                      - no-store
+            ContentTypeOptions:
+              type: object
+              additionalProperties: false
+              required:
+                - description
+                - required
+                - schema
+              properties:
+                description:
+                  type: string
+                  minLength: 1
+                required:
+                  const: true
+                schema:
+                  const:
+                    type: string
+                    enum:
+                      - nosniff
+            RequestId:
+              type: object
+              additionalProperties: false
+              required:
+                - description
+                - required
+                - schema
+              properties:
+                description:
+                  type: string
+                  minLength: 1
+                required:
+                  const: true
+                schema:
+                  const:
+                    $ref: "#/components/schemas/RequestId"
+            RetryAfter:
+              type: object
+              additionalProperties: false
+              required:
+                - description
+                - required
+                - schema
+              properties:
+                description:
+                  type: string
+                  minLength: 1
+                required:
+                  const: true
+                schema:
+                  const:
+                    type: integer
+                    minimum: 1
+                    maximum: 60
+            VaryAccept:
+              type: object
+              additionalProperties: false
+              required:
+                - description
+                - required
+                - schema
+              properties:
+                description:
+                  type: string
+                  minLength: 1
+                required:
+                  const: true
+                schema:
+                  const:
+                    type: string
+                    enum:
+                      - Accept
+  w001-request-id-shape:
+    description: Request IDs must remain canonical lowercase UUIDv4 values.
+    severity: error
+    resolved: false
+    given: $.components.schemas.RequestId
+    then:
+      function: schema
+      functionOptions:
+        dialect: draft2020-12
+        allErrors: true
+        schema:
+          type: object
+          additionalProperties: false
+          required:
+            - type
+            - minLength
+            - maxLength
+            - pattern
+            - examples
+          properties:
+            type:
+              const: string
+            minLength:
+              const: 36
+            maxLength:
+              const: 36
+            pattern:
+              const: "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            examples:
+              type: array
+              minItems: 1
+              maxItems: 1
+              items:
+                type: string
+                pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+  w001-error-code-shape:
+    description: The W001 error vocabulary must remain explicit and bounded.
+    severity: error
+    resolved: false
+    given: $.components.schemas.ErrorCode
+    then:
+      function: schema
+      functionOptions:
+        dialect: draft2020-12
+        allErrors: true
+        schema:
+          type: object
+          additionalProperties: false
+          required:
+            - type
+            - enum
+          properties:
+            type:
+              const: string
+            enum:
+              type: array
+              minItems: 7
+              maxItems: 7
+              uniqueItems: true
+              allOf:
+                - contains:
+                    const: invalid_request
+                - contains:
+                    const: method_not_allowed
+                - contains:
+                    const: not_acceptable
+                - contains:
+                    const: route_not_found
+                - contains:
+                    const: service_unavailable
+                - contains:
+                    const: unsupported_media_type
+                - contains:
+                    const: internal_error
+  w001-no-external-ref:
+    description: Generator input may only use references inside the canonical file.
+    severity: error
+    resolved: false
+    given: $..['$ref']
+    then:
+      function: pattern
+      functionOptions:
+        match: ^#/
+  w001-no-go-type-import:
+    description: >-
+      x-go-type-import is forbidden because the pinned generator has an
+      unpatched code-generation injection advisory.
+    severity: error
+    resolved: false
+    given: $..['x-go-type-import']
+    then:
+      function: undefined
+  w001-no-webhook-operations:
+    description: Webhook operations are outside the current W001 contract scope.
     severity: error
     given: $.webhooks
     then:

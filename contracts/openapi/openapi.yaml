@@ -1,9 +1,197 @@
 openapi: 3.1.0
 info:
   title: HedefOra API
-  version: 0.0.0
+  version: 0.1.0
   description: >-
-    W000 no-feature contract scaffold. Runtime operations begin in W001 after
-    their producers, consumers, errors and compatibility behavior are defined.
+    HedefOra'nın contract-first HTTP API sözleşmesi. Bu ilk additive runtime
+    dilimi yalnız process liveness davranışını yayımlar.
+  contact:
+    name: HedefOra
+    url: https://hedefora.com
+  license:
+    name: Proprietary
+servers:
+  - url: /
+    description: Current origin
 jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
-paths: {}
+tags:
+  - name: Health
+    description: Process lifecycle health signals.
+paths:
+  /health/live:
+    get:
+      operationId: getHealthLive
+      summary: Check whether the API process is serving traffic
+      description: >-
+        Returns a live status while the API process serves traffic. Once
+        graceful shutdown begins, the same endpoint returns a stable 503 error
+        envelope and asks callers to retry after a bounded delay.
+      tags:
+        - Health
+      security: []
+      x-hedefora-auth: public
+      x-hedefora-idempotency: inherent
+      x-hedefora-concurrency: none
+      x-hedefora-rate-limit: health
+      responses:
+        "200":
+          description: The API process is live and serving traffic.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            X-Content-Type-Options:
+              $ref: "#/components/headers/ContentTypeOptions"
+            Vary:
+              $ref: "#/components/headers/VaryAccept"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthLiveResponse"
+        "503":
+          description: The API process is draining and will stop serving.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Retry-After:
+              $ref: "#/components/headers/RetryAfter"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            X-Content-Type-Options:
+              $ref: "#/components/headers/ContentTypeOptions"
+            Vary:
+              $ref: "#/components/headers/VaryAccept"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceUnavailableError"
+        default:
+          description: A typed, user-safe HTTP error.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            X-Content-Type-Options:
+              $ref: "#/components/headers/ContentTypeOptions"
+            Vary:
+              $ref: "#/components/headers/VaryAccept"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+components:
+  headers:
+    CacheControl:
+      description: Prevents health responses from being stored by intermediaries.
+      required: true
+      schema:
+        type: string
+        enum:
+          - no-store
+    ContentTypeOptions:
+      description: Disables content-type sniffing.
+      required: true
+      schema:
+        type: string
+        enum:
+          - nosniff
+    RequestId:
+      description: Correlation identifier for this request.
+      required: true
+      schema:
+        $ref: "#/components/schemas/RequestId"
+    RetryAfter:
+      description: Whole seconds before the caller should retry.
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 60
+    VaryAccept:
+      description: Marks representation negotiation on the Accept header.
+      required: true
+      schema:
+        type: string
+        enum:
+          - Accept
+  schemas:
+    RequestId:
+      type: string
+      minLength: 36
+      maxLength: 36
+      pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+      examples:
+        - 7d444840-9dc0-4bb4-9f1d-6a20c3ce090a
+    HealthLiveResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - live
+    ErrorEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+        - request_id
+        - retryable
+      properties:
+        code:
+          $ref: "#/components/schemas/ErrorCode"
+        message:
+          type: string
+          minLength: 1
+          maxLength: 200
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+        retryable:
+          type: boolean
+        retry_after_seconds:
+          type: integer
+          minimum: 1
+          maximum: 60
+    ServiceUnavailableError:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+        - request_id
+        - retryable
+        - retry_after_seconds
+      properties:
+        code:
+          type: string
+          enum:
+            - service_unavailable
+        message:
+          type: string
+          minLength: 1
+          maxLength: 200
+        request_id:
+          $ref: "#/components/schemas/RequestId"
+        retryable:
+          type: boolean
+          enum:
+            - true
+        retry_after_seconds:
+          type: integer
+          minimum: 1
+          maximum: 60
+    ErrorCode:
+      type: string
+      enum:
+        - invalid_request
+        - method_not_allowed
+        - not_acceptable
+        - route_not_found
+        - service_unavailable
+        - unsupported_media_type
+        - internal_error

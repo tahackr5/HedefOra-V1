@@ -2,11 +2,9 @@
 
 ## Immutable base
 
-Wave açılırken:
+Wave açılırken `WAVE_START_COMMIT` ve tree tarihsel provenance olarak kaydedilir ve değiştirilmez. Aynı task fazındaki tüm writer branch/worktree'leri `state/ACTIVE-WAVE.md` içindeki tek `TASK_PHASE_BASE` SHA'sından açılır; hareket eden `HEAD` base olarak kullanılmaz.
 
-- `WAVE_START_COMMIT` kaydedilir,
-- tüm task branch/worktree'leri bu SHA'dan oluşturulur,
-- wave içinde hareket eden `HEAD` base olarak kullanılmaz.
+Task-phase base yalnız owner-onaylı exact head'in two-parent, content-identical merge'i uzak `main`e girdikten; ordered parent/tree doğrulandıktan; post-merge local+hosted full-tree ve R-016 ile uygulanabilir hosted security gate'leri geçtikten sonra ilerletilebilir. İlk control-plane bootstrap'ının base runner yokluğundan kaynaklanan trusted-PR `NOT_RUN` sonucu tek seferlik ve açık kayıtlıdır; runtime target'ta tekrar edemez. Eski wave start kaydı silinmez; merge/gate/ownership continuity kanıtı checkpoint ile tutulur. Farklı writer'lar farklı checkpoint kullanamaz.
 
 ## İsimlendirme
 

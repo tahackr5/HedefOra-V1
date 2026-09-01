@@ -1,8 +1,10 @@
 # W001 Yazma Sahipliği ve Birleştirme Planı
 
-> Tek writer orchestrator'dır. Bütün W001 task branch/worktree'leri immutable `WAVE_START_COMMIT` olan `bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b` üzerinden açılır.
+> Historical `WAVE_START_COMMIT` `bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b` olarak değişmez. DEC-026/ADR-0016 uyarınca W001 runtime task fazının tek immutable base'i post-merge doğrulanmış `1dbc81b57e4809ce7ba0f530cab946ee0540ea71`'dir. Path başına tek writer korunur; shared dosyaları yalnız orchestrator birleştirir.
 
 Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERSHIP.json` içindedir. Manifest schema v2 kullanır; son self-referential seal commit'inde yalnız bu JSON değişebilir. Tarihsel `state/W000-*` dosyaları W001 boyunca değiştirilemez.
+
+- Historical runtime ownership seal: manifest `verifiedThrough` `b88b64f31c8f6fcbaab95bff1ee7383cfd2f30c7`; yalnız ownership JSON'unu değiştiren exact runtime input seal `ccb345dd529da6baa7537e516eba205476cec6b2`, tree `e63bb7d32f017f67bede63bc1c707275b9d7f8ed`. Trusted-control integration/promotion için yeni final seal pending.
 
 ## W001-T00 — Wave open ve governance state
 
@@ -61,15 +63,84 @@ Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERS
 - Boundary: GitHub repository ID `1349011765` ve full name `tahackr5/HedefOra-V1` birlikte exact eşleşir. Hosted artifact yalnız externally-unverified `github-context-claim`, yerel artifact `local-declaration` taşır; authenticated GitHub run/artifact provenance doğrulaması detached artifact dışındadır. Normal `pull_request` enforcement yasaktır; first-party push ve base-controlled `pull_request_target` boundary'leri fork/foreign head checkout ve scanner/rule/image/DB acquisition öncesi bloklar. Rule byte'ları repository/artifact'e konmaz ve scanning-as-a-service sunulmaz.
 - Expected gates: evidence/schema v2 unit/negative tests, workflow/actionlint, frozen full tree, exact public local R-016, rule artifact redaction/rehash, ownership range+seal, hosted quality/Dependency Review/Default CodeQL, fresh security ve cold review. Yeni exact SHA ayrı owner merge onayı almadan birleşmez.
 
+## W001-T04A — Trusted runtime checkpoint ve ownership freeze
+
+- Writer: orchestrator.
+- Immutable task-phase base: `1dbc81b57e4809ce7ba0f530cab946ee0540ea71`; tree `8e6973a69f8f9551a29c8f301d59961113cf4e70`.
+- Owned paths: `AGENTS.md`, `DECISIONS.md`, `FILE-INDEX.md`, `architecture/ADR-REGISTER.md`, `delivery/WORKTREE-OWNERSHIP-AND-MERGE.md`, `state/ACTIVE-WAVE.md`, `state/DECISION-QUEUE.md`, `state/RELEASE-LEDGER.md`, `state/RISK-REGISTER.md`, `state/W001-EVIDENCE.md`, `state/W001-OWNERSHIP.md`, `state/W001-OWNERSHIP.json`.
+- Scope: DQ-006/DEC-026/ADR-0016 çelişki çözümü; exact post-merge local/hosted kanıt; T04 DAG, writer/path ve gate matrisi. API/DB/job davranışı yoktur.
+- Expected gates: governance validation, diff check, W000 immutability, W001 continuous ownership plus manifest-only seal, clean worktree.
+
+## W001-T04B — Dependency ve compatibility freeze
+
+- Writers: none; architecture/backend/quality/security read-only proposal verir.
+- Scope: official exact version, license, maintenance, vulnerability/SBOM ve exit planı; OpenAPI 3.1 generator compatibility; additive API sınıflaması; ilerideki DB/River migration/replay penceresi.
+- Boundary: `delivery/TOOLCHAIN-LOCK.md` içindeki planned W001 sürümleri ekleme izni değildir. İlk health dilimi yalnız gerçek producer/consumer'ı olan minimum generator/runtime dependency'lerini ekler; pgx/River/migrate/Testcontainers sonraki owning task'a kadar eklenmez.
+- Current verdict: affected `oapi-codegen 2.8.0` için kalıcı `NO-GO/BLOCKED_EXTERNAL`; owner DEC-027 ile onu dependency/tool graph'ına almayan ayrı T04E sealed-renderer task'ını açtı. Recursive extension lint yalnız defense-in-depth'tir.
+
+## W001-T04E — Exact-health sealed security compiler
+
+- Writer/merge/stage sahibi: orchestrator; architecture, quality ve security ajanları read-only proposal/review verir.
+- Owned paths: `DECISIONS.md`, `FILE-INDEX.md`, `architecture/ADR-REGISTER.md`, `contracts/README.md`, `delivery/TOOLCHAIN-LOCK.md`, `package.json`, `scripts/check-generated.mjs`, `scripts/check-generated.test.mjs`, `scripts/generate-openapi.mjs`, `scripts/generate-openapi.test.mjs`, `scripts/fixtures/openapi-generator-negative-mutations.mjs`, `internal/generated/openapi/openapi.gen.go`, `state/ACTIVE-WAVE.md`, `state/DECISION-QUEUE.md`, `state/RELEASE-LEDGER.md`, `state/RISK-REGISTER.md`, `state/W001-EVIDENCE.md`, `state/W001-OWNERSHIP.md`, `state/W001-OWNERSHIP.json`.
+- Input/output contract: yalnız exact `contracts/openapi/openapi.yaml` LF bytes, size `5604`, SHA-256 `5d157cd1d6627d781030212454ceaa075e994cdfa22a6f1f1929d26265af85ab`; tek hardcoded output `internal/generated/openapi/openapi.gen.go`. CLI yalnız `--check` veya `--write`; path/package/template/config/stdin override yoktur.
+- TCB boundary: Node standard library dışında dependency yok; YAML parser, subprocess, network, environment-derived path, eval/dynamic import/plugin/template engine yok. Spec'ten source code, identifier, import, output path veya comment interpolation yok. Second operation/schema fail-closed yeni owner/security compiler task'ı ister.
+- Expected gates: fatal/bounded input preflight; 33 canonical single-mutation rejection; generator-specific injection/ref/extension/duplicate/alias/tag/merge/multi-doc/UTF-8/NUL/CR/size corpus; rejected inputte zero-output; same-process ve fresh-process deterministic byte parity; exact output inventory/symlink/non-regular/drift; gofmt, pinned Go compile/vet/test/race; no dependency/lock drift; R-016; independent security ve cold review.
+- Rollback: merge öncesi task branch'ini terk etmek. Patched upstream'e geçiş ancak generated public Go API + HTTP golden parity ve ayrı dependency/security admission sonrasında atomik yapılır.
+- Current state: exact `959e128ea5fd0191b4283293fbe49f2a854b0aa6` / tree `42069f70d14626ece232b4184c7e80f776fa8e2a` üzerinde generator/full-tree/pinned-Go/R-016/security/quality `PASS`; T04E `COMPLETED`.
+
+## W001-T04C — Additive liveness contract ve generated parity
+
+- Writer/merge/stage sahibi: orchestrator; builder ajanlar yalnız proposal verir.
+- Owned paths: `contracts/openapi/**`, `contracts/README.md`, `.spectral.yaml`, `scripts/fixtures/openapi-negative-mutations.mjs`, `scripts/validate-contracts.mjs`, `scripts/validate-contracts.test.mjs`, T04E generation paths, generated Go root `internal/generated/openapi/**`; generated TypeScript root `apps/web/src/generated/api/**` yalnız gerçek frontend consumer task'ında ayrıca açılır.
+- Contract: `GET /health/live`; public/no-auth, inherently idempotent, concurrency precondition'i yok, explicit health rate-limit class. Serving sırasında typed `200`; drain sırasında `service_unavailable`, `retryable: true`, bounded zorunlu retry süresi ve `Retry-After` taşıyan dedicated typed `503`.
+- Generated boundary: kanonik OpenAPI elle değiştirilir; generated dosya elle düzenlenmez. Exact sealed regeneration byte-diff, Go compile ve schema/generator negative fixture'ları zorunludur. TypeScript parity bu Go slice'ıyla `PASS` olmaz.
+- Current state: contract preflight, T04E sealed generated Go parity ve T04D HTTP integration exact S3 üzerinde `PASS`; bounded T04C Go/HTTP dilimi `COMPLETED`. Gerçek TypeScript consumer task/gate'i açılmadı ve `NOT_RUN`; TypeScript parity `PASS` değildir.
+
+## W001-T04D — API/config/telemetry/health runtime
+
+- Writer: orchestrator; ilk vertical slice boyunca T04C ile aynı integration worktree'sinde sıralı çalışır, paralel writer yoktur.
+- Owned paths: `cmd/hedefora/**`, `internal/platform/app/**`, `internal/platform/config/**`, `internal/platform/http/**`, `internal/platform/health/**`, `internal/platform/telemetry/**`; runtime activation boundary için exact `scripts/check-generated.mjs`, `scripts/check-generated.test.mjs` ve `scripts/list-repository-files.mjs`.
+- Acceptance: explicit `api` process mode, allowlisted environment config, secret/raw-header loglamama, cryptographic request ID, structured request outcome, bounded server timeouts, graceful drain/shutdown, generated strict handler ve `200/503` unit/integration tests.
+- Boundary: PostgreSQL, River, object storage, VPS, DNS, Cloudflare ve staging mutation yoktur; readiness DB sahibi T04F'ye kadar eklenmez.
+- Current state: implementation/remediation head F3 `759e338cbc868e63bc10d0b70ae4fe2836f4cc83`; manifest-only ownership seal S3 `057a1976dd157b0225e3e7530998e7ac6abae217`, tree `a6cd96a1b9721b75fc222d11b97289457ae3ce05`. Exact S3 local ownership/full-tree/pinned-Go/R-016/security/cold kapıları ve T04D vertical slice `PASS`; T04D `COMPLETED`. Runtime trusted-base PR/R-016, hosted Dependency Review ve hosted CodeQL `NOT_RUN`; exact-head owner merge gate'i pending; R-014 branch/ruleset enforcement `BLOCKED_EXTERNAL`.
+
+## W001-T04I — Trusted-control graph integration ve CodeQL fixture remediation
+
+- Writer/merge/stage sahibi: orchestrator; security ve quality reviewer'lar read-only.
+- Immutable inputs: sealed runtime `ccb345dd529da6baa7537e516eba205476cec6b2`; owner-approved trusted control merge `ecf71c0eb8139c0d7ff911ebb9f33afa6a1164ee`.
+- Integration: `54a7b709bcda9ceecccb6898c23e3e19f65dcea2`, ordered parents `ccb345dd` + `ecf71c0`; rebase/cherry-pick/history rewrite yok. Protected `.gitleaksignore`, R-016 runner/contracts/fixtures ve tool byte'ları `ecf71c0` ile exact kalır.
+- Graph-reconciliation envelope: living schema-v2 manifest ortak prefix'i `W001-T03-bootstrap-merge-wrapper` dahil korur; `1dbc81b → 54a7b709` aralığını yalnız gerçek endpoint union'ındaki exact 49 path ile doğrular. Bu aggregate kayıt, tarihsel T03A/T04 dar sealed manifestlerini Git tarihinden silmez ve gelecekte aynı 49 path'e yazma yetkisi vermez.
+- CodeQL remediation: `54a7b709 → 8a007b12e39478932387c2107c6dfc8665c0fea8` yalnız `scripts/generate-openapi.test.mjs`; complete CRLF fixture exact `SOURCE_CARRIAGE_RETURN_FORBIDDEN` ile fail-closed kalır. Production generator/runtime path'i değişmez.
+- State promotion owned paths: `state/ACTIVE-WAVE.md`, `state/RELEASE-LEDGER.md`, `state/RISK-REGISTER.md`, `state/W001-EVIDENCE.md`, `state/W001-OWNERSHIP.md`. Final seal yalnız `state/W001-OWNERSHIP.json` değiştirebilir.
+- Required gates: exact sealed head'de ownership, Node/pnpm full-tree, generated/OpenAPI drift, pinned Go build/vet/shuffle/race, pinned Gitleaks history+sibling canary, local R-016, fresh security/cold; PR #4 üzerinde trusted-base R-016, Dependency Review ve CodeQL. Ayrı owner exact-head onayı olmadan merge yoktur.
+
+## W001-T04F — PostgreSQL 17 roles, migration ve readiness foundation
+
+- Future disjoint owners: architecture `contracts/database/**` + `db/migrations/**`; infra `infra/compose.dev.yml` + `infra/postgres/**`; backend `internal/platform/postgres/**`; quality `tests/integration/postgres/**`.
+- Acceptance: migration/app/worker/read-only roller ayrı; runtime DB owner değil; empty/up/down/upgrade ve privilege-negative PostgreSQL 17 testleri; TLS/timeout/pool; generic DB detail sızdırmayan `/health/ready`.
+- Bu task T04C/T04D exact merged checkpoint'i ve ayrı dependency evaluation olmadan writer açmaz.
+
+## W001-T04G — River ve process baseline
+
+- Future disjoint owners: architecture `contracts/jobs/**`; backend `internal/platform/jobs/**`; quality `tests/integration/river/**`.
+- Acceptance: versioned payload/catalog parity, exact queue/process subscriptions, transactional enqueue/rollback, retry/restart/failure injection. Test-only probe River mekaniğini doğrulayabilir; fake production job üretmez. Gerçek product job yokken production catalog boş kalır.
+
+## W001-T04H — Integrated review ve runtime owner merge gate
+
+- State/evidence writer: orchestrator; security ve cold reviewer fresh-context/read-only.
+- Required: full-tree + generated drift + migration/River applicability, local/hosted R-016, trusted-base PR gate, Dependency Review, CodeQL, exact ownership seal, security/cold verdict ve ayrı exact-head owner merge onayı.
+- Protected R-016 control-plane path'i değişirse runtime target ile karıştırılmaz; ayrı control-only bootstrap ve owner gate'i gerekir.
+
 ## Merge ve rollback
 
 1. W001 açılış state commit'i.
 2. Manifest-only ownership seal.
 3. R-016 control-plane implementation + tests + docs.
 4. Manifest-only seal ve exact-target full-tree/security/cold review.
-5. İlk bootstrap PR'ı için explicit owner approval ve owner-controlled two-parent, content-identical GitHub merge; wave-start base trusted workflow/runner taşımadığı için hosted trusted gate bu PR'da `NOT_RUN` kalır.
-6. Yeni base üzerinde ayrı target/runtime PR'ı; trusted-base gate `PASS` olmadan ilerlemez. Protected control-plane değişikliği gerekiyorsa yine önce control-only owner-approved bootstrap, sonra ayrı target PR yapılır.
-7. Final `main` push active-wave merge-wrapper/full-tree gate.
+5. İlk bootstrap PR'ı explicit owner approval ile owner-controlled two-parent, content-identical merge edildi; bootstrap trusted gate'i `NOT_RUN`, post-merge local/hosted full-tree `PASS` kaydedildi.
+6. Runtime checkpoint/DAG governance commit'i ve manifest-only ownership seal.
+7. Yeni base üzerinde ayrı target/runtime PR'ı; trusted-base gate `PASS` olmadan ilerlemez. Protected control-plane değişikliği gerekiyorsa yine önce control-only owner-approved bootstrap, sonra ayrı target PR yapılır.
+8. Ayrı exact runtime head owner onayı, two-parent content-identical merge ve final `main` push merge-wrapper/full-tree gate.
 
 Squash/rebase/direct push kabul edilmez. Merge öncesi güvenli rollback W001 PR'ını merge etmemektir. Merge sonrasında repository public iken eski workflow tree'sine ham revert yasaktır: progression durdurulur, owner onayıyla repository private yapılır, exact ID/full-name/visibility ve hosted capability yeniden doğrulanır, ancak bundan sonra reviewed revert PR değerlendirilebilir; source boundary mümkünse korunur. Hosted CodeQL/Dependency Review kullanılabildiği sürece gerçek gate'tir; branch/ruleset enforcement doğrulanana kadar `BLOCKED_EXTERNAL` kalır. VPS/DNS rollback bu task için `NOT_APPLICABLE`, çünkü dış sistem mutation'ı yoktur.
 
