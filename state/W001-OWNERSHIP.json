@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "1aa09c174f8fbbfd96e9027426a27413423c8a25",
+  "verifiedThrough": "8948294dc12f139d307b5d3d18e84507d15722ab",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -496,6 +496,28 @@
         "state/W001-EVIDENCE.md",
         "state/W001-OWNERSHIP.md"
       ]
+    },
+    "W001-T04F-task-open-seal": {
+      "base": "1aa09c174f8fbbfd96e9027426a27413423c8a25",
+      "head": "fc69dc4dd78206c4106d2c8d8c528aa08c198a8c",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04F-governance-correction": {
+      "base": "fc69dc4dd78206c4106d2c8d8c528aa08c198a8c",
+      "head": "92be98e2e949904f15ff3b1ff72d783f6c80b475",
+      "allowedPaths": [
+        "DECISIONS.md",
+        "architecture/ADR-REGISTER.md",
+        "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/W001-OWNERSHIP.md"
+      ]
+    },
+    "W001-T04F-governance-correction-evidence": {
+      "base": "92be98e2e949904f15ff3b1ff72d783f6c80b475",
+      "head": "8948294dc12f139d307b5d3d18e84507d15722ab",
+      "allowedPaths": ["state/RELEASE-LEDGER.md", "state/W001-EVIDENCE.md"]
     }
   }
 }
