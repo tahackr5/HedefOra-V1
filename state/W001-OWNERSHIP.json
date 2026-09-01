@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "e2c4ffd5dfe3767ef3ceadd4fa54b9264ce7a2d5",
+  "verifiedThrough": "759e338cbc868e63bc10d0b70ae4fe2836f4cc83",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -508,6 +508,20 @@
       "allowedPaths": [
         "scripts/check-generated.mjs",
         "scripts/check-generated.test.mjs"
+      ]
+    },
+    "W001-T04D-runtime-source-boundary-followup-seal": {
+      "base": "e2c4ffd5dfe3767ef3ceadd4fa54b9264ce7a2d5",
+      "head": "19e1eb2fd2f6ece8062fa8fb5154938a36b9da0e",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04D-runtime-source-boundary-parity": {
+      "base": "19e1eb2fd2f6ece8062fa8fb5154938a36b9da0e",
+      "head": "759e338cbc868e63bc10d0b70ae4fe2836f4cc83",
+      "allowedPaths": [
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "scripts/list-repository-files.mjs"
       ]
     }
   }
