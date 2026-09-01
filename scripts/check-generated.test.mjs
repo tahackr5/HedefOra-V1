@@ -219,6 +219,94 @@ test("only the exact T04D runtime source set is allowlisted", () => {
   }
 });
 
+test("the cmd runtime root rejects every non-allowlisted file independent of extension", async () => {
+  const root = await mkdtemp(
+    path.join(os.tmpdir(), "hedefora-runtime-command-boundary-"),
+  );
+  try {
+    const commandRoot = path.join(root, "cmd", "hedefora");
+    await mkdir(commandRoot, { recursive: true });
+    await writeFile(path.join(commandRoot, "main.go"), "package main\n");
+    await writeFile(path.join(commandRoot, "main_test.go"), "package main\n");
+
+    const rejectedFiles = [
+      "assembly-lower.s",
+      "assembly-upper.S",
+      "extensionless",
+      "object.syso",
+      "payload.bin",
+    ];
+    for (const filename of rejectedFiles) {
+      await writeFile(path.join(commandRoot, filename), "fixture\n");
+    }
+
+    assert.deepEqual(
+      await findGeneratedArtifacts(root),
+      rejectedFiles
+        .map((filename) => `cmd/hedefora/${filename}#unexpected-runtime-source`)
+        .sort(),
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("ignored cmd files cannot bypass the exact runtime source boundary", async () => {
+  const root = await mkdtemp(
+    path.join(os.tmpdir(), "hedefora-ignored-runtime-command-"),
+  );
+  try {
+    runGit(root, "init", "--quiet");
+    const commandRoot = path.join(root, "cmd", "hedefora");
+    await mkdir(commandRoot, { recursive: true });
+    await writeFile(path.join(root, ".gitignore"), "cmd/hedefora/ignored-*\n");
+    await writeFile(
+      path.join(commandRoot, "main.go"),
+      'package main\n\nimport _ "embed"\n\n//go:embed ignored-embedded.bin\nvar embedded []byte\n\nfunc main() {}\n',
+    );
+    await writeFile(path.join(commandRoot, "main_test.go"), "package main\n");
+
+    const ignoredFiles = [
+      "ignored-assembly.s",
+      "ignored-embedded.bin",
+      "ignored-extensionless",
+      "ignored-object.syso",
+    ];
+    for (const filename of ignoredFiles) {
+      await writeFile(path.join(commandRoot, filename), "fixture\n");
+    }
+    const symlinkFindings = [];
+    try {
+      await symlink(
+        path.join(commandRoot, "main.go"),
+        path.join(commandRoot, "ignored-link.s"),
+      );
+      symlinkFindings.push("cmd/hedefora/ignored-link.s#symbolic-link");
+    } catch (error) {
+      if (!new Set(["EACCES", "EPERM"]).has(error?.code)) throw error;
+    }
+    runGit(
+      root,
+      "add",
+      ".gitignore",
+      "cmd/hedefora/main.go",
+      "cmd/hedefora/main_test.go",
+    );
+
+    assert.deepEqual(
+      await findGeneratedArtifacts(root),
+      [
+        ...ignoredFiles.map(
+          (filename) => `cmd/hedefora/${filename}#unexpected-runtime-source`,
+        ),
+        ...symlinkFindings,
+      ].sort(),
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("force-tracked source in ignored output directories fails closed", async () => {
   const root = await mkdtemp(
     path.join(os.tmpdir(), "hedefora-tracked-output-"),
