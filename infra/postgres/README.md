@@ -8,14 +8,16 @@ Bu dizin, ileride owner-admitted `infra/compose.dev.yml` değişikliğiyle açı
 
 `hedefora_dev`, official image'in local bootstrap ve database-owner rolüdür. Uygulama veya worker runtime'ı bu rolle bağlanmaz.
 
-| Rol                  | Amaç                         | Database yetkisi    |
-| -------------------- | ---------------------------- | ------------------- |
-| `hedefora_migration` | Immutable migration uygulama | `CONNECT`, `CREATE` |
-| `hedefora_app`       | API runtime                  | `CONNECT`           |
-| `hedefora_worker`    | Worker runtime               | `CONNECT`           |
-| `hedefora_readonly`  | Salt-okunur destek erişimi   | `CONNECT`           |
+| Rol                  | Amaç                                   | Oturum / database yetkisi   |
+| -------------------- | -------------------------------------- | --------------------------- |
+| `hedefora_migration` | Immutable migration uygulama           | LOGIN / `CONNECT`, `CREATE` |
+| `hedefora_app`       | API runtime                            | LOGIN / `CONNECT`           |
+| `hedefora_worker`    | Worker runtime                         | LOGIN / `CONNECT`           |
+| `hedefora_readonly`  | Gelecekteki salt-okunur capability ACL | NOLOGIN / yok               |
 
-Dört login rolü de superuser, database/role oluşturma, replication, row-level-security bypass ve role inheritance yetkilerinden yoksundur; aralarında veya başka bir rolde membership yoktur. `PUBLIC` database `CONNECT`/`TEMPORARY` ve `public` schema yetkilerini taşımaz. `hedefora_migration` yalnız migration'ların `hedefora` ve `hedefora_meta` schema'larını oluşturabilmesi için database `CREATE` yetkisi alır. Schema ve object-level grant'lerin source of truth'u immutable migration dosyalarıdır.
+Üç login rolü superuser, database/role oluşturma, replication, row-level-security bypass ve role inheritance yetkilerinden yoksundur; dört yönetilen rolün hiçbirinde membership yoktur. `hedefora_readonly` parola veya LOGIN taşımaz. PostgreSQL'in değiştirilebilir `default_transaction_read_only` ayarı güvenlik sınırı sayılmaz; support erişimi ancak fiziksel/servis düzeyinde salt-okunurluğu ayrıca admitted edilmiş endpoint ve ayrı reviewed login tasarımıyla açılabilir.
+
+`PUBLIC` hedef database `CONNECT`/`TEMPORARY` ve `public` schema yetkilerini taşımaz. Yönetilen rollerin hedef dışındaki bütün connectable database bağlantı/TEMP yetkileri (`postgres` ve `template1` dahil) bootstrap sırasında katalogdan bulunup kaldırılır. Sonraki database oluşturma akışı aynı deny-by-default politikayı yeniden uygulamak zorundadır. `hedefora_migration` yalnız migration'ların `hedefora` ve `hedefora_meta` schema'larını oluşturabilmesi için hedef database `CREATE` yetkisi alır. Bütün built-in advisory-lock alma imzaları `PUBLIC` ve yönetilen rollerden kaldırılır; yalnız `hedefora_migration`, transaction-scoped `pg_advisory_xact_lock(bigint)` imzasını çalıştırabilir. Bu function ACL değişikliği cluster-wide olduğundan yalnız HedefOra'ya ayrılmış cluster sözleşmesinde uygulanır. Schema ve object-level grant'lerin source of truth'u immutable migration dosyalarıdır.
 
 ## Local-only parola girdileri
 
@@ -24,11 +26,10 @@ Planlanan Compose service sözleşmesi aşağıdaki environment değişkenlerini
 - `HEDEFORA_DEV_POSTGRES_MIGRATION_PASSWORD`
 - `HEDEFORA_DEV_POSTGRES_APP_PASSWORD`
 - `HEDEFORA_DEV_POSTGRES_WORKER_PASSWORD`
-- `HEDEFORA_DEV_POSTGRES_READONLY_PASSWORD`
 
 Inert candidate metadata yalnız bu değişken adlarını taşır; `${...}` interpolation'ı veya credential değeri içermez. Bu nedenle `docker compose config` çağıranın environment değerlerini render edemez. Gerçek environment mapping'i ancak exact image admission sonrasında owner-reviewed service materialization değişikliğinde eklenebilir.
 
-Materialize edilen local/test service yalnız açıkça production secret'ı olmayan izole test credential'ları kullanır. Init script yönetilen dört rol girdisinin de en az 12 byte taşımasını client output'una değeri yazmadan doğrular; boş veya kısa bir değer role creation başlamadan SQLSTATE `22023` ve `ON_ERROR_STOP` kaynaklı nonzero psql sonucu ile fail-closed durur. Değerler yalnız izole local/test shell environment'ında verilir; gerçek staging/production credential'ı, `.env` dosyası veya paylaşılmış parola bu akışta kullanılmaz.
+Materialize edilen local/test service yalnız açıkça production secret'ı olmayan izole test credential'ları kullanır. Init script üç LOGIN rolü girdisinin de en az 12 byte taşımasını client output'una değeri yazmadan doğrular; boş veya kısa bir değer role creation başlamadan SQLSTATE `22023` ve `ON_ERROR_STOP` kaynaklı nonzero psql sonucu ile fail-closed durur. `hedefora_readonly` için parola girdisi yoktur. Değerler yalnız izole local/test shell environment'ında verilir; gerçek staging/production credential'ı, `.env` dosyası veya paylaşılmış parola bu akışta kullanılmaz.
 
 ## Init ve migration davranışı
 

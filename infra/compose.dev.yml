@@ -26,7 +26,6 @@ x-hedefora-postgres-candidate:
         - HEDEFORA_DEV_POSTGRES_MIGRATION_PASSWORD
         - HEDEFORA_DEV_POSTGRES_APP_PASSWORD
         - HEDEFORA_DEV_POSTGRES_WORKER_PASSWORD
-        - HEDEFORA_DEV_POSTGRES_READONLY_PASSWORD
     network-boundary:
       host-address: 127.0.0.1
       host-port-variable-name: HEDEFORA_DEV_POSTGRES_PORT
@@ -46,7 +45,9 @@ x-hedefora-postgres-candidate:
       validates:
         - tcp-accepting-connections
         - managed-role-attributes
-        - managed-role-scram-verifiers
+        - login-role-scram-verifiers
+        - managed-role-database-connect-scope
+        - advisory-lock-function-acls
     security_opt:
       - no-new-privileges:true
     shm_size: 128mb

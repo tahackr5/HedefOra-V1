@@ -7,17 +7,27 @@ kanonik kaynağıdır. Değişiklik mevcut bir veritabanı sözleşmesini bozmaz
 ## Üretenler ve tüketenler
 
 - `infra/postgres/**`, ortam bootstrap yöneticisiyle database privilege'larını
-  ve `contracts/database/roles.yaml` içindeki dört LOGIN rolünü üretir.
+  ve `contracts/database/roles.yaml` içindeki üç LOGIN rolü ile bir NOLOGIN
+  salt-okunur capability rolünü üretir.
 - `db/migrations/**`, yalnız `hedefora_migration` rolüyle schema ve migration
   ledger'ını üretir.
 - PostgreSQL 17 ve `tests/integration/postgres/**`, rol/migration sözleşmesinin
   doğrudan tüketicileridir.
-- Gelecekteki API, worker ve support adapter'ları sırasıyla
-  `hedefora_app`, `hedefora_worker` ve `hedefora_readonly` tüketicileridir.
+- Gelecekteki API ve worker adapter'ları sırasıyla `hedefora_app` ve
+  `hedefora_worker` tüketicileridir. `hedefora_readonly`, primary üzerinde
+  oturum açamaz ve membership taşımaz; ancak fiziksel/servis düzeyinde
+  salt-okunurluğu ayrıca admitted edilmiş bir endpoint için yeni bir support
+  login'i açıkça tasarlandığında capability rolü olarak değerlendirilebilir.
 
 Uygulama ve worker runtime'ı database, schema, tablo, sequence, function veya
 type sahibi olamaz. `hedefora_meta` yalnız migration rolüne açıktır. Ortam
 bootstrap admin'i runtime credential değildir ve uygulama process'ine verilmez.
+Yönetilen roller hedef dışındaki hiçbir connectable database'e (ilk cluster'da
+`postgres` ve `template1` dahil) bağlanamaz. Sonraki database oluşturma akışı
+aynı deny-by-default politikayı yeniden uygulamak zorundadır. Built-in
+advisory-lock alma fonksiyonları `PUBLIC` ve runtime rollerinden kaldırılır;
+migration rolü yalnız migration dosyalarının kullandığı
+`pg_advisory_xact_lock(bigint)` imzasını çalıştırabilir.
 
 ## Migration protokolü
 

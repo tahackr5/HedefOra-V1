@@ -132,6 +132,16 @@ test("inert Compose exact profile rejects service or candidate drift", () => {
       ),
     /inert candidate profile drift/u,
   );
+  assert.throws(
+    () =>
+      validateComposeContractText(
+        source.replace(
+          "        - HEDEFORA_DEV_POSTGRES_WORKER_PASSWORD",
+          "        - HEDEFORA_DEV_POSTGRES_WORKER_PASSWORD\n        - HEDEFORA_DEV_POSTGRES_READONLY_PASSWORD",
+        ),
+      ),
+    /inert candidate profile drift/u,
+  );
 });
 
 test("migration YAML is exact-parity with approved SQL hashes and timeouts", () => {
@@ -167,6 +177,26 @@ test("role YAML exact profile binds runtime, ACL and default privileges", () => 
   assert.doesNotThrow(() => validateRoleContractText(source));
   for (const changed of [
     source.replace("inherit: false", "inherit: true"),
+    source.replace(
+      "name: hedefora_readonly\n    login: false",
+      "name: hedefora_readonly\n    login: true",
+    ),
+    source.replace(
+      "    memberships: []\n    credential_source: none",
+      "    memberships: [hedefora_app]\n    credential_source: none",
+    ),
+    source.replace(
+      "hedefora_readonly: []\n  managed_role_denied_database_scope",
+      "hedefora_readonly: [hedefora_dev]\n  managed_role_denied_database_scope",
+    ),
+    source.replace(
+      "managed_role_denied_database_scope: all_connectable_except_hedefora_dev",
+      "managed_role_denied_database_scope: postgres_only",
+    ),
+    source.replace(
+      "hedefora_app: []\n    hedefora_worker: []",
+      "hedefora_app: [pg_catalog.pg_advisory_lock(bigint)]\n    hedefora_worker: []",
+    ),
     source.replace(
       "hedefora_readonly: [select]",
       "hedefora_readonly: [select, insert]",
@@ -214,6 +244,37 @@ test("init source guard is exact active structure and comment spoof cannot pass"
       ),
     /exact active role\/init guard profile drift/u,
   );
+  for (const changed of [
+    source.replace(
+      "CREATE ROLE hedefora_readonly\n  NOLOGIN",
+      "CREATE ROLE hedefora_readonly\n  LOGIN",
+    ),
+    source.replace(
+      "WHERE datallowconn",
+      "WHERE datallowconn AND datname = 'postgres'",
+    ),
+    source.replace(
+      "pg_catalog.pg_advisory_lock(bigint),",
+      "-- pg_catalog.pg_advisory_lock(bigint),",
+    ),
+    source.replace(
+      "pg_catalog.pg_try_advisory_xact_lock_shared(integer, integer)\nFROM PUBLIC, hedefora_migration, hedefora_app, hedefora_worker, hedefora_readonly;",
+      "pg_catalog.pg_try_advisory_xact_lock_shared(integer, integer)\nFROM hedefora_migration, hedefora_app, hedefora_worker, hedefora_readonly;",
+    ),
+    source.replace(
+      "GRANT EXECUTE ON FUNCTION pg_catalog.pg_advisory_xact_lock(bigint)",
+      "GRANT EXECUTE ON FUNCTION pg_catalog.pg_advisory_lock(bigint)",
+    ),
+    source.replace(
+      "\\getenv worker_password HEDEFORA_DEV_POSTGRES_WORKER_PASSWORD",
+      "\\getenv worker_password HEDEFORA_DEV_POSTGRES_WORKER_PASSWORD\n\\getenv readonly_password HEDEFORA_DEV_POSTGRES_READONLY_PASSWORD",
+    ),
+  ]) {
+    assert.throws(
+      () => validateInitSourceText(changed),
+      /exact active role\/init guard profile drift/u,
+    );
+  }
 });
 
 test("static repository profile passes without subprocess or network", () => {
