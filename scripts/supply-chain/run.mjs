@@ -70,6 +70,7 @@ const CONTROL_CONFIGURATION_PATHS = Object.freeze({
   evidenceSchema: "security/r016-evidence.schema.json",
 });
 const CONTROL_PROTECTED_EXACT_PATHS = new Set([
+  ".gitleaksignore",
   ...Object.values(CONTROL_CONFIGURATION_PATHS),
   ".github/workflows/ci.yml",
   ".github/workflows/codeql.yml",

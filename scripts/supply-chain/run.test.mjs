@@ -74,6 +74,19 @@ const repositoryRoot = path.resolve(
   "..",
   "..",
 );
+const expectedGitleaksIgnoreEntries = Object.freeze([
+  "dbfa70715f5b684b34d743ecd05e2827fe8a60e9:internal/platform/health/service_test.go:generic-api-key:13",
+  "dbfa70715f5b684b34d743ecd05e2827fe8a60e9:internal/platform/http/handler_test.go:generic-api-key:20",
+  "dbfa70715f5b684b34d743ecd05e2827fe8a60e9:internal/platform/telemetry/telemetry_test.go:generic-api-key:80",
+]);
+const expectedGitleaksIgnoreBytes = Buffer.from(
+  [
+    "# Verified historical request-ID test fixtures; keep fingerprints exact.",
+    ...expectedGitleaksIgnoreEntries,
+    "",
+  ].join("\n"),
+  "utf8",
+);
 const policy = parseStrictJson(
   await readFile(
     path.join(repositoryRoot, "security", "supply-chain-policy.json"),
@@ -706,6 +719,7 @@ test("target and trusted control roots are disjoint and protected Git objects st
   );
 
   const protectedPaths = [
+    ".gitleaksignore",
     ".github/workflows/ci.yml",
     ".github/workflows/codeql.yml",
     ".github/workflows/r016-trusted-pr.yml",
@@ -739,6 +753,18 @@ test("target and trusted control roots are disjoint and protected Git objects st
   target.set("pnpm-lock.yaml", entry("pnpm-lock.yaml", "b".repeat(40)));
   target.set("go.mod", entry("go.mod", "c".repeat(40)));
   target.set("apps/web/src/App.tsx", entry("apps/web/src/App.tsx"));
+  const gitleaksIgnoreBytes = await readFile(
+    path.join(repositoryRoot, ".gitleaksignore"),
+  );
+  assert.deepEqual(gitleaksIgnoreBytes, expectedGitleaksIgnoreBytes);
+  assert.deepEqual(
+    gitleaksIgnoreBytes
+      .toString("utf8")
+      .split("\n")
+      .filter((line) => line !== "" && !line.startsWith("#")),
+    expectedGitleaksIgnoreEntries,
+  );
+  assert.equal(isProtectedControlPath(".gitleaksignore"), true);
   assert.equal(isProtectedControlPath("scripts/supply-chain/run.mjs"), true);
   assert.equal(isProtectedControlPath(".github/workflows/codeql.yml"), true);
   await assert.rejects(
@@ -753,6 +779,45 @@ test("target and trusted control roots are disjoint and protected Git objects st
     validateProtectedControlPlane(target, control, true).entries.length,
     protectedPaths.length,
   );
+
+  const changedIgnore = new Map(target);
+  changedIgnore.set(
+    ".gitleaksignore",
+    entry(".gitleaksignore", "e".repeat(40)),
+  );
+  assert.throws(
+    () => validateProtectedControlPlane(changedIgnore, control, true),
+    /differ from the trusted base/u,
+    "split-root ignore OID must fail protected parity before scanning",
+  );
+  const runnerSource = await readFile(
+    path.join(repositoryRoot, "scripts", "supply-chain", "run.mjs"),
+    "utf8",
+  );
+  const runGateStart = runnerSource.indexOf(
+    "async function runGate(context, now)",
+  );
+  const runGateEnd = runnerSource.indexOf(
+    "\nasync function inspectSource",
+    runGateStart,
+  );
+  const runGate = runnerSource.slice(runGateStart, runGateEnd);
+  const protectedParityOffset = runGate.indexOf(
+    "prepareControlPlaneInputs(context)",
+  );
+  assert.ok(protectedParityOffset >= 0);
+  for (const scanningTransition of [
+    "loadConfiguration(context)",
+    "acquireImages(context, configuration)",
+    "acquireRules(context, configuration)",
+    "acquireDatabases(context, configuration, now)",
+    "runSemgrepGates(context, configuration, rules, semgrepSources)",
+  ]) {
+    assert.ok(
+      protectedParityOffset < runGate.indexOf(scanningTransition),
+      scanningTransition,
+    );
+  }
 
   for (const repositoryPath of protectedPaths) {
     const changed = new Map(target);

@@ -277,6 +277,7 @@ const DATABASE_VALIDATION_LIMITS = Object.freeze({
 });
 
 const CONTROL_PROTECTED_EXACT_PATHS = new Set([
+  ".gitleaksignore",
   "security/supply-chain-policy.json",
   "security/scanners.lock.json",
   "security/osv-scanner.toml",
