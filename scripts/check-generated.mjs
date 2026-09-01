@@ -1,7 +1,11 @@
+import { createHash } from "node:crypto";
 import { lstat, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { listRepositoryFiles } from "./list-repository-files.mjs";
+import {
+  listRepositoryFiles,
+  listTrackedRepositoryEntries,
+} from "./list-repository-files.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const repositoryRoot = path.resolve(path.dirname(scriptPath), "..");
@@ -91,11 +95,63 @@ export async function findGeneratedArtifacts(root) {
       findings.push(runtimeRoot);
     }
   }
-  findings.push(...(await findRuntimeFilesystemArtifacts(root)));
+  const runtimeInventory = await findRuntimeFilesystemArtifacts(root);
+  findings.push(...runtimeInventory.findings);
+  for (const expected of allowedW001RuntimeFilesystemFiles) {
+    if (!runtimeInventory.seenPaths.has(expected)) {
+      findings.push(`${expected}#missing-runtime-source`);
+    }
+  }
+
+  const trackedEntries = await listTrackedRepositoryEntries(root, [
+    ...allowedW001RuntimeFilesystemFiles,
+  ]);
+  if (trackedEntries === null) {
+    findings.push(".git#runtime-inventory-unavailable");
+  } else {
+    const entriesByPath = new Map();
+    for (const entry of trackedEntries) {
+      const entries = entriesByPath.get(entry.path) ?? [];
+      entries.push(entry);
+      entriesByPath.set(entry.path, entries);
+    }
+    for (const expected of allowedW001RuntimeFilesystemFiles) {
+      const entries = entriesByPath.get(expected);
+      if (!entries) {
+        findings.push(`${expected}#untracked-runtime-source`);
+      } else if (
+        entries.length !== 1 ||
+        !isRegularRuntimeIndexEntry(entries[0])
+      ) {
+        findings.push(`${expected}#invalid-runtime-index-entry`);
+      } else if (runtimeInventory.regularPaths.has(expected)) {
+        const bytes = await readFile(path.join(root, ...expected.split("/")));
+        if (
+          gitBlobObjectId(bytes, entries[0].objectId.length) !==
+          entries[0].objectId
+        ) {
+          findings.push(`${expected}#invalid-runtime-index-entry`);
+        }
+      }
+    }
+    for (const entry of trackedEntries) {
+      const trackedRoot = entry.path.split("/")[0]?.toLowerCase();
+      if (
+        runtimeFilesystemRoots.has(trackedRoot) &&
+        !allowedW001RuntimeFilesystemFiles.has(entry.path)
+      ) {
+        findings.push(`${entry.path}#unexpected-runtime-source`);
+      }
+    }
+  }
 
   const files = await listRepositoryFiles(root);
   for (const relativePath of files) {
     const normalized = relativePath;
+    if (isRuntimeRootAlias(normalized)) {
+      findings.push(`${normalized}#unexpected-runtime-source`);
+      continue;
+    }
     const pathParts = normalized.split("/");
     if (runtimeFilesystemRoots.has(pathParts[0]?.toLowerCase())) {
       continue;
@@ -155,24 +211,35 @@ export async function findGeneratedArtifacts(root) {
 
 async function findRuntimeFilesystemArtifacts(root) {
   const findings = [];
+  const seenPaths = new Set();
+  const regularPaths = new Set();
   const rootEntries = await readdir(root, { withFileTypes: true });
   for (const entry of rootEntries) {
+    if (isRuntimeRootAlias(entry.name)) {
+      findings.push(`${entry.name}#unexpected-runtime-source`);
+      continue;
+    }
     if (!runtimeFilesystemRoots.has(entry.name.toLowerCase())) continue;
     await inspectRuntimeFilesystemPath(
       path.join(root, entry.name),
       entry.name,
       findings,
+      seenPaths,
+      regularPaths,
     );
   }
-  return findings;
+  return { findings, regularPaths, seenPaths };
 }
 
 async function inspectRuntimeFilesystemPath(
   absolutePath,
   relativePath,
   findings,
+  seenPaths,
+  regularPaths,
 ) {
   const normalized = relativePath;
+  seenPaths.add(normalized);
   const fileStats = await lstat(absolutePath);
   if (fileStats.isSymbolicLink()) {
     findings.push(`${normalized}#symbolic-link`);
@@ -190,6 +257,8 @@ async function inspectRuntimeFilesystemPath(
         path.join(absolutePath, entry.name),
         `${relativePath}/${entry.name}`,
         findings,
+        seenPaths,
+        regularPaths,
       );
     }
     return;
@@ -199,7 +268,35 @@ async function inspectRuntimeFilesystemPath(
     !allowedW001RuntimeFilesystemFiles.has(normalized)
   ) {
     findings.push(`${normalized}#unexpected-runtime-source`);
+  } else {
+    regularPaths.add(normalized);
   }
+}
+
+function isRuntimeRootAlias(relativePath) {
+  const separator = relativePath.indexOf("\\");
+  return (
+    separator > 0 &&
+    runtimeFilesystemRoots.has(relativePath.slice(0, separator).toLowerCase())
+  );
+}
+
+function isRegularRuntimeIndexEntry(entry) {
+  return (
+    entry.indexTag === "H" &&
+    !entry.intentToAdd &&
+    entry.stage === 0 &&
+    (entry.mode === "100644" || entry.mode === "100755") &&
+    !/^0+$/u.test(entry.objectId)
+  );
+}
+
+function gitBlobObjectId(bytes, objectIdLength) {
+  const algorithm = objectIdLength === 40 ? "sha1" : "sha256";
+  return createHash(algorithm)
+    .update(`blob ${bytes.byteLength}\0`)
+    .update(bytes)
+    .digest("hex");
 }
 
 export function isAllowedPreRuntimeSource(relativePath) {
