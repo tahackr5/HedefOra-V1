@@ -64,6 +64,7 @@
 - Owner 2026-08-31'de unpatched upstream'i beklemek yerine affected `oapi-codegen` kullanılmadan güvenlik-kritik local generator stratejisini onayladı; DEC-027/ADR-0017 exact-health sealed renderer sınırını formalize eder.
 - Yeni runtime exact head'i ayrı owner merge onayı ve trusted-base R-016/Dependency Review/CodeQL/full-tree/security/cold kanıtı olmadan `main`e giremez.
 - Repository backup/recovery W007 ve en geç ilk gerçek kullanıcı/public launch/production promotion öncesi hard gate'tir.
+- Owner exact `2577e2649402f753c8216ca7e2ab6b27d6e60c0c` control head'inin two-parent, content-identical `ecf71c0eb8139c0d7ff911ebb9f33afa6a1164ee` merge'i ile birleştirilmesini ve yeni trusted base'in runtime branch'ine entegrasyonunu 2026-09-01 tarihinde onayladı.
 - Mevcut 2 GB/30 GB Ubuntu VPS yalnız staging adayıdır; T04 boyunca VPS, SSH, Cloudflare veya DNS mutation yapılmaz.
 - Password, private key, token, MFA/recovery code ve gerçek `.env` istenmez, okunmaz veya kaydedilmez.
 
