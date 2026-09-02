@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "a393f2dcdf4220eda4e14b280342a4dc8f2ff72d",
+  "verifiedThrough": "43a82caffe7dba5a3b1305dbb79f0e52c24151ea",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -417,13 +417,189 @@
     "W001-T04I-codeql-fixture-remediation": {
       "base": "54a7b709bcda9ceecccb6898c23e3e19f65dcea2",
       "head": "8a007b12e39478932387c2107c6dfc8665c0fea8",
-      "allowedPaths": [
-        "scripts/generate-openapi.test.mjs"
-      ]
+      "allowedPaths": ["scripts/generate-openapi.test.mjs"]
     },
     "W001-T04I-graph-integration-promotion": {
       "base": "8a007b12e39478932387c2107c6dfc8665c0fea8",
       "head": "a393f2dcdf4220eda4e14b280342a4dc8f2ff72d",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md"
+      ]
+    },
+    "W001-T04I-graph-integration-seal": {
+      "base": "a393f2dcdf4220eda4e14b280342a4dc8f2ff72d",
+      "head": "89d9632b1fefdd8b0cd2e6c5e9e432076f63836b",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04I-owner-merge-wrapper": {
+      "base": "89d9632b1fefdd8b0cd2e6c5e9e432076f63836b",
+      "head": "cd81ee7b36d5bc647bb297e8ede13b21a7f1c8f1",
+      "allowedPaths": [
+        ".spectral.yaml",
+        "AGENTS.md",
+        "DECISIONS.md",
+        "FILE-INDEX.md",
+        "architecture/ADR-REGISTER.md",
+        "cmd/hedefora/main.go",
+        "cmd/hedefora/main_test.go",
+        "contracts/README.md",
+        "contracts/openapi/fixtures/reject-path-operation.yaml",
+        "contracts/openapi/fixtures/reject-webhook.yaml",
+        "contracts/openapi/openapi.yaml",
+        "delivery/TOOLCHAIN-LOCK.md",
+        "delivery/WORKTREE-OWNERSHIP-AND-MERGE.md",
+        "internal/generated/openapi/openapi.gen.go",
+        "internal/platform/app/api.go",
+        "internal/platform/app/api_test.go",
+        "internal/platform/config/api.go",
+        "internal/platform/config/api_test.go",
+        "internal/platform/health/service.go",
+        "internal/platform/health/service_test.go",
+        "internal/platform/http/handler.go",
+        "internal/platform/http/handler_test.go",
+        "internal/platform/http/server.go",
+        "internal/platform/http/server_test.go",
+        "internal/platform/telemetry/telemetry.go",
+        "internal/platform/telemetry/telemetry_test.go",
+        "package.json",
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "scripts/fixtures/openapi-generator-negative-mutations.mjs",
+        "scripts/fixtures/openapi-negative-mutations.mjs",
+        "scripts/generate-openapi.mjs",
+        "scripts/generate-openapi.test.mjs",
+        "scripts/list-repository-files.mjs",
+        "scripts/validate-contracts.mjs",
+        "scripts/validate-contracts.test.mjs",
+        "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.json",
+        "state/W001-OWNERSHIP.md"
+      ]
+    },
+    "W001-T04F-task-open": {
+      "base": "cd81ee7b36d5bc647bb297e8ede13b21a7f1c8f1",
+      "head": "1aa09c174f8fbbfd96e9027426a27413423c8a25",
+      "allowedPaths": [
+        "delivery/TOOLCHAIN-LOCK.md",
+        "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md"
+      ]
+    },
+    "W001-T04F-task-open-seal": {
+      "base": "1aa09c174f8fbbfd96e9027426a27413423c8a25",
+      "head": "fc69dc4dd78206c4106d2c8d8c528aa08c198a8c",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04F-governance-correction": {
+      "base": "fc69dc4dd78206c4106d2c8d8c528aa08c198a8c",
+      "head": "92be98e2e949904f15ff3b1ff72d783f6c80b475",
+      "allowedPaths": [
+        "DECISIONS.md",
+        "architecture/ADR-REGISTER.md",
+        "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/W001-OWNERSHIP.md"
+      ]
+    },
+    "W001-T04F-governance-correction-evidence": {
+      "base": "92be98e2e949904f15ff3b1ff72d783f6c80b475",
+      "head": "8948294dc12f139d307b5d3d18e84507d15722ab",
+      "allowedPaths": ["state/RELEASE-LEDGER.md", "state/W001-EVIDENCE.md"]
+    },
+    "W001-T04F-governance-correction-seal": {
+      "base": "8948294dc12f139d307b5d3d18e84507d15722ab",
+      "head": "948f7a1c3ba97ef586cad9d0347696f2e026b6d8",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04F-phase-a-implementation": {
+      "base": "948f7a1c3ba97ef586cad9d0347696f2e026b6d8",
+      "head": "b101c7cf17e71c37d2c8048451c2ba8e119cee1e",
+      "allowedPaths": [
+        "contracts/database/README.md",
+        "contracts/database/migrations.yaml",
+        "contracts/database/roles.yaml",
+        "db/migrations/000001_database_foundation.down.sql",
+        "db/migrations/000001_database_foundation.up.sql",
+        "db/migrations/SHA256SUMS",
+        "infra/compose.dev.yml",
+        "infra/postgres/README.md",
+        "infra/postgres/initdb/010_roles.sql",
+        "package.json",
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "tests/integration/postgres/run.mjs",
+        "tests/integration/postgres/run.test.mjs"
+      ]
+    },
+    "W001-T04F-phase-a-static-evidence": {
+      "base": "b101c7cf17e71c37d2c8048451c2ba8e119cee1e",
+      "head": "4cacb40d178f3e79f04cc0a5d5ece09ba6962f0f",
+      "allowedPaths": [
+        "FILE-INDEX.md",
+        "delivery/TOOLCHAIN-LOCK.md",
+        "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md"
+      ]
+    },
+    "W001-T04F-phase-a-static-evidence-seal": {
+      "base": "4cacb40d178f3e79f04cc0a5d5ece09ba6962f0f",
+      "head": "b9e1ab5b927da93d9782e3da600420f7885b5a01",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04F-phase-a-security-remediation": {
+      "base": "b9e1ab5b927da93d9782e3da600420f7885b5a01",
+      "head": "659c1cb642d56ec36d168bd585841981c989fba4",
+      "allowedPaths": [
+        "contracts/database/README.md",
+        "contracts/database/roles.yaml",
+        "infra/compose.dev.yml",
+        "infra/postgres/README.md",
+        "infra/postgres/initdb/010_roles.sql",
+        "tests/integration/postgres/run.mjs",
+        "tests/integration/postgres/run.test.mjs"
+      ]
+    },
+    "W001-T04F-phase-a-documentation-parity": {
+      "base": "659c1cb642d56ec36d168bd585841981c989fba4",
+      "head": "7a987f7bb85643c30ce3607367cbbca74f49abd2",
+      "allowedPaths": ["infra/README.md", "infra/postgres/README.md"]
+    },
+    "W001-T04F-phase-a-remediation-evidence": {
+      "base": "7a987f7bb85643c30ce3607367cbbca74f49abd2",
+      "head": "98738c7c986164486068564cca327462c841a57c",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md"
+      ]
+    },
+    "W001-T04F-phase-a-remediation-evidence-seal": {
+      "base": "98738c7c986164486068564cca327462c841a57c",
+      "head": "5b3fc79507f5784c47661ef01dad914e9c61bdc1",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04F-phase-a-local-exit-evidence": {
+      "base": "5b3fc79507f5784c47661ef01dad914e9c61bdc1",
+      "head": "43a82caffe7dba5a3b1305dbb79f0e52c24151ea",
       "allowedPaths": [
         "state/ACTIVE-WAVE.md",
         "state/RELEASE-LEDGER.md",

@@ -79,7 +79,7 @@
 - Work that can continue safely: Read-only scope/dependency araştırması ve exact post-merge verification.
 - Blocking wave/gate: W001-T04 writer worktree'lerinin açılması.
 - Owner decision: `... yeni trusted base üzerinden runtime geliştirme aşamasına otonom olarak devam edin.` — 2026-08-31; exact merge ayrıca owner tarafından onaylandı.
-- Resolution: DEC-026 / ADR-0016 wave start'ı tarihsel provenance olarak korur; `1dbc81b57e4809ce7ba0f530cab946ee0540ea71` W001 runtime fazının tek immutable base'idir. Exact uygulama aralığı `state/W001-OWNERSHIP.json` içinde `W001-T04A-trusted-runtime-checkpoint` olarak mühürlenir.
+- Resolution: DEC-026 / ADR-0016 wave start'ı tarihsel provenance olarak korur; `1dbc81b57e4809ce7ba0f530cab946ee0540ea71` W001 T04C/T04D/T04I runtime-foundation fazının immutable base'idir. Exact uygulama aralığı `state/W001-OWNERSHIP.json` içinde mühürlenir; sonraki task-phase checkpoint'leri ancak DEC-026 koşullarıyla ilerler.
 
 ## Open
 
@@ -95,6 +95,42 @@
 - Owner decision: `GHSA-9c2f-gr95-7wqw zafiyeti ve upstream yamanın belirsizliği nedeniyle ... güvenlik-kritik yerel generator / alternatif güvenli kod üretim stratejisinin geliştirilmesini ve değerlendirilmesini onaylıyorum.` — 2026-08-31.
 - Resolution: DEC-027 / ADR-0017, exact-health-only ve sıfır-bağımlılıklı sealed renderer yolunu kabul eder. `oapi-codegen`, runtime ve middleware dependency/tool olarak reddedilmeye devam eder; kapsam genişlemesi ayrı owner/security gate'idir.
 - Closed commit: `1bc42bcc9ca8f44cdf35a29856ef69eb60872e51`
+
+### DQ-008 — W001-T04F PostgreSQL driver ve migration/test dependency yolu
+
+- Opened by / date: orchestrator + architecture/security dependency admission / 2026-09-02
+- Conflicting files/sections: `delivery/TOOLCHAIN-LOCK.md` planned pgx/Testcontainers/golang-migrate pinleri; `state/RISK-REGISTER.md` R-018; T04F backend pool/migration acceptance; DEC-019 production dependency gate.
+- Decision needed: PostgreSQL runtime için kanonik pgx/River hattını bounded risk sözleşmesiyle korumak ile T04F'de daha küçük `lib/pq` dependency yüzeyini seçmek arasında owner architecture kararı ver; Testcontainers ve golang-migrate NO-GO sonucunu aşmadan migration/integration yolunu belirle.
+- Options: (A) pgx `v5.10.0` + exact security overrides, pgxpool-only/single-goroutine connection ownership ve misuse/intended-use stress-race kanıtı; (B) signed ve zero-dependency `lib/pq v1.12.3`, ileride T04G River driver divergence'ını kabul ederek; (C) yeni güvenli upstream pgx release'ini beklemek. R-016 policy exception, pseudo-version/master veya zafiyetli Testcontainers/golang-migrate eklemek seçenek değildir.
+- Security/privacy/cost/migration impact: A seçeneği unsupported concurrent-use panic hazard'ını adapter/test sınırına taşır ve 16-module closure üretir. B supply-chain yüzeyini küçültür fakat iki DB stack'i ve T04G migration maliyeti doğurabilir. Her iki yol secret/redaction, TLS, timeout/pool ve exact-head SBOM/R-016 ister.
+- Work that can continue safely: role/migration contract'ı, immutable SQL/checksum/advisory-lock tasarımı, exact PostgreSQL digest'li Compose/CLI harness, privilege-negative test matrisi ve source-boundary hazırlığı. `go.mod`, `go.sum` ve backend adapter writer'ı açılmaz.
+- Blocking wave/gate: T04F backend pool/readiness primitive'i ve T04F completion. Production/staging deploy ayrı owner gate'tir.
+- Owner decision: PENDING.
+- Closed commit: PENDING.
+
+### DQ-009 — `/health/ready` için ikinci-operation compiler admission
+
+- Opened by / date: orchestrator + T04F surface review / 2026-09-02
+- Conflicting files/sections: T04F `/health/ready` acceptance; DEC-027/ADR-0017 exact `/health/live` sealed renderer sınırı; `contracts/README.md`; current generated/runtime ownership.
+- Decision needed: exact-health renderer'ı örtük genişletmeden, ikinci OpenAPI operation için ayrı security-critical compiler/parser task'ını açıp açmama kararı ver.
+- Options: (A) önerilen ayrı owner-approved compiler task'ı; canonical two-operation OpenAPI, zero/spec-bounded interpolation, yeni negative corpus, deterministic generated parity ve fresh security review; (B) güvenli upstream generator release'ini beklemek. Generated Go'yu elle düzenlemek veya mevcut source digest/profile'ı sessizce genişletmek seçenek değildir.
+- Security/privacy/cost/migration impact: Yeni compiler kapsamı TCB ve bakım yüzeyini büyütür; yanlış implementasyon generated code injection veya contract drift yaratabilir. Endpoint yalnız generic readiness döndürür, raw DB/DSN/SQL ayrıntısı sızdırmaz; veri migration etkisi yoktur.
+- Work that can continue safely: HTTP'den bağımsız readiness probe interface/test tasarımı ancak DQ-008 driver seçimi sonrasında; OpenAPI/generator/generated/runtime wiring değişmez.
+- Blocking wave/gate: T04F public `/health/ready` acceptance ve T04F completion.
+- Owner decision: PENDING.
+- Closed commit: PENDING.
+
+### DQ-010 — W001-T04F PostgreSQL image execution admission
+
+- Opened by / date: orchestrator + independent T04F contract/security review / 2026-09-02
+- Conflicting files/sections: PostgreSQL 17 local integration acceptance; `delivery/TOOLCHAIN-LOCK.md` exact official image identity; R-018 image-level security gate; `infra/compose.dev.yml` fail-closed execution boundary.
+- Decision needed: Canlı PostgreSQL 17 testini hangi kanonik, exact-digest ve vulnerability-admitted execution kaynağıyla açacağımıza owner/security kararı ver.
+- Options: (A, önerilen) kritik/yüksek eşiği geçen yeni official PostgreSQL 17 rebuild'ini bekleyip pinned scanner/advisory DB ile exact digest'i yeniden doğrulamak; (B) pinned base, repository-owned Dockerfile, SBOM/provenance ve ayrı security review taşıyan owner-approved hardened derived image üretmek; (C) eşdeğer provenance/vulnerability kapıları olan pinned native/package PostgreSQL 17 harness'ı tasarlamak. Mevcut Bookworm/Trixie/Alpine digest'lerini çalıştırmak, yalnız profile/comment ile engel koymak veya unpinned Scout çıktısını kanonik `PASS` saymak seçenek değildir.
+- Security/privacy/cost/migration impact: Supplemental registry scan'leri official varyantlarda critical/high OS-package bulguları gösterdi. A gecikme yaratır fakat en küçük bakım yüzeyidir. B ayrı image bakım/patch/SBOM yükü ve registry provenance gerektirir. C CI/host drift'i ve paket kaynağı bakım yükü doğurur. Hiçbir seçenek production/staging credential veya veri migration yetkisi vermez.
+- Work that can continue safely: Inert image metadata, immutable SQL/checksum/timeout sözleşmesi, rol/ACL contract'ı, Docker'sız statik parity/negative testleri, DQ-008/DQ-009 için read-only tasarım. Compose aktif service taşımaz; image pull/run/start yapılmaz.
+- Blocking wave/gate: T04F canlı empty/up/down/upgrade/privilege testi, PostgreSQL adapter/pool doğrulaması ve T04F completion. Production/staging deploy ayrıca owner gate'idir.
+- Owner decision: PENDING.
+- Closed commit: PENDING.
 
 ## Item template
 

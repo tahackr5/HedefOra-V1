@@ -9,7 +9,6 @@ import {
 
 const scriptPath = fileURLToPath(import.meta.url);
 const repositoryRoot = path.resolve(path.dirname(scriptPath), "..");
-const forbiddenRuntimeRoots = ["db/migrations"];
 const generatedMarker = /(?:Code generated .* DO NOT EDIT|@generated)/i;
 const generatedFilename = /\.(?:gen|generated)(?:\.[^/]+)?$/i;
 const forbiddenHtmlBehavior =
@@ -63,9 +62,33 @@ export const allowedW001RuntimeSourceFiles = new Set([
   "internal/platform/telemetry/telemetry.go",
   "internal/platform/telemetry/telemetry_test.go",
 ]);
-const runtimeFilesystemRoots = new Set(["cmd", "internal"]);
+export const allowedW001DatabaseFiles = new Set([
+  "db/migrations/000001_database_foundation.down.sql",
+  "db/migrations/000001_database_foundation.up.sql",
+  "db/migrations/SHA256SUMS",
+]);
+export const allowedW001InfrastructureFiles = new Set([
+  "infra/README.md",
+  "infra/compose.dev.yml",
+  "infra/postgres/README.md",
+  "infra/postgres/initdb/010_roles.sql",
+]);
+export const allowedW001PostgresTestSourceFiles = new Set([
+  "tests/integration/postgres/run.mjs",
+  "tests/integration/postgres/run.test.mjs",
+]);
+const runtimeFilesystemRoots = new Set([
+  "cmd",
+  "db",
+  "infra",
+  "internal",
+  "tests",
+]);
 const allowedW001RuntimeFilesystemFiles = new Set([
+  ...allowedW001DatabaseFiles,
   ...allowedW001GeneratedSourceFiles,
+  ...allowedW001InfrastructureFiles,
+  ...allowedW001PostgresTestSourceFiles,
   ...allowedW001RuntimeSourceFiles,
 ]);
 const generatedMarkerDefinitionFiles = new Set([
@@ -83,18 +106,13 @@ if (path.resolve(process.argv[1] ?? "") === path.resolve(scriptPath)) {
     process.exitCode = 1;
   } else {
     console.log(
-      "PASS: the W001 runtime boundary contains only allowlisted source paths and the exact generated OpenAPI artifact.",
+      "PASS: the W001 runtime/database boundary contains only allowlisted source paths and the exact generated OpenAPI artifact.",
     );
   }
 }
 
 export async function findGeneratedArtifacts(root) {
   const findings = [];
-  for (const runtimeRoot of forbiddenRuntimeRoots) {
-    if (await pathExists(path.join(root, ...runtimeRoot.split("/")))) {
-      findings.push(runtimeRoot);
-    }
-  }
   const runtimeInventory = await findRuntimeFilesystemArtifacts(root);
   findings.push(...runtimeInventory.findings);
   for (const expected of allowedW001RuntimeFilesystemFiles) {
@@ -303,19 +321,12 @@ export function isAllowedPreRuntimeSource(relativePath) {
   return (
     relativePath.startsWith("scripts/") ||
     relativePath.startsWith("tools/repolint/") ||
+    allowedW001DatabaseFiles.has(relativePath) ||
     allowedW001SupplyChainToolSourceFiles.has(relativePath) ||
     allowedW001GeneratedSourceFiles.has(relativePath) ||
+    allowedW001InfrastructureFiles.has(relativePath) ||
+    allowedW001PostgresTestSourceFiles.has(relativePath) ||
     allowedW001RuntimeSourceFiles.has(relativePath) ||
     allowedW000FrontendSourceFiles.has(relativePath)
   );
-}
-
-async function pathExists(target) {
-  try {
-    await readdir(target);
-    return true;
-  } catch (error) {
-    if (error?.code === "ENOENT") return false;
-    throw error;
-  }
 }
