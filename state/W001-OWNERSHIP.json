@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "4cacb40d178f3e79f04cc0a5d5ece09ba6962f0f",
+  "verifiedThrough": "98738c7c986164486068564cca327462c841a57c",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -552,6 +552,40 @@
         "delivery/TOOLCHAIN-LOCK.md",
         "state/ACTIVE-WAVE.md",
         "state/DECISION-QUEUE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md"
+      ]
+    },
+    "W001-T04F-phase-a-static-evidence-seal": {
+      "base": "4cacb40d178f3e79f04cc0a5d5ece09ba6962f0f",
+      "head": "b9e1ab5b927da93d9782e3da600420f7885b5a01",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04F-phase-a-security-remediation": {
+      "base": "b9e1ab5b927da93d9782e3da600420f7885b5a01",
+      "head": "659c1cb642d56ec36d168bd585841981c989fba4",
+      "allowedPaths": [
+        "contracts/database/README.md",
+        "contracts/database/roles.yaml",
+        "infra/compose.dev.yml",
+        "infra/postgres/README.md",
+        "infra/postgres/initdb/010_roles.sql",
+        "tests/integration/postgres/run.mjs",
+        "tests/integration/postgres/run.test.mjs"
+      ]
+    },
+    "W001-T04F-phase-a-documentation-parity": {
+      "base": "659c1cb642d56ec36d168bd585841981c989fba4",
+      "head": "7a987f7bb85643c30ce3607367cbbca74f49abd2",
+      "allowedPaths": ["infra/README.md", "infra/postgres/README.md"]
+    },
+    "W001-T04F-phase-a-remediation-evidence": {
+      "base": "7a987f7bb85643c30ce3607367cbbca74f49abd2",
+      "head": "98738c7c986164486068564cca327462c841a57c",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
         "state/RELEASE-LEDGER.md",
         "state/RISK-REGISTER.md",
         "state/W001-EVIDENCE.md",
