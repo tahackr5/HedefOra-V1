@@ -33,9 +33,10 @@
     "governance:check": "node scripts/validate-governance.mjs",
     "licenses:check": "node scripts/check-licenses.mjs",
     "lint": "pnpm contracts:lint && pnpm governance:check && pnpm --filter @hedefora/web lint",
+    "postgres:live": "node tests/integration/postgres/live/run-live.mjs",
     "supply-chain:check": "node scripts/supply-chain/run.mjs",
     "supply-chain:test": "node --test scripts/supply-chain/*.test.mjs",
-    "test": "node --test scripts/*.test.mjs scripts/supply-chain/*.test.mjs scripts/postgres-image/*.test.mjs tests/integration/postgres/*.test.mjs && pnpm --filter @hedefora/web test:coverage",
+    "test": "node --test scripts/*.test.mjs scripts/supply-chain/*.test.mjs scripts/postgres-image/*.test.mjs scripts/postgres-image/apk-runtime/*.test.mjs tests/integration/postgres/*.test.mjs tests/integration/postgres/live/*.test.mjs && pnpm --filter @hedefora/web test:coverage",
     "todo:check": "node scripts/check-todos.mjs",
     "typecheck": "pnpm --filter @hedefora/web typecheck"
   },

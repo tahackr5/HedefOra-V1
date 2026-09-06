@@ -91,4 +91,8 @@
 
 ## Kural
 
+- `scripts/postgres-image/apk-runtime/**` (Stage S data-only signed-APK/OCI byte replay; execution authority null)
+- `tests/integration/postgres/live/RUNNER-CONTRACT.md` (kapalı PG17 launcher, private fixture v2 ve engine NOT_RUN sınırı)
+
+
 Ana oturum bütün dosyaları her görevde okumaz. İlgili read map kullanılır; alt ajanlar kısa sonuç ve file references döndürür.

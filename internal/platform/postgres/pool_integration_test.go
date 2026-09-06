@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -20,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tahackr5/HedefOra-V1/internal/platform/config"
 )
@@ -41,6 +43,7 @@ type pg17Fixture struct {
 	RootCAPEM      string `json:"root_ca_pem"`
 	Password       string `json:"password"`
 	ControlAddress string `json:"control_address"`
+	ControlToken   string `json:"control_token"`
 }
 
 func requirePG17Fixture(t *testing.T) pg17Fixture {
@@ -67,13 +70,14 @@ func requirePG17Fixture(t *testing.T) pg17Fixture {
 	controlHost, controlPort, err := net.SplitHostPort(f.ControlAddress)
 	port, parseErr := strconv.ParseUint(controlPort, 10, 16)
 	if err != nil || parseErr != nil || port == 0 || controlHost != "127.0.0.1" ||
-		f.Schema != "hedefora.pg17.integration.v1" || !f.SyntheticOnly || f.Host != "127.0.0.1" ||
+		f.Schema != "hedefora.pg17.integration.v2" || !f.SyntheticOnly || f.Host != "127.0.0.1" ||
 		!regexp.MustCompile(`^[a-f0-9]{32}$`).MatchString(f.RunID) ||
 		!regexp.MustCompile(`^[a-f0-9]{40}$`).MatchString(f.SourceSHA) ||
 		!regexp.MustCompile(`^sha256:[a-f0-9]{64}$`).MatchString(f.ImageDigest) ||
 		f.SourceSHA != os.Getenv("HEDEFORA_PG17_TEST_SOURCE_SHA") ||
 		f.ImageDigest != os.Getenv("HEDEFORA_PG17_TEST_IMAGE_DIGEST") ||
-		f.Password != "synthetic-pg17-"+f.RunID || f.TLSPort == 0 ||
+		!regexp.MustCompile(`^synthetic-pg17-[a-f0-9]{64}$`).MatchString(f.Password) ||
+		!regexp.MustCompile(`^[a-f0-9]{64}$`).MatchString(f.ControlToken) || f.TLSPort == 0 ||
 		f.PlaintextPort == 0 || f.TLSPort == f.PlaintextPort ||
 		config.ValidatePostgres(f.config()) != nil {
 		t.Fatal("PG17_INTEGRATION_FIXTURE_BINDING_INVALID")
@@ -125,7 +129,7 @@ func pg17CleanError(t *testing.T, f pg17Fixture, err error) {
 	if err == nil {
 		t.Fatal("negative real-engine operation unexpectedly succeeded")
 	}
-	for _, forbidden := range []string{f.Password, f.RootCAPEM, f.Host, "hedefora_app", "SQLSTATE", "FATAL", "postgres://", "synthetic-"} {
+	for _, forbidden := range []string{f.Password, f.ControlToken, f.RootCAPEM, f.Host, "hedefora_app", "SQLSTATE", "FATAL", "postgres://", "synthetic-"} {
 		if strings.Contains(err.Error(), forbidden) {
 			t.Fatal("provider detail escaped pool boundary")
 		}
@@ -184,10 +188,35 @@ func TestPG17TLSAndSCRAM(t *testing.T) {
 	}
 }
 
+func pg17AuthenticatedWitness(t *testing.T, f pg17Fixture) {
+	t.Helper()
+	p := pg17New(t, f.config())
+	conn, err := pg17Raw(t, p).Acquire(pg17Context(t, 3*time.Second))
+	if err != nil {
+		t.Fatal("positive PG17 witness could not acquire a connection")
+	}
+	var authenticated bool
+	err = conn.QueryRow(pg17Context(t, 2*time.Second), `SELECT
+		current_setting('server_version_num')::int / 10000 = 17
+		AND system_user = 'scram-sha-256:hedefora_app'
+		AND current_database() = 'hedefora_dev'
+		AND (SELECT ssl FROM pg_stat_ssl WHERE pid = pg_backend_pid())`).Scan(&authenticated)
+	socket, tlsSocket := conn.Conn().PgConn().Conn().(*tls.Conn)
+	verified := tlsSocket && socket.ConnectionState().Version >= tls.VersionTLS12 && len(socket.ConnectionState().VerifiedChains) > 0
+	conn.Release()
+	if err != nil || !authenticated || !verified {
+		t.Fatal("positive PG17 witness did not prove verified TLS and SCRAM")
+	}
+	if p.Close(pg17Context(t, 6*time.Second)) != nil {
+		t.Fatal("positive PG17 witness cleanup failed")
+	}
+}
+
 func TestPG17TLSAndAuthenticationFailuresDoNotFallback(t *testing.T) {
 	f := requirePG17Fixture(t)
 	for _, name := range []string{"wrong-ca", "wrong-hostname", "wrong-password", "no-tls"} {
 		t.Run(name, func(t *testing.T) {
+			pg17AuthenticatedWitness(t, f)
 			c := f.config()
 			switch name {
 			case "wrong-ca":
@@ -200,15 +229,32 @@ func TestPG17TLSAndAuthenticationFailuresDoNotFallback(t *testing.T) {
 				c.Host = "mismatch.hedefora.invalid"
 			}
 			var p *Pool
-			if name == "wrong-hostname" {
+			var observedMu sync.Mutex
+			var observed []*pg17RefusalWire
+			if name == "wrong-hostname" || name == "no-tls" {
 				p = newPool(nil, c)
 				pc, err := providerConfig(c, os.Environ(), p.lifetime)
 				if err != nil {
 					p.cancel()
 					t.Fatal("hostname probe config failed")
 				}
-				// Route to the same real engine without changing certificate SNI.
-				pc.ConnConfig.LookupFunc = func(context.Context, string) ([]string, error) { return []string{f.Host}, nil }
+				if name == "wrong-hostname" {
+					// Route to the same real engine without changing certificate SNI.
+					pc.ConnConfig.LookupFunc = func(context.Context, string) ([]string, error) { return []string{f.Host}, nil }
+				} else {
+					dial := pc.ConnConfig.DialFunc
+					pc.ConnConfig.DialFunc = func(ctx context.Context, network, address string) (net.Conn, error) {
+						conn, err := dial(ctx, network, address)
+						if err != nil {
+							return nil, err
+						}
+						wire := &pg17RefusalWire{Conn: conn}
+						observedMu.Lock()
+						observed = append(observed, wire)
+						observedMu.Unlock()
+						return wire, nil
+					}
+				}
 				raw, err := pgxpool.NewWithConfig(pg17Context(t, 3*time.Second), pc)
 				if err != nil {
 					p.cancel()
@@ -228,9 +274,53 @@ func TestPG17TLSAndAuthenticationFailuresDoNotFallback(t *testing.T) {
 				t.Fatal("real negative endpoint did not return generic unavailable")
 			}
 			pg17CleanError(t, f, err)
+			// Inspect the provider only at the private test boundary. Production
+			// keeps its generic sentinel; no raw error text is printed or stored.
+			conn, providerErr := pg17Raw(t, p).Acquire(pg17Context(t, 4*time.Second))
+			if conn != nil {
+				conn.Release()
+				t.Fatal("negative provider unexpectedly authenticated")
+			}
+			if providerErr == nil {
+				t.Fatal("negative provider supplied no failure evidence")
+			}
+			switch name {
+			case "wrong-ca":
+				var cause x509.UnknownAuthorityError
+				if !errors.As(providerErr, &cause) {
+					t.Fatal("negative CA did not fail certificate authority verification")
+				}
+			case "wrong-hostname":
+				var cause x509.HostnameError
+				if !errors.As(providerErr, &cause) {
+					t.Fatal("negative hostname did not fail certificate name verification")
+				}
+			case "wrong-password":
+				var cause *pgconn.PgError
+				if !errors.As(providerErr, &cause) || cause.Code != "28P01" {
+					t.Fatal("negative password did not receive PostgreSQL authentication rejection")
+				}
+			}
+			if p.Close(pg17Context(t, 6*time.Second)) != nil {
+				t.Fatal("negative provider did not complete cleanup")
+			}
+			if name == "no-tls" {
+				observedMu.Lock()
+				wires := append([]*pg17RefusalWire(nil), observed...)
+				observedMu.Unlock()
+				if len(wires) < 2 {
+					t.Fatal("both generic and provider TLS refusals were not observed")
+				}
+				for _, wire := range wires {
+					if !wire.refusedWithoutStartup() {
+						t.Fatal("real engine refusal was missing or plaintext fallback bytes were written")
+					}
+				}
+			}
 			if pg17Raw(t, p).Stat().AcquiredConns() != 0 {
 				t.Fatal("failed handshake retained an acquired connection")
 			}
+			pg17AuthenticatedWitness(t, f)
 		})
 	}
 	// The admitted ssl=off engine must actually answer PostgreSQL SSLRequest.
@@ -445,8 +535,21 @@ func TestPG17InflightQueryCancellationAndClose(t *testing.T) {
 			// PG17 may keep running SQL after a socket deadline. Clean up only the
 			// exact same-role test sleep; this is not server-cancel PASS evidence.
 			defer func() {
-				_, err := monitorConn.Exec(pg17Context(t, time.Second),
-					"SELECT pg_cancel_backend(pid) FROM pg_stat_activity WHERE pid=$1 AND usename=current_user AND query='SELECT pg_sleep(30)'", pid)
+				ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+				defer cancel()
+				err := pg17CancelAndObserve(ctx, func(ctx context.Context) (bool, error) {
+					var acknowledged bool
+					// Zero matching active queries is already clean at this observation;
+					// a matching backend returning false is never converted to success.
+					err := monitorConn.QueryRow(ctx,
+						"SELECT COALESCE(bool_and(pg_cancel_backend(pid)), true) FROM pg_stat_activity WHERE pid=$1 AND usename=current_user AND state='active' AND query='SELECT pg_sleep(30)'", pid).Scan(&acknowledged)
+					return acknowledged, err
+				}, func(ctx context.Context) (bool, error) {
+					var active bool
+					err := monitorConn.QueryRow(ctx,
+						"SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE pid=$1 AND usename=current_user AND state='active' AND query='SELECT pg_sleep(30)')", pid).Scan(&active)
+					return active, err
+				})
 				if err != nil {
 					t.Error("synthetic long-query cleanup failed")
 				}

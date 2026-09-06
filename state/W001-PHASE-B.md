@@ -394,3 +394,75 @@ verdi:9match/4High. `libxml2.grype.json` SHA-256
 Önceki package-SBOM raw0 tek başına tam admission değildir. Backport/package
 attribution incelemesi sürer; findings silinmez, VEX/ignore/threshold waiver
 yoktur ve aday image execution BLOCKED_SECURITY kalır.
+
+## 2026-09-07 — Stage S ve kapalı live-runner entegrasyonu
+
+Continuation source başlangıcı `2ee64c140b0812e6b0eae63c6a7f187a0440a7f9`
+/ tree `ab12673cbfeda9d29bfe275cb1a793689f6a483e`; immutable trusted base
+aba3d13 değişmez. Root tek repository writer; diğer ajanlar yalnız TEMP öneri
+veya salt okunur inceleme sağladı. Etkin model/effort UNKNOWN/UNKNOWN.
+
+Yeni kapsam: `scripts/postgres-image/apk-runtime/` sekiz data-only Stage S
+dosyası; `tests/integration/postgres/live/` altı runner/test/sözleşme dosyası;
+exact generated-boundary allowlist, package test/CLI ve üç Go test dosyası.
+Production dependency, immutable migration, source-builder veya protected
+R-016 controller değişmedi. Fixed authority null; public CLI her platformda
+exit1/BLOCKED_SECURITY. Private capability allocator/fresh aggregate/license
+admission henüz yoktur; bunlar yerel pending iştir, dış engelin kendisi değildir.
+
+Stage S exact araştırma OCI/APK/index/source byte kimliği, bounded immutable
+dosya okumaları, signed28-package metadata closure ve984-entry sanal rootfs
+bağlarını doğrular; host extraction/package script/image execution yapmaz.
+APKv2 RSA-SHA1 legacy sınırı korunur; publisher compiler provenance ve NVD
+dictionary completeness NOT_PROVEN, lisans NOT_ADMITTED. Byte replay,
+vulnerability veya engine PASS değildir.
+
+Bağımsız bulgular ve dar düzeltmeler:
+
+- F-S01 normalize-before-symlink gizli cycle kabulü: ilk review LOW/High,
+  bağımsız boundary investigator Medium/High değerlendirdi; iki verdict
+  korunur. Bileşen sıralı çözüm,40-link sınırı, regular-file üzerinden `..`,
+  `.`, trailing-slash reddi ve finite-repeat/implicit-directory testleri eklendi.
+- LR-01 Medium public CLI export-only exit0: gerçek Node dispatch, generic
+  nonzero blocked response ve sahte flag/env regresyonu eklendi.
+- LR-02 Medium public runId-derived parolalar/controller authorization:
+  her role bağımsız CSPRNG32-byte parola ve private controller token eklendi.
+  Tek strict64hex header queue öncesi timingSafeEqual ile doğrulanır. Fixture
+  v2 iki Go consumer'ıyla birlikte değişti; token argv/URL/public receipt'e
+  taşınmaz. Gerçek loopback missing/wrong/malformed/duplicate token testleri
+  callback0, geçerli token normal action/ACK doğrular.
+- LR-03 önceki Low/High, son investigator Medium/High kapanış kanıtı:
+  yalnız gerçek close olayı connectionClosed=true verir; disconnect belirsiz
+  kapanışı false taşır. Missing-close/failed-kill/orphan regresyonu eklendi.
+  CLI kapanışı PostgreSQL backend cleanup kanıtı değildir.
+- Go engine-evidence F01 Medium/F02 Low: negatif TLS/password öncesi/sonrası
+  gerçek SCRAM+TLS sağlıklı tanık ve typed x509/28P01 sebebi zorunlu. TLS
+  refusal wire observer plaintext StartupMessage/fallback'i reddeder.
+  Query cleanup pg_cancel_backend bool ACK ve bounded inactive gözlemi ister.
+  İki helper regresyonu default Go unit kümesindedir. Engine NOT_RUN kalır.
+
+Pre-fix component77/77 exit0 bulguları kapsamıyordu; closure kanıtı değildir.
+Dirty-source Node24.20.0 komutu `--test
+scripts/postgres-image/apk-runtime/*.test.mjs
+tests/integration/postgres/live/runner.test.mjs
+tests/integration/postgres/live-sql.test.mjs scripts/check-generated.test.mjs`:
+115test/113PASS/iki mevcut Windows skip, exit0; log SHA256
+`ed1fb88d4f9a7db97aa0a9971b5bea4c9f7301cb6ee3be4fcd555eb7d3500878`.
+Fixed-artifact CLI byte replay exit0:28package/984entry/308link, authority
+ABSENT, execution NOT_ADMITTED; transport artifact SHA256
+`37f2914ca6eef3cdf9426472688483f6c9001cd1bf5ad9094ed541be4e400a03`.
+Linux Go1.26.7 source/module-cache RO/networknone: iki package default
+uncached race0, tagged vet0, tagged compile `-run '^$'`0; log SHA256
+`dfa33a7330a54d8d1d83f23903cc81c69e5f16a0fdd343f9c499dde14aedbf06`.
+Yeni sealed full-tree, independent re-review ve hosted/R-016 henüz bu
+component sonuçlarıyla PASS değildir; yeni exact source'a yeniden bağlanır.
+
+Source-builder2Critical/7High ve alternatif signed-APK libxml2 upstream4High
+sonuçları korunur. Bounded public minimal/Alpine/signed-index araştırması
+admission sağlamadı; dünyada hiç güvenli image yok iddiası değildir.
+Threshold/ignore/VEX değişmez. Image import/start, SQL/TLS/SCRAM/pool/readiness
+engine matrisi NOT_RUN; Phase B IN_PROGRESS, image BLOCKED_SECURITY.
+Güvenli draft PR hazırlanabilir; T04F exit/READY_TO_MERGE değildir. Yeni
+exact main merge ayrı owner gate'idir. Rollback: merge etmeme/review'lu dar
+revert; immutable SQL ve protected public control-plane korunur.
+VPS/production/DNS/SSH/kullanıcı verisi mutation'ı yoktur.

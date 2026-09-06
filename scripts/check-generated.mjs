@@ -88,6 +88,12 @@ export const allowedW001InfrastructureFiles = new Set([
 export const allowedW001PostgresTestSourceFiles = new Set([
   "tests/integration/postgres/cmd/tlsfixture/main.go",
   "tests/integration/postgres/cmd/tlsfixture/main_linux_test.go",
+  "tests/integration/postgres/live/RUNNER-CONTRACT.md",
+  "tests/integration/postgres/live/live-runtime.mjs",
+  "tests/integration/postgres/live/process.mjs",
+  "tests/integration/postgres/live/psql.mjs",
+  "tests/integration/postgres/live/run-live.mjs",
+  "tests/integration/postgres/live/runner.test.mjs",
   "tests/integration/postgres/live-sql.mjs",
   "tests/integration/postgres/live-sql.test.mjs",
   "tests/integration/postgres/run.mjs",

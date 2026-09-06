@@ -44,6 +44,7 @@ type pg17Fixture struct {
 	RootCAPEM      string `json:"root_ca_pem"`
 	Password       string `json:"password"`
 	ControlAddress string `json:"control_address"`
+	ControlToken   string `json:"control_token"`
 }
 
 func requirePG17Fixture(t *testing.T) pg17Fixture {
@@ -70,13 +71,14 @@ func requirePG17Fixture(t *testing.T) pg17Fixture {
 	controlHost, controlPort, err := net.SplitHostPort(f.ControlAddress)
 	port, parseErr := strconv.ParseUint(controlPort, 10, 16)
 	if err != nil || parseErr != nil || port == 0 || controlHost != "127.0.0.1" ||
-		f.Schema != "hedefora.pg17.integration.v1" || !f.SyntheticOnly || f.Host != "127.0.0.1" ||
+		f.Schema != "hedefora.pg17.integration.v2" || !f.SyntheticOnly || f.Host != "127.0.0.1" ||
 		!regexp.MustCompile(`^[a-f0-9]{32}$`).MatchString(f.RunID) ||
 		!regexp.MustCompile(`^[a-f0-9]{40}$`).MatchString(f.SourceSHA) ||
 		!regexp.MustCompile(`^sha256:[a-f0-9]{64}$`).MatchString(f.ImageDigest) ||
 		f.SourceSHA != os.Getenv("HEDEFORA_PG17_TEST_SOURCE_SHA") ||
 		f.ImageDigest != os.Getenv("HEDEFORA_PG17_TEST_IMAGE_DIGEST") ||
-		f.Password != "synthetic-pg17-"+f.RunID || f.TLSPort == 0 ||
+		!regexp.MustCompile(`^synthetic-pg17-[a-f0-9]{64}$`).MatchString(f.Password) ||
+		!regexp.MustCompile(`^[a-f0-9]{64}$`).MatchString(f.ControlToken) || f.TLSPort == 0 ||
 		f.PlaintextPort == 0 || f.TLSPort == f.PlaintextPort ||
 		config.ValidatePostgres(f.config()) != nil {
 		t.Fatal("PG17_INTEGRATION_FIXTURE_BINDING_INVALID")
@@ -106,6 +108,7 @@ func pg17Control(t *testing.T, f pg17Fixture, action string) {
 		t.Fatal("test control request construction failed")
 	}
 	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Hedefora-Control-Token", f.ControlToken)
 	client := &http.Client{Timeout: 15 * time.Second, Transport: &http.Transport{Proxy: nil, DisableKeepAlives: true},
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	response, err := client.Do(request)
@@ -203,7 +206,7 @@ func pg17AssertResponse(t *testing.T, response *http.Response, status int, f pg1
 }
 func pg17NoSensitive(t *testing.T, text string, f pg17Fixture) {
 	t.Helper()
-	for _, forbidden := range []string{f.Password, f.RootCAPEM, "hedefora_app", "hedefora_dev", "SQLSTATE", "FATAL", "postgres://", "synthetic-ambient-poison"} {
+	for _, forbidden := range []string{f.Password, f.ControlToken, f.RootCAPEM, "hedefora_app", "hedefora_dev", "SQLSTATE", "FATAL", "postgres://", "synthetic-ambient-poison"} {
 		if strings.Contains(text, forbidden) {
 			t.Fatal("sensitive database detail appeared in health output")
 		}

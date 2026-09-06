@@ -760,3 +760,123 @@ func TestSyntheticWireIntendedConcurrentUse(t *testing.T) {
 		t.Fatal("capacity or probe accounting failed")
 	}
 }
+
+// Observe the real ssl=off engine without intercepting or changing its bytes.
+// A plaintext StartupMessage, on this or a fallback connection, fails even if
+// the engine's hostnossl-reject HBA would also deny authentication.
+type pg17RefusalWire struct {
+	net.Conn
+	mu      sync.Mutex
+	written int
+	read    int
+	prefix  [8]byte
+	reply   byte
+}
+
+func (w *pg17RefusalWire) recordWrite(b []byte) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if w.written < len(w.prefix) {
+		copy(w.prefix[w.written:], b)
+	}
+	w.written += len(b)
+}
+
+func (w *pg17RefusalWire) recordRead(b []byte) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if w.read == 0 && len(b) > 0 {
+		w.reply = b[0]
+	}
+	w.read += len(b)
+}
+
+func (w *pg17RefusalWire) Write(b []byte) (int, error) {
+	n, err := w.Conn.Write(b)
+	w.recordWrite(b[:n])
+	return n, err
+}
+
+func (w *pg17RefusalWire) Read(b []byte) (int, error) {
+	n, err := w.Conn.Read(b)
+	w.recordRead(b[:n])
+	return n, err
+}
+
+func (w *pg17RefusalWire) refusedWithoutStartup() bool {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.written == 8 && w.prefix == [8]byte{0, 0, 0, 8, 4, 210, 22, 47} && w.read == 1 && w.reply == 'N'
+}
+
+func TestTLSRefusalWireObservationRejectsFallback(t *testing.T) {
+	request := []byte{0, 0, 0, 8, 4, 210, 22, 47}
+	w := &pg17RefusalWire{}
+	w.recordWrite(request[:3])
+	w.recordWrite(request[3:])
+	w.recordRead([]byte{'N'})
+	if !w.refusedWithoutStartup() {
+		t.Fatal("fragmented SSLRequest witness rejected")
+	}
+	w.recordWrite([]byte{0, 0, 0, 20})
+	if w.refusedWithoutStartup() {
+		t.Fatal("plaintext startup after TLS refusal accepted")
+	}
+	for _, reply := range [][]byte{nil, {'S'}, {'N', 'X'}} {
+		w := &pg17RefusalWire{}
+		w.recordWrite(request)
+		w.recordRead(reply)
+		if w.refusedWithoutStartup() {
+			t.Fatal("missing or wrong refusal witness accepted")
+		}
+	}
+	w = &pg17RefusalWire{}
+	w.recordWrite([]byte{0, 0, 0, 8, 0, 3, 0, 0})
+	w.recordRead([]byte{'N'})
+	if w.refusedWithoutStartup() {
+		t.Fatal("plaintext startup on fallback connection accepted")
+	}
+}
+
+func pg17CancelAndObserve(ctx context.Context, cancelQuery func(context.Context) (bool, error), activeQuery func(context.Context) (bool, error)) error {
+	cancelled, err := cancelQuery(ctx)
+	if err != nil || !cancelled {
+		return errors.New("synthetic query cancellation was not acknowledged")
+	}
+	for {
+		active, err := activeQuery(ctx)
+		if err != nil {
+			return errors.New("synthetic query completion could not be observed")
+		}
+		if !active {
+			return nil
+		}
+		timer := time.NewTimer(10 * time.Millisecond)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return ctx.Err()
+		case <-timer.C:
+		}
+	}
+}
+
+func TestSyntheticQueryCleanupRequiresAcknowledgementAndCompletion(t *testing.T) {
+	ok := func(context.Context) (bool, error) { return true, nil }
+	no := func(context.Context) (bool, error) { return false, nil }
+	if pg17CancelAndObserve(context.Background(), no, no) == nil {
+		t.Fatal("false cancellation was accepted")
+	}
+	if pg17CancelAndObserve(context.Background(), ok, no) != nil {
+		t.Fatal("acknowledged completed cleanup was rejected")
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if !errors.Is(pg17CancelAndObserve(ctx, ok, ok), context.Canceled) {
+		t.Fatal("active query was accepted after cleanup deadline")
+	}
+	failed := func(context.Context) (bool, error) { return false, errors.New("synthetic query error") }
+	if pg17CancelAndObserve(context.Background(), failed, no) == nil || pg17CancelAndObserve(context.Background(), ok, failed) == nil {
+		t.Fatal("failed cleanup query was accepted")
+	}
+}

@@ -179,6 +179,20 @@ aralığın allowlist'i gelecekte yazma yetkisi değildir; validator değişmez.
 
 ## Secret ve artifact sınırı
 
+### W001-T04FB — Stage S / runner continuation
+
+Source baseline2ee64c1; task-phase/trusted base aba3d13 ve tarihsel wave start
+korunur. Root tek repository writer; proposal/review ajanları disjoint TEMP
+veya read-only. Yeni exact yollar: `scripts/postgres-image/apk-runtime/`
+sekiz dosya, `tests/integration/postgres/live/` altı dosya,
+`internal/platform/postgres/{pool_test,pool_integration_test}.go`,
+`internal/platform/app/api_integration_test.go`,
+`scripts/check-generated{,.test}.mjs`, `package.json`, `FILE-INDEX.md` ve
+orchestrator-owned ACTIVE-WAVE/PHASE-B/OWNERSHIP/EVIDENCE/RISK/RELEASE state.
+Final JSON seal actual closed range/first-parent union'u listeler; bu kayıt
+protected R-016, immutable SQL veya image execution authority yetkisi değildir.
+
+
 ### W001-T04FB-CONTROL — selected Go graph remediation
 
 Task-phase base `7a1e124e432b51694e7d60c0d3d1589867a8835f` / tree `ec6d12847c657adedbd84e44565598d234c7b928`; historical wave start değişmez. Tek writer orchestrator, branch `codex/w001-r016-go-graph`, worktree `T04FB-CONTROL`. Architecture/infra implementation proposal-only, security/cold read-only. Kod/sözleşme yolları: `scripts/supply-chain/{run,run.test,contracts,contracts.test}.mjs`, `security/r016-evidence.schema.json`, `scripts/fixtures/supply-chain/{transitive-go.mod,transitive-go.sum}.txt` ve doğrulanmış Go identity regresyonu için `.github/workflows/ci.yml`; shared governance/evidence yalnız orchestrator tarafından birleştirilir. Root Go manifestleri, runtime/compiler, image, policy thresholds ve scanner sürümleri kapsam dışıdır. Acceptance ve rollback: `state/W001-R016-GO-GRAPH.md`. Continuous first-parent path union ve manifest-only seal her yeni exact head'de doğrulanır; eski base protected-parity reddi bootstrap istisnası olarak açık kalır, trusted runtime PASS sayılamaz.
