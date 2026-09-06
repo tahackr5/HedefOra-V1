@@ -78,6 +78,7 @@
 - `state/W001-OWNERSHIP.md` (W001 immutable-base yazma sahipliği ve görev DAG'ı)
 - `state/W001-OWNERSHIP.json` (W001 commit aralığı ve path allowlist kanıtı)
 - `state/W001-EVIDENCE.md` (R-016 scanner, rule, advisory DB, fixture ve gate kanıtı)
+- `state/W001-R016-GO-GRAPH.md` (Phase B selected-Go-graph control-only remediation ve exact gate kanıtı)
 - `security/**` (supply-chain policy, exact scanner/ruleset pinleri ve açık istisnalar)
 - `scripts/supply-chain/**` ve `scripts/fixtures/supply-chain/**`
 - `.github/workflows/ci.yml`
