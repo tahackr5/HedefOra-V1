@@ -236,3 +236,78 @@ VPS/SSH/DNS/secret/data mutation yoktur. Public repository'de eski unsafe
 control'a ham revert yasaktır; hata halinde runtime ilerlemesi durdurulur ve
 trusted main korunur, gerekiyorsa reviewed forward-fix/control owner gate'i
 açılır. Sonraki PR hazırlanabilir; yeni exact-head main merge ayrı owner gate.
+
+## Runtime integration seal ve ayrı trusted-controller kanıtı
+
+`f19cca198e7236e15f2ac7d764c12f8312b0f348` runtime integration merge'inin
+ordered parents'ı `02ef7cf2379c563d398571a6f439920331e16a80` ve trusted
+`aba3d13ed057bbe80a2e67486058180479c3c50e`'dir. Bu runtime integration
+merge'i content-identical owner/main merge diye sunulmaz; actual first-parent
+18-path diff sahiplik manifestinde ayrı görev olarak kaydedildi. Manifest-only
+seal `a3c0b9197386e093bb80b922b0bacc91f5763a6f`, tree
+`1d0c40d27faba492b815532b43b5b2298d8f11a9`; W001 continuous ownership0,
+governance0 ve controller unit124/124/skip0. İlk repolint komutu yanlışlıkla
+non-main `./tools/repolint` paketini hedefleyip exit1 verdi; gerçek
+`./tools/repolint/cmd/repolint -manifest state/W001-OWNERSHIP.json -all
+-base bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b -head HEAD` exit0.
+
+Exact a3c0b91 Node24.20.0/pnpm11.24.0 `ci:check`0: repository274PASS,
+iki mevcut Windows literal-backslash skip; web3/3/scaffold coverage100,
+Spectral59, deterministic generated parity, canonical security-pin tidy,
+licenses/audit0. Log SHA-256
+`0cd988df062ea284b83392245ca4d9e893a8ed7797c9f65bec2de7a272c15336`.
+Bu Node gate'i yeni exact Linux Go veya hosted gate'in yerine geçmez.
+
+- Self-control local R016 `20260906T210416303Z-25224-fe87e11e` PASS0,
+  source/control a3c0b91,426raw/19terminal/schema0, rehash mismatch0;
+  evidence `24bdf0a2416e2d5c344f2a1e2c7aa4e75f10b430f20f5bbf9c7f06ee87c07fcf`,
+  DB seal `ab95965405bb29208664f1be29bdd443f5240fc2970866cb0ed27c949d4eae67`.
+  İlk CLI aynı source root'u controller olarak kullanır; environment'taki
+  farklı EXPECTED_CONTROL_SHA onu ayrı trusted-controller koşusu yapmaz.
+- Ayrı admitted aba3d13 clone'undaki immutable runner modülü ile target
+  a3c0b91 üzerinde `executeSupplyChainGate`:
+  `20260906T211005393Z-17284-68e5f41b` PASS0. Source224tracked/tree1d0c40,
+  control206tracked/treeed51da4;456raw/19terminal/schema0, rehash mismatch0.
+  Evidence `5c0f1a070de8aee478d72cf970e4f4851a307775478cf21c03e251f76294c924`,
+  DB seal `791d4539962aa3639667ed7f730b54e333731bd8c9db78034c085d3750edb568`.
+  Target protected workflow/controller/fixture/schema bytes aba3d13 ile
+  exact parity'dedir. Local declaration/visibilityProof=false korunur;
+  bu hosted PR authority veya Phase B completion değildir.
+
+## PG17 alternatif araştırması — yalnız veri edinimi
+
+İki public hazır aday exact manifest/config/layer/diff-ID/SBOM kimliğiyle,
+pinli Syft1.51.1/Grype0.118.0 ve fresh DB üzerinden çalıştırılmadan tarandı:
+
+| Aday linux/amd64 manifest | Gerçek sonuç |
+|---|---|
+| Official17.11-alpine3.24 `sha256:7456ef82e5f5bc43d997f4781bbd7c0d6389bff397564649a356e206ba473aee` | raw2;5Critical/41High/3Unknown; related CVSS dahil49blocking; ignored0 |
+| CNPG17.11-minimal-trixie `sha256:74bd7677a9d9bde0258dc3593106539a1fd5a0b23fecb4ee97dfb67589f8b6f2` | raw2;27Critical/107High/16Unknown; related CVSS dahil184blocking; ignored0 |
+
+Chainguard public exact17 HTTP404; DHI17 HTTP401, credential alınmadı.
+Fresh Linux Grype DB import0; hydrated DB SHA-256
+`b46475b87396aac20557f409356989900390786038759b213dc69a057051b598`
+scan öncesi/sonrası byte-identical. Araştırma evidence-index
+`4a85768d11280cbced3e489c394668c1fbf0a5f0e200cbdbad645869da4e196a`,
+67artifact rehash0mismatch; scan-proof
+`e999dcd71d4104b3f566b7b8338e989a87b2c720a118ec1d9768b6d81efcf46f`.
+İlk Windows DB activation failure/raw1 korunur; Linux import0 ayrı kanıttır.
+Araştırmanın Node24.19.0 completion'ı repository24.20.0 gate'i sayılmaz.
+
+İzolasyon kararı: non-root/read-only/cap-drop/network sınırları ek savunmadır;
+mevcut High/Critical/unknown/CVSS bulgularını ortadan kaldırmaz. Failed
+source-builder ve bu iki hazır image çalıştırılmaz; eski9builder bulgusu
+başka profile geçilerek kapatılmaz. Owner'ın güvenli alternatif araştırması
+onayı kapsamında signed precompiled APK + data-only reproducible OCI
+assembly profili hazırlanıyor. Yerel builder çalışmadığı kanıtlandığında
+yalnız o yeni profile ait builder gate gerekçeli NOT_APPLICABLE olabilir;
+publisher/source, full OS/binary inventory, independent CPE parity, iki PG
+source-family17.11/18.6, fresh scan/canary, license ve execution review
+kapıları korunur. Source-build policy ve eski FAIL kanıtı değiştirilmez.
+
+İlk yeni28signed-APK closure taraması raw0/3Medium/2Low/0blocking/ignored0
+verdi; bu yalnız olumlu araştırma sinyalidir, execution admission değildir.
+Source-family libpq18.6, signer trust anchor ve APKv2 RSA-SHA1 legacy
+sınırı ayrıca incelenir. Package scripts, builder ve PostgreSQL çalıştırma0.
+Yeni runtime profilinin/test runner'ın source integration, independent
+security review, gerçek engine ve final hosted PR kapıları pending'dir.
