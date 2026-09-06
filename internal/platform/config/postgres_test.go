@@ -100,6 +100,48 @@ func TestPostgresRejectsAmbientDuplicateUnknownAndCaseDrift(t *testing.T) {
 	}
 }
 
+func TestPostgresNumericOverridesPreserveStrictBounds(t *testing.T) {
+	t.Parallel()
+	base := validPostgres(t)
+	withPort := func(value uint16) Postgres { c := base; c.Port = value; return c }
+	withConnections := func(value int32) Postgres { c := base; c.MaxConnections = value; return c }
+	for _, field := range []struct {
+		name     string
+		accepted map[string]Postgres
+		rejected []string
+	}{
+		{
+			name: "PORT",
+			accepted: map[string]Postgres{"1": withPort(1), "5432": withPort(5432), "65535": withPort(65535),
+				"0005432": withPort(5432), strings.Repeat("0", 128) + "1": withPort(1)},
+			rejected: []string{"0", "65536", "65537", "70968"},
+		},
+		{
+			name: "MAX_CONNECTIONS",
+			accepted: map[string]Postgres{"1": withConnections(1), "4": withConnections(4), "8": withConnections(8),
+				"0008": withConnections(8), strings.Repeat("0", 128) + "1": withConnections(1)},
+			rejected: []string{"0", "9", "2147483648", "4294967297", "4294967304"},
+		},
+	} {
+		t.Run(field.name, func(t *testing.T) {
+			for input, want := range field.accepted {
+				got, err := LoadPostgres(append(postgresEnvironment(base), PostgresEnvironmentPrefix+field.name+"="+input))
+				if err != nil || got != want {
+					t.Fatalf("valid numeric form %q changed", input)
+				}
+			}
+			invalid := append(field.rejected, "", "+1", "-1", " 1", "1 ", "1_0", "0x1", "1e0", "１", "\x00",
+				"9223372036854775808", "18446744073709551616")
+			for _, input := range invalid {
+				got, err := LoadPostgres(append(postgresEnvironment(base), PostgresEnvironmentPrefix+field.name+"="+input))
+				if !errors.Is(err, ErrInvalidPostgresEnvironment) || got != (Postgres{}) {
+					t.Fatalf("invalid numeric form %q accepted or partial configuration exposed", input)
+				}
+			}
+		})
+	}
+}
+
 func TestPostgresDirectValidation(t *testing.T) {
 	t.Parallel()
 	base := validPostgres(t)

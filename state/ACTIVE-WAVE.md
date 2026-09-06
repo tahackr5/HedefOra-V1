@@ -14,7 +14,7 @@
 - Integration branch: `codex/w001-t04f-phase-b`
 - Worktree: `C:\Users\ihsan\.codex\worktrees\HedefOra\W001\T04FB`
 - Started at: `2026-08-28T21:50:57+03:00` (`2026-08-28T18:50:57Z`)
-- Last checkpoint: Trusted PR #7 aba3d13 post-merge PASS korunur. Runtime continuation 8f349e/410a17e Stage S + kapalı live-runner entegrasyonu sonrası hardlink candidate review FAIL verdi; af918cca39ace82967d718f72318d5c47400a523 dar forward-fix84/84unit ve unchanged28package/984entry/308link replay0. Yeni final seal/full-tree/hosted/R-016/cold beklenir; image BLOCKED_SECURITY, gerçek engine NOT_RUN. Tarihsel R-027 ve ownership/candidate FAIL kayıtları korunur.
+- Last checkpoint: PR #8 OPEN/DRAFT exact4446c8f; local full-tree/R016 ve hosted push/trustedR016 PASS, fakat hosted CI34066149544 Go cache cleanup EACCES ve CodeQL high/open2/3 nedeniyle cold FAIL. Dar cleanup/static-proof düzeltmeleri ve odaklı nonrootLinux reproducer/configrace PASS; yeni exact seal/full-tree/hosted/cold beklenir. Trusted PR #7 aba3d13 post-merge PASS ve tarihsel FAIL kayıtları korunur; image BLOCKED_SECURITY, gerçek engine NOT_RUN.
 - Current objective: Yeni trusted control base'i mevcut Phase B pool/TLS/readiness runtime lineage'ına entegre etmek; PG17 güvenli alternatif/runtime closure ve gerçek SQL/TLS/pool/readiness engine kapılarını tamamlayıp yeni exact PR owner gate'ine ilerlemek. Sourcebuilder2Critical+7High ve taranan alternatiflerin FAIL sonuçları korunur; eşik/ignore/VEX gevşetilmez. Image execution ve Phase B completion henüz NOT_RUN.
 
 ## Historical task/gate record

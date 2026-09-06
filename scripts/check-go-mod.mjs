@@ -182,6 +182,54 @@ async function readSource(root) {
   return sources;
 }
 
+async function cleanupDirectoryIdentity(target) {
+  const stat = await lstat(target, { bigint: true });
+  if (
+    !stat.isDirectory() ||
+    stat.isSymbolicLink() ||
+    normalized(await realpath(target)) !== normalized(target)
+  ) {
+    throw new Error("Unsafe Go check cleanup target");
+  }
+  return stat;
+}
+
+export async function cleanupGoTemporary(temporary, run) {
+  // Only the exact newly allocated mkdtemp child is eligible for cleanup.
+  if (
+    path.resolve(temporary) !== temporary ||
+    path.dirname(temporary) !== path.resolve(os.tmpdir()) ||
+    !/^hedefora-go-mod-[A-Za-z0-9]{6}$/u.test(path.basename(temporary))
+  ) {
+    throw new Error("Unsafe Go check cleanup target");
+  }
+  const before = await cleanupDirectoryIdentity(temporary);
+  const modules = path.join(temporary, "modules");
+  let moduleStat;
+  try {
+    moduleStat = await lstat(modules);
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  if (moduleStat !== undefined) {
+    await cleanupDirectoryIdentity(modules);
+    // Go owns its read-only module directories. Use its cleaner with the same
+    // isolated offline environment; never make shared caches writable.
+    await run(["clean", "-modcache"]);
+    try {
+      await lstat(modules);
+      throw new Error("Go module cache cleanup was incomplete");
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+  }
+  const after = await cleanupDirectoryIdentity(temporary);
+  if (before.dev !== after.dev || before.ino !== after.ino) {
+    throw new Error("Go check cleanup target changed");
+  }
+  await rm(temporary, { recursive: true });
+}
+
 export async function checkGoManifests(root, goBinary = "go") {
   const sources = await readSource(root);
   const temporary = await mkdtemp(path.join(os.tmpdir(), "hedefora-go-mod-"));
@@ -242,15 +290,7 @@ export async function checkGoManifests(root, goBinary = "go") {
     )
       throw new Error("Go source changed during check");
   } finally {
-    // Only this newly allocated directory is eligible for recursive cleanup.
-    if (
-      path.dirname(temporary) !== path.resolve(os.tmpdir()) ||
-      !path.basename(temporary).startsWith("hedefora-go-mod-") ||
-      normalized(await realpath(temporary)) !== normalized(temporary)
-    ) {
-      throw new Error("Unsafe Go check cleanup target");
-    }
-    await rm(temporary, { recursive: true });
+    await cleanupGoTemporary(temporary, run);
   }
 }
 

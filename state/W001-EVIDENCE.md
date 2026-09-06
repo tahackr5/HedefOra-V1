@@ -346,3 +346,14 @@ PASS olsa da aynı source'un hardlink candidate review FAIL kaydı korunur.
 af918cc düzeltmesi yeni exact gate ister. Image BLOCKED_SECURITY/engine
 NOT_RUN/Phase B IN_PROGRESS; draft PR preparation release veya owner-merge
 admission değildir. Historical evidence, R-014 ve dış servis boşlukları saklanmaz.
+
+## PR #8 hosted checkpoint — 2026-09-07
+
+Exact4446c8f local quality27/27 ve trusted local R016494raw PASS;
+hosted push/trusted R016 ile DependencyReview PASS. Buna karşılık hosted
+quality cleanup EACCES sonrası Go adımları SKIPPED; correct-ref CodeQL
+high/open2/3 ve cold FAIL korunur. Salt okunur bağımsız inceleme dönüşümlerde
+ulaşılabilir taşma bulmadı. Dar cleanup ve literal-bound static-proof
+değişiklikleri, odaklı Node15/15 ve actual nonrootLinux reproducer/configrace
+kanıtları `state/W001-PHASE-B.md` içindedir. Yeni sealed-head gate'leri
+henüz beklenir; PR DRAFT/owner-ready=false/image BLOCKED_SECURITY.

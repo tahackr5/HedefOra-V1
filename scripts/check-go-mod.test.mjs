@@ -1,10 +1,23 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import {
+  lstat,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rename,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 import {
   acquireGoModules,
   annotateRestoredPins,
   assertCanonicalManifests,
+  cleanupGoTemporary,
   goEnvironment,
   requireGoSuccess,
   securityModulePins,
@@ -226,4 +239,164 @@ test("nonzero, timeout and launch errors cannot become success or leak stderr", 
         error.message.includes("failed"),
     );
   }
+});
+
+async function cleanupFixture(t) {
+  const temporary = await mkdtemp(path.join(os.tmpdir(), "hedefora-go-mod-"));
+  t.after(() => rm(temporary, { recursive: true, force: true }));
+  return temporary;
+}
+
+test("owned cache is cleaned offline before the outer temporary tree", async (t) => {
+  const temporary = await cleanupFixture(t);
+  const modules = path.join(temporary, "modules");
+  await mkdir(modules);
+  await writeFile(path.join(temporary, "canary"), "owned fixture");
+  const calls = [];
+  await cleanupGoTemporary(temporary, async (args) => {
+    calls.push(args);
+    assert.equal(
+      await readFile(path.join(temporary, "canary"), "utf8"),
+      "owned fixture",
+    );
+    const env = goEnvironment(temporary, false, { GOMODCACHE: "/foreign" });
+    assert.equal(env.GOMODCACHE, modules);
+    assert.equal(env.GOPROXY, "off");
+    assert.equal(env.GOSUMDB, "off");
+    assert.equal(env.GOFLAGS, "");
+    await rm(modules, { recursive: true });
+  });
+  assert.deepEqual(calls, [["clean", "-modcache"]]);
+  await assert.rejects(lstat(temporary), { code: "ENOENT" });
+});
+
+test("early failures without a module cache preserve failure and skip Go clean", async (t) => {
+  const temporary = await cleanupFixture(t);
+  const failure = new Error("preflight failure");
+  let calls = 0;
+  await assert.rejects(
+    async () => {
+      try {
+        throw failure;
+      } finally {
+        await cleanupGoTemporary(temporary, () => {
+          calls += 1;
+        });
+      }
+    },
+    (error) => error === failure,
+  );
+  assert.equal(calls, 0);
+  await assert.rejects(lstat(temporary), { code: "ENOENT" });
+});
+
+test("cleanup rejects broad, noncanonical and non-directory roots before invoking Go", async (t) => {
+  const temporary = await cleanupFixture(t);
+  const file = path.join(temporary, "canary");
+  await writeFile(file, "preserved");
+  let calls = 0;
+  for (const target of [
+    os.tmpdir(),
+    path.dirname(os.tmpdir()),
+    temporary + path.sep + ".",
+    file,
+    temporary + "extra",
+  ]) {
+    await assert.rejects(
+      cleanupGoTemporary(target, () => {
+        calls += 1;
+      }),
+      /Unsafe Go check cleanup target/,
+    );
+  }
+  assert.equal(calls, 0);
+  assert.equal(await readFile(file, "utf8"), "preserved");
+});
+
+test("a file in place of the module directory prevents both cleanup operations", async (t) => {
+  const temporary = await cleanupFixture(t);
+  const modules = path.join(temporary, "modules");
+  await writeFile(modules, "preserved");
+  let calls = 0;
+  await assert.rejects(
+    cleanupGoTemporary(temporary, () => {
+      calls += 1;
+    }),
+    /Unsafe Go check cleanup target/,
+  );
+  assert.equal(calls, 0);
+  assert.equal(await readFile(modules, "utf8"), "preserved");
+});
+
+test("module directory links cannot redirect cleanup to a sibling or a missing path", async (t) => {
+  for (const exists of [true, false]) {
+    const temporary = await cleanupFixture(t);
+    const sibling = await cleanupFixture(t);
+    const destination = exists ? sibling : path.join(sibling, "missing");
+    await writeFile(path.join(sibling, "canary"), "preserved");
+    const modules = path.join(temporary, "modules");
+    await symlink(
+      destination,
+      modules,
+      process.platform === "win32" ? "junction" : "dir",
+    );
+    let calls = 0;
+    await assert.rejects(
+      cleanupGoTemporary(temporary, () => {
+        calls += 1;
+      }),
+      /Unsafe Go check cleanup target/,
+    );
+    assert.equal(calls, 0);
+    assert.ok((await lstat(modules)).isSymbolicLink());
+    assert.equal(
+      await readFile(path.join(sibling, "canary"), "utf8"),
+      "preserved",
+    );
+  }
+});
+
+test("failed or incomplete Go cleanup cannot become success or delete the outer tree", async (t) => {
+  for (const result of [
+    { status: 1 },
+    { status: null },
+    { status: 0, signal: "SIGTERM" },
+    { status: 0, error: new Error("private-marker") },
+    { status: 0 },
+  ]) {
+    const temporary = await cleanupFixture(t);
+    await mkdir(path.join(temporary, "modules"));
+    await writeFile(path.join(temporary, "canary"), "preserved");
+    await assert.rejects(
+      cleanupGoTemporary(temporary, () => requireGoSuccess(result, "clean")),
+      (error) =>
+        !error.message.includes("private-marker") &&
+        /failed|incomplete/u.test(error.message),
+    );
+    assert.equal(
+      await readFile(path.join(temporary, "canary"), "utf8"),
+      "preserved",
+    );
+  }
+});
+
+test("replacement of the temporary root during Go cleanup is rejected", async (t) => {
+  const temporary = await cleanupFixture(t);
+  const sibling = await cleanupFixture(t);
+  const moved = path.join(sibling, "original");
+  await mkdir(path.join(temporary, "modules"));
+  await assert.rejects(
+    cleanupGoTemporary(temporary, async () => {
+      await rm(path.join(temporary, "modules"), { recursive: true });
+      await rename(temporary, moved);
+      await mkdir(temporary);
+      await writeFile(path.join(temporary, "canary"), "preserved");
+    }),
+    /cleanup target changed/,
+  );
+  assert.equal(
+    await readFile(path.join(temporary, "canary"), "utf8"),
+    "preserved",
+  );
+  assert.ok((await lstat(moved)).isDirectory());
 });

@@ -582,3 +582,105 @@ saklanan byte'ları doğrulanabilir. DB archive'ları artifact'ta saklanmadığ�
 yeniden archive rehash/scan iddiası yok; seal ve validator-output bağı
 doğrulandı. Local-declaration/visibilityProof=false, hosted authority değildir.
 Bu PASS af918cc veya sonraki head'e, PG image veya engine gate'ine taşınmaz.
+
+## 2026-09-07 — PR #8 exact444 checkpoint ve hosted remediation
+
+PR #8 OPEN/DRAFT: `https://github.com/tahackr5/HedefOra-V1/pull/8`.
+Head `4446c8f0733a10c5e2191f8c769394ce0e0ad1b3`, tree
+`7f3c2730c2bd4bb19ad2f1b0e8bfc378c6eef05a`; base/control aba3d13.
+Normal push yapıldı; main merge veya image/PG execution yapılmadı.
+
+Exact444 yerel kalite PASS: proof
+`fb1ed0c1eb0d08b0151bd27535095f748a08bff18289bbbb0f598c84fabe1a2b`,
+27required/27receipt, bağımsız rehash mismatch0. Node24.20/pnpm11.24
+frozen+ci0,378test/376PASS/iki mevcut Windows skip; Linux boundary14/14skip0;
+web3/3 coverage100; LinuxGo1.26.7 fmt29/verify/list/build/vet/shuffle/race/
+W000+W001ownership0, tagged vet/compile0; Python4/actionlint/Gitleaks157patch0
+ve typedUUIDcanary1/Compose0service/Gitclean166commit/fsck0.
+CI log `d42ea24a1138abd57513c5a9f85f7a82b13b5ecb8e62f9c752f0128c5c5de586`;
+Go log `8d31067c080fcbb0128b69dba7b9cd474f96fbfa189a85d9c792784e1aa6a240`.
+Yerel Node gate'i Windows'ta çalıştı; Linux nonroot manifest cleanup kanıtı
+değildir. Sonraki hosted FAIL bu yerel PASS ile gizlenmez.
+
+Ayrı trusted-controller local R-016 run
+`20260906T230829848Z-27636-17f8ed02`, actual exit0/PASS, evidence
+`d5f80c4f48e581d9a05e91515aec4c68ef5dcaa5f534c637b0f610aef90ccc3a`.
+Cold readonly replay494/494 raw hash eşleşti; source444/controlaba identity
+ayrı doğrulandı. Local declaration/visibilityProof=false hosted authority
+yerine geçmez; gerçek PG ve sourcebuilder çalıştırılmadı.
+
+Hosted CI34066149544 quality101575149854 FAIL: Node378/378/Linuxskip0 ve
+web3/3 sonrasında check-go-mod finally içindeki genel recursive rm,
+Go'nun salt okunur `gopkg.in/check.v1@.../.github` cache dizininde EACCES
+verdi. Sonraki Go verify/vet/build/test/race adımları SKIPPED/NOT_RUN.
+ActualGo1.26.7 identity/manifest assertion PASS. Ham log SHA256
+`16c67c8b469c116f55f9ff8a98f1d603bbfc3a3e1f489aea052b75f71c23ef28`.
+CI watch exit1; trusted PR34066167269 watch exit0. PushR016101575149833,
+trustedR016101575193759 ve DependencyReview101575193787 PASS; pgpassfile
+ve puddle Scorecard uyarıları nonblocking olarak korunur.
+
+Bağımsız authenticated hosted proof: push artifact9999019287,
+464raw/232process/19terminal/index244+244; trusted artifact9999024110,
+494raw/247process/19terminal/index244+206. İkisinde120blobprocess,
+117source/control blob kontrolü,31protected path,562package ve16seçili
+Go module; hash/size mismatch0. Verification report
+`6f9b3d002d0d0ab5f9bc2054e0e5e84333d4601041620b8e3870be2e8674e3c8`,
+final manifest `d3e1b3040c747748b3a3c1c0da7fbf3d72057c6ceae6e79d24198fc03ec39384`.
+Artifact visibilityProof=false değişmeden authenticated dış authority
+kuruldu. Saklanmayan özgün redacted stream/advisory DB archive byte'ları
+yeniden taranmış/rehashlenmiş sayılmaz; seal ve kayıtlı validator bağı doğrulandı.
+
+CodeQL34066165756 executionSUCCESS, exact `refs/pull/8/head`:
+Go1732990227 results2, Actions1732989561/Python1732989770/JS1732990267
+results0. Alert2/3 `go/incorrect-integer-conversion` high/open'dır.
+`refs/pull/8/merge` boş sorgusu doğru ref için sıfır alert kanıtı değildir.
+Parent ve fresh investigator decimal→cast→ValidatePostgres yolunu bağımsız
+izledi: helper yalnız0 veya izinli aralık döndürür; sıfır reddedilir.
+Ulaşılabilir taşma doğrulanmadı (guarded false positive, high confidence).
+Cold exact444 verdict FAIL: hosted cleanup ve açık CodeQL gate'i; eski
+hardlink finding'i kaynakta kapanmış olsa da owner-ready=false kalır.
+
+### Dar kaynak düzeltmeleri ve acceptance
+
+Orchestrator dört dosyanın tek yazarıdır: config/postgres.go+test ve
+scripts/check-go-mod.mjs+test. Sayısal iki dönüşüm önünde literal1..65535
+ve1..8 sınırları görünür yapıldı; ortak decimal/RetryAfterSeconds, API,
+DB ve generated sözleşmeleri değişmedi. Bu, kanıtlanmış zafiyet düzeltmesi
+iddiası değil, hosted static-proof ve uyumluluk regresyon değişikliğidir.
+Sarma sonrası geçerli görünen65537/70968/4294967297/4294967304 dahil
+overflow, işaret/Unicode/NUL/boşluk/hex/üs reddi; sınırlar/default/uzun
+başlangıç sıfırları/generic error ve zero-value dönüşü korunur.
+
+Go cache için yeni canonical mkdtemp child + lstat/realpath dizin kontrolleri,
+modules link/dosya/dangling-link reddi, aynı izole offline ortamda exact
+`go clean -modcache`, root inode/dev yeniden kontrolü ve sonra outer rm
+uygulanır. Cache yoksa Go çağrısı0; clean fail/incomplete dış rm'yi durdurur.
+GOFLAGS, checksum verify, timeout, acquisition ve source seal değişmez;
+paylaşılan cache, sudo, recursive chmod veya modcacherw kullanılmaz.
+[Go cache sözleşmesi](https://go.dev/ref/mod#go-clean-modcache) ile uyumludur.
+Path kontrolleri aynı UID'nin eşzamanlı mutation'ına atomik garanti iddiası
+taşımaz; source kodu private temp ağacında çalıştırılmaz.
+
+Odaklı Node24.20 test15/15/skip0 exit0, log
+`0bebaecf027f5bc00317b239d8f6011b310f443c3403e4ad272c2d93ea0aae30`.
+Nonroot Linux UID1001, cap-dropALL, pinnedGo1.26.7 config race exit0,
+log `5915c40d121cd7907498c7f18f733faa487f85d799a22df6604c344734db62a1`.
+Aynı nonroot/pinnedNode24.20/Go1.26.7 gerçek module acquisition reproducer:
+cache mode0555; eski Node rm EACCES, yeni cleanup0/temp absent ve dış sibling
+canary unchanged; log
+`87949ae151a2d7d78d2eab482f04262b3a226e0b54e636f6eb72428a23a29874`.
+Bunlar henüz yeni sealed-head full-tree/hosted CodeQL kapanışı değildir.
+Yeni exact seal, nonroot full ci:check, local/hosted/R016 ve independent
+candidate/cold review gerekir; geçmiş444 FAIL geriye dönük PASS olmaz.
+
+Rollback ayrı dar revert ve yeni ownership/gate gerektirir; geçmiş ref'ler
+rewrite edilmez. Engine/image/Phase B exit NOT_RUN/BLOCKED_SECURITY;
+R-026 ve R-014, CodeRabbit/Sonar bağlantı boşlukları korunur. Model/effort
+UNKNOWN/UNKNOWN; hiçbir plugin çıktısı taklit edilmedi.
+
+Tek fresh-context read-only post-patch bypass/regression review dört dosyada
+somut surviving bypass veya uyumluluk regresyonu bulmadı. Reviewer dosya
+hash'lerini başlangıç/kapanışta aynı doğruladı; kendi Node24.19 test15/15
+exit0 yalnız supplemental kanıttır, canonical/hosted PASS değildir. Root'un
+yukarıdaki pinned Node24.20/nonrootLinuxGo kanıtları ayrı kalır. İnceleme
+Go yürütmedi ve source review'u engine/CodeQL kapanışı olarak sunmadı.

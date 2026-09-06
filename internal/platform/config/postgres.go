@@ -76,7 +76,11 @@ func LoadPostgres(environ []string) (Postgres, error) {
 		case "HEDEFORA_POSTGRES_HOST":
 			result.Host = value
 		case "HEDEFORA_POSTGRES_PORT":
-			result.Port = uint16(decimal(value, 1, 65535))
+			port := decimal(value, 1, 65535)
+			if port < 1 || port > 65535 {
+				return Postgres{}, ErrInvalidPostgresEnvironment
+			}
+			result.Port = uint16(port)
 		case "HEDEFORA_POSTGRES_DATABASE":
 			result.Database = value
 		case "HEDEFORA_POSTGRES_USER":
@@ -94,7 +98,11 @@ func LoadPostgres(environ []string) (Postgres, error) {
 		case "HEDEFORA_POSTGRES_CLOSE_TIMEOUT":
 			result.CloseTimeout = duration(value, time.Second, 10*time.Second)
 		case "HEDEFORA_POSTGRES_MAX_CONNECTIONS":
-			result.MaxConnections = int32(decimal(value, 1, 8))
+			connections := decimal(value, 1, 8)
+			if connections < 1 || connections > 8 {
+				return Postgres{}, ErrInvalidPostgresEnvironment
+			}
+			result.MaxConnections = int32(connections)
 		default:
 			return Postgres{}, ErrInvalidPostgresEnvironment
 		}
