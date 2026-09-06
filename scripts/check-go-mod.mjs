@@ -65,6 +65,32 @@ export function requireGoSuccess(result, label) {
   }
 }
 
+export function acquireGoModules(run) {
+  let inventory;
+  try {
+    // Parsing only: this command is offline and never resolves module paths.
+    inventory = JSON.parse(run(["mod", "edit", "-json"]));
+  } catch {
+    throw new Error("Go replacement preflight inventory is invalid");
+  }
+  if (
+    inventory === null ||
+    typeof inventory !== "object" ||
+    Array.isArray(inventory) ||
+    !Object.hasOwn(inventory, "Replace") ||
+    !(
+      inventory.Replace === null ||
+      (Array.isArray(inventory.Replace) && inventory.Replace.length === 0)
+    )
+  ) {
+    throw new Error("Go replacement preflight requires no replacements");
+  }
+  // No local or versioned replacement may redirect acquisition outside the
+  // sealed manifest graph, even before the consumer source has been copied.
+  run(["mod", "download", "all"], true);
+  run(["mod", "verify"]);
+}
+
 export function assertCanonicalManifests(expected, actual) {
   for (const name of ["go.mod", "go.sum"]) {
     if (
@@ -183,8 +209,7 @@ export async function checkGoManifests(root, goBinary = "go") {
     if (!expectedVersion.test(run(["version"])))
       throw new Error("Exact Go 1.26.7 is required");
     // The network-enabled phase receives manifests only, never repository source.
-    run(["mod", "download", "all"], true);
-    run(["mod", "verify"]);
+    acquireGoModules(run);
     for (const [name, bytes] of sources) {
       if (name === "go.mod" || name === "go.sum") continue;
       const destination = path.join(checkout, name);

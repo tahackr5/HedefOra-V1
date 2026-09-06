@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
 import {
+  acquireGoModules,
   annotateRestoredPins,
   assertCanonicalManifests,
   goEnvironment,
@@ -9,6 +10,89 @@ import {
   securityModulePins,
   validateSourceEntry,
 } from "./check-go-mod.mjs";
+
+test("module replacement preflight runs offline before acquisition", () => {
+  for (const Replace of [null, []]) {
+    const calls = [];
+    acquireGoModules((arguments_, acquisition = false) => {
+      calls.push({ arguments_, acquisition });
+      return JSON.stringify({ Replace });
+    });
+    assert.deepEqual(calls, [
+      { arguments_: ["mod", "edit", "-json"], acquisition: false },
+      { arguments_: ["mod", "download", "all"], acquisition: true },
+      { arguments_: ["mod", "verify"], acquisition: false },
+    ]);
+  }
+});
+
+test("every replacement and malformed inventory is rejected before acquisition", () => {
+  const replacements = [
+    { Old: { Path: "example.invalid/source" }, New: { Path: "../outside" } },
+    { Old: { Path: "example.invalid/source" }, New: { Path: "/outside" } },
+    { Old: { Path: "example.invalid/source" }, New: { Path: "C:/outside" } },
+    {
+      Old: { Path: "example.invalid/source", Version: "v1.0.0" },
+      New: { Path: "example.invalid/replacement", Version: "v1.0.1" },
+    },
+  ];
+  for (const document of [
+    ...replacements.map((replacement) => ({ Replace: [replacement] })),
+    { Replace: [null] },
+    { Replace: [{}] },
+    { Replace: {} },
+    { Replace: "" },
+    { Replace: false },
+    { Replace: 0 },
+    {},
+    null,
+    [],
+    "not-an-object",
+    0,
+    false,
+  ]) {
+    const calls = [];
+    assert.throws(
+      () =>
+        acquireGoModules((arguments_, acquisition = false) => {
+          calls.push({ arguments_, acquisition });
+          return JSON.stringify(document);
+        }),
+      /replacement preflight/,
+    );
+    assert.deepEqual(calls, [
+      { arguments_: ["mod", "edit", "-json"], acquisition: false },
+    ]);
+  }
+  for (const output of ["", "undefined", "{private-source-marker"]) {
+    const calls = [];
+    assert.throws(
+      () =>
+        acquireGoModules((arguments_, acquisition = false) => {
+          calls.push({ arguments_, acquisition });
+          return output;
+        }),
+      (error) =>
+        error.message.includes("preflight") &&
+        !error.message.includes("private-source-marker"),
+    );
+    assert.deepEqual(calls, [
+      { arguments_: ["mod", "edit", "-json"], acquisition: false },
+    ]);
+  }
+  let calls = 0;
+  assert.throws(
+    () =>
+      acquireGoModules(() => {
+        calls += 1;
+        throw new Error("private-source-marker");
+      }),
+    (error) =>
+      error.message.includes("preflight") &&
+      !error.message.includes("private-source-marker"),
+  );
+  assert.equal(calls, 1);
+});
 
 test("only three reviewed exact security graph pins are restored", () => {
   assert.deepEqual(securityModulePins, [
