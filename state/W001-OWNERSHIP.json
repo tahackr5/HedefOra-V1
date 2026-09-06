@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "43a82caffe7dba5a3b1305dbb79f0e52c24151ea",
+  "verifiedThrough": "9d5c7774f58c67cdf656d457be186876c298e8b1",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -606,6 +606,68 @@
         "state/RISK-REGISTER.md",
         "state/W001-EVIDENCE.md",
         "state/W001-OWNERSHIP.md"
+      ]
+    },
+    "W001-T04F-phase-a-local-exit-seal": {
+      "base": "43a82caffe7dba5a3b1305dbb79f0e52c24151ea",
+      "head": "01017a25bf02f27924bf0361fd6b70abdc493ac0",
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
+    },
+    "W001-T04F-phase-a-owner-merge": {
+      "base": "01017a25bf02f27924bf0361fd6b70abdc493ac0",
+      "head": "7a1e124e432b51694e7d60c0d3d1589867a8835f",
+      "allowedPaths": [
+        "DECISIONS.md",
+        "FILE-INDEX.md",
+        "architecture/ADR-REGISTER.md",
+        "contracts/database/README.md",
+        "contracts/database/migrations.yaml",
+        "contracts/database/roles.yaml",
+        "db/migrations/000001_database_foundation.down.sql",
+        "db/migrations/000001_database_foundation.up.sql",
+        "db/migrations/SHA256SUMS",
+        "delivery/TOOLCHAIN-LOCK.md",
+        "infra/README.md",
+        "infra/compose.dev.yml",
+        "infra/postgres/README.md",
+        "infra/postgres/initdb/010_roles.sql",
+        "package.json",
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.json",
+        "state/W001-OWNERSHIP.md",
+        "tests/integration/postgres/run.mjs",
+        "tests/integration/postgres/run.test.mjs"
+      ]
+    },
+    "W001-T04FB-task-open": {
+      "base": "7a1e124e432b51694e7d60c0d3d1589867a8835f",
+      "head": "7cbf26e6605b8129cbeb498cd60984550fd8afad",
+      "allowedPaths": [
+        "DECISIONS.md",
+        "FILE-INDEX.md",
+        "architecture/ADR-REGISTER.md",
+        "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md",
+        "state/W001-PHASE-B.md"
+      ]
+    },
+    "W001-T04FB-dependency-pins": {
+      "base": "7cbf26e6605b8129cbeb498cd60984550fd8afad",
+      "head": "9d5c7774f58c67cdf656d457be186876c298e8b1",
+      "allowedPaths": [
+        "go.mod",
+        "go.sum"
       ]
     }
   }
