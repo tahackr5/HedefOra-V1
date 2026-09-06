@@ -2,6 +2,17 @@
 
 > Orchestrator-owned living evidence. Bu dosya yalnız exact SHA/tree, literal command/exit ve doğrulanmış artifact kimliğiyle PASS kaydeder.
 
+## Güncel control checkpoint — 2026-09-06
+
+PR #7 exact20e91 local/hosted R-016 artifact ve raw replay kimlikleri,
+CodeQL/Dependency Review bağları ve trusted parity FAIL20/acquisition0:
+`state/W001-R016-GO-GRAPH.md`. Fresh final cold verdict **FAIL**: authenticated
+hosted quality Go1.26.0, canonical1.26.7 değil. Main7a1 post-merge job'unda
+aynı mismatch doğrulandı; eski hosted execution SUCCESS kayıtları kanonik
+Go admission sayılmaz. Local pinned1.26.7 ve ayrı R-016 kanıtları korunur.
+R-027 remediation yeni exact workflow pin/assertion ve full revalidation
+gerektirir; hiçbir geçmiş SHA yeni PASS olarak yeniden etiketlenmez.
+
 ## Scope
 
 W001 runtime davranışından önce aşağıdaki telafi paketi zorunludur:

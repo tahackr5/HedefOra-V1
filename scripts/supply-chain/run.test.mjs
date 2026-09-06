@@ -413,6 +413,170 @@ test("CI R-016 step binds the exact checkout and hard-pinned trusted Node", asyn
   );
 });
 
+test("CI quality rejects toolchain drift before any Go quality command", async () => {
+  const workflow = (
+    await readFile(
+      path.join(repositoryRoot, ".github", "workflows", "ci.yml"),
+      "utf8",
+    )
+  ).replaceAll("\r\n", "\n");
+  const goModule = (
+    await readFile(path.join(repositoryRoot, "go.mod"), "utf8")
+  ).replaceAll("\r\n", "\n");
+  const toolVersions = (
+    await readFile(path.join(repositoryRoot, ".tool-versions"), "utf8")
+  ).replaceAll("\r\n", "\n");
+  const setupStep = [
+    "      - name: Set up exact Go toolchain",
+    "        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0",
+    "        with:",
+    "          cache: false",
+    "          check-latest: false",
+    "          go-version: 1.26.7",
+    "",
+  ].join("\n");
+  const identityStep = [
+    "      - name: Verify Go toolchain identity and manifest parity",
+    "        shell: bash",
+    "        run: |",
+    "          set -euo pipefail",
+    '          expected_go_version="go1.26.7"',
+    '          actual_go_version="$(go env GOVERSION)"',
+    '          [[ "${GOTOOLCHAIN}" == "local" ]]',
+    '          [[ "$(go env GOTOOLCHAIN)" == "local" ]]',
+    '          [[ "${actual_go_version}" == "${expected_go_version}" ]]',
+    '          module_go_version="$(awk \'$1 == "go" { if (NF != 2) exit 1; print $2 }\' go.mod)"',
+    '          module_go_toolchain="$(awk \'$1 == "toolchain" { if (NF != 2) exit 1; print $2 }\' go.mod)"',
+    '          tool_versions_go="$(awk \'$1 == "golang" { if (NF != 2) exit 1; print $2 }\' .tool-versions)"',
+    '          [[ "${module_go_version}" == "1.26.0" ]]',
+    '          [[ "${module_go_toolchain}" == "${expected_go_version}" ]]',
+    '          [[ "go${tool_versions_go}" == "${expected_go_version}" ]]',
+    '          go_root="$(go env GOROOT)"',
+    '          [[ "$(realpath "$(command -v go)")" == "$(realpath "${go_root}/bin/go")" ]]',
+    '          [[ "$(realpath "$(command -v gofmt)")" == "$(realpath "${go_root}/bin/gofmt")" ]]',
+    "          printf 'Verified Go toolchain: %s (GOTOOLCHAIN=local; manifest parity passed)\\n' \"${actual_go_version}\"",
+    "",
+  ].join("\n");
+  const validate = (candidate, module = goModule, versions = toolVersions) => {
+    assert.match(
+      candidate,
+      /\nenv:\n  CI: "true"\n  GOFLAGS: -mod=readonly\n  GOTOOLCHAIN: local\n/u,
+    );
+    const quality = candidate.slice(
+      candidate.indexOf("  quality:\n"),
+      candidate.indexOf("\n  supply-chain:\n"),
+    );
+    assert.equal(quality.split("uses: actions/setup-go@").length, 2);
+    assert.equal(quality.split(setupStep).length, 2);
+    assert.equal(quality.split(identityStep).length, 2);
+    assert.ok(quality.indexOf(setupStep) < quality.indexOf(identityStep));
+    for (const command of [
+      "- name: Check tracked Go formatting",
+      "- name: Validate immutable W000 history",
+      "- name: Validate immutable W001 ownership ranges",
+      "run: pnpm ci:check",
+      "run: go mod verify",
+      "run: go vet ./...",
+      "run: go build ./...",
+      "run: go test -count=1 -shuffle=on ./...",
+      "run: go test -race -count=1 -shuffle=on ./...",
+    ]) {
+      assert.ok(
+        quality.indexOf(identityStep) < quality.indexOf(command),
+        command,
+      );
+    }
+    assert.doesNotMatch(quality, /continue-on-error|go-version-file/u);
+    assert.deepEqual(
+      module.split("\n").filter((line) => /^go\s/u.test(line)),
+      ["go 1.26.0"],
+    );
+    assert.deepEqual(
+      module.split("\n").filter((line) => /^toolchain\s/u.test(line)),
+      ["toolchain go1.26.7"],
+    );
+    assert.deepEqual(
+      versions.split("\n").filter((line) => /^golang\s/u.test(line)),
+      ["golang 1.26.7"],
+    );
+  };
+  validate(workflow);
+  for (const [label, from, to] of [
+    [
+      "minimum language version as runtime",
+      "go-version: 1.26.7",
+      "go-version: 1.26.0",
+    ],
+    [
+      "ambiguous version-file input",
+      "go-version: 1.26.7",
+      "go-version-file: go.mod",
+    ],
+    [
+      "automatic toolchain selection",
+      "GOTOOLCHAIN: local",
+      "GOTOOLCHAIN: auto",
+    ],
+    ["missing identity preflight", identityStep, ""],
+    [
+      "missing actual-version assertion",
+      '          [[ "${actual_go_version}" == "${expected_go_version}" ]]\n',
+      "",
+    ],
+    [
+      "missing manifest parity",
+      '          [[ "${module_go_toolchain}" == "${expected_go_version}" ]]\n',
+      "",
+    ],
+    [
+      "missing executable parity",
+      '          [[ "$(realpath "$(command -v gofmt)")" == "$(realpath "${go_root}/bin/gofmt")" ]]\n',
+      "",
+    ],
+    [
+      "masked identity failure",
+      "          actual_go_version=",
+      "          set +e\n          actual_go_version=",
+    ],
+    ["cached tests", "go test -count=1 -shuffle=on ./...", "go test ./..."],
+    [
+      "missing race",
+      "go test -race -count=1 -shuffle=on ./...",
+      "go test -count=1 -shuffle=on ./...",
+    ],
+    ["missing build", "run: go build ./...", "run: echo build"],
+  ]) {
+    const mutated = workflow.replace(from, to);
+    assert.notEqual(mutated, workflow, label);
+    assert.throws(() => validate(mutated), assert.AssertionError, label);
+  }
+  const lateIdentity = workflow
+    .replace(identityStep, "")
+    .replace(
+      "      - name: Validate immutable W000 history\n",
+      identityStep + "\n      - name: Validate immutable W000 history\n",
+    );
+  assert.throws(() => validate(lateIdentity), assert.AssertionError);
+  for (const module of [
+    goModule.replace("go 1.26.0", "go 1.26.1"),
+    goModule.replace("toolchain go1.26.7", "toolchain go1.26.0"),
+    goModule.replace("toolchain go1.26.7", ""),
+    goModule + "\ntoolchain go1.26.7\n",
+  ]) {
+    assert.throws(() => validate(workflow, module), assert.AssertionError);
+  }
+  for (const versions of [
+    toolVersions.replace("golang 1.26.7", "golang 1.26.0"),
+    toolVersions.replace("golang 1.26.7", ""),
+    toolVersions + "\ngolang 1.26.7\n",
+  ]) {
+    assert.throws(
+      () => validate(workflow, goModule, versions),
+      assert.AssertionError,
+    );
+  }
+});
+
 test("trusted PR gate keeps control code on the immutable base checkout", async () => {
   const workflow = (
     await readFile(

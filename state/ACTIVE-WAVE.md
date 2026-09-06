@@ -14,8 +14,8 @@
 - Integration branch: `codex/w001-r016-go-graph`
 - Worktree: `C:\Users\ihsan\.codex\worktrees\HedefOra\W001\T04FB-CONTROL`
 - Started at: `2026-08-28T21:50:57+03:00` (`2026-08-28T18:50:57Z`)
-- Last checkpoint: Owner-approved PR #6 two-parent/content-identical merge `7a1e124`; post-merge clean local full-tree, hosted CI `34033868818`, CodeQL `34033868551`, local/hosted R-016 PASS. Bu Phase A checkpoint'idir; Phase B veya canlı PostgreSQL PASS değildir.
-- Current objective: Control-only selected-Go-graph remediation exact5b9 local full-tree/R-016/security/cold PASS kanıtını final evidence-promotion ve ownership seal ile kaydetmek; yeni exact final head'te applicable local/hosted/CodeQL/Dependency Review kapılarını çalıştırıp owner merge paketini hazırlamak. Runtime bağımlılığı/PG image bu branch'te yoktur; parent Phase B sibling worktree'lerde güvenli yerel geliştirmeyi sürdürür. Canonical controller henüz trusted main'e katılmadı.
+- Last checkpoint: Owner-approved PR #6 two-parent/content-identical merge `7a1e124`; clean local pinned Go1.26.7/full-tree, CodeQL ve local/hosted R-016 PASS. Hosted CI `34033868818` execution SUCCESS fakat gerçek Go1.26.0 kullandığı sonradan doğrulandı: canonical hosted Go quality FAIL. Tarihsel success kaydı exact toolchain admission değildir; yeni control düzeltmesi ve owner merge sonrası main yeniden doğrulanmalıdır.
+- Current objective: PR #7 control-only selected-Go-graph düzeltmesine doğrulanmış hosted Go identity regresyonunu eklemek; exact20e91 cold FAIL korunur. Yeni exact head'te local/full-tree/R-016/security/cold/hosted kapıları yenilenerek owner merge paketi hazırlanır. Runtime bağımlılığı/PG image bu branch'te yoktur. Controller henüz trusted main'e katılmadı; eski base trusted parity reddi PASS olarak sunulmaz.
 
 ## Historical task/gate record (PR #6 öncesi)
 

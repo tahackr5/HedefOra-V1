@@ -23,7 +23,7 @@ R-016 run `20260906T130505799Z-24384-356bcd77`, normalized exit 21/OSV raw exit 
 
 ## Sahiplik
 
-Yalnız `scripts/supply-chain/{run,run.test,contracts,contracts.test}.mjs`, `security/r016-evidence.schema.json`, gerekli tek-purpose `scripts/fixtures/supply-chain/*transitive*` fixture'ı ve atanmış governance/evidence/ownership dosyaları. Workflow/policy/scanner version/threshold/ruleset değişikliği yoktur. Kök go.mod/go.sum veya runtime kaynakları bu PR'a alınmaz. Root proposal'ı doğrulayıp apply_patch ile uygular; generated/schema kimlikleri semantik inceleme sonrasında yenilenir.
+Yalnız `scripts/supply-chain/{run,run.test,contracts,contracts.test}.mjs`, `security/r016-evidence.schema.json`, gerekli tek-purpose `scripts/fixtures/supply-chain/*transitive*` fixture'ı ve atanmış governance/evidence/ownership dosyaları. Doğrulanmış CI toolchain regresyonu için `.github/workflows/ci.yml` exact Go seçimi/identity assertion ve kanonik build/shuffle/race kapıları da orchestrator sahipliğine eklendi. Policy/scanner version/threshold/ruleset değişikliği yoktur. Kök go.mod/go.sum veya runtime kaynakları bu PR'a alınmaz. Root proposal'ı doğrulayıp apply_patch ile uygular; generated/schema kimlikleri semantik inceleme sonrasında yenilenir.
 
 ## Artifact uyumluluğu
 
@@ -45,3 +45,58 @@ Producer `run.mjs`, consumer exact control SHA'sının `contracts.mjs` ve tracke
 Yukarıdaki sonuçlar yalnız exact5b9 yerel checkpoint'e bağlıdır. Bu evidence-promotion commit'i ve manifest-only yeni final seal üzerinde yeni exact full-tree/R-016 replay ve independent final recheck gerekir; sonuç eski SHA'dan taşınmaz. PR/hosted Linux/CodeQL/Dependency Review, owner merge ve post-merge henüz NOT_RUN. Eski base protected controller değişikliğini trusted PR parity ile reddetmelidir; bu control-only bootstrap'ın NOT_RUN sınırıdır, ayrı runtime PR için bypass değildir. Bare/secured pgx differential deneyleri source-only isolated manifest verisi olarak çalışır; uygulama/PG service başlatılmaz.
 
 Rollback merge öncesi branch'i terk edip fail-closed trusted main'i korumaktır. Public repo eski private-only kontrol tree'sine döndürülmez; hiçbir production/data mutation yoktur. Kullanıcıdan normal implementasyon ayrıntıları için ek onay istenmez; yeni exact merge yetkisi gerekiyorsa o somut kapıda raporlanır.
+
+## Exact20 hosted kanıtı ve cold FAIL — 2026-09-06
+
+Final checkpoint `20e91e0e6d367015058eaae4b82db25b56693e1a`, tree
+`2e10b05fda035bf4046ef1bf506b3222c1c1d748`, PR #7 draft/open.
+Final local quality proof SHA-256
+`a00f2c2cdd487a54accba549bfca566cc533dbfbf7919e817c068697d68f00f0`;
+9 log rehash0, pinned Go1.26.7 full-tree PASS. Local R-016
+`20260906T140651122Z-28288-47a599e9` PASS0, evidence
+`6dcd850decffda92dac11ee0a4dcb4278cb0150a895c57475a3f89bae7fc936a`,
+DB seal `8d6b1b0134e1099d28d4e81cc06a36afa11fdbdf4bbc748cd3133a331af02c27`.
+Independent replay408raw/90source-control blob/9quality logs mismatch0.
+“32 protected” geçmiş terminolojisi düzeltilir:32 control input,31 protected
+index entry vardır; go.mod ek control-only input'tur.
+
+Authenticated push CI34038266758 boundary101500225057,
+quality101500234287 ve R-016101500234184 execution SUCCESS.
+Hosted Linux repository184/184, skip0; web3/3; canonical compiler corpus33/33.
+CodeQL34038336434 dört dil PASS/results0/error boş, exact PR head open alerts0.
+Analyses Actions1731967896/Go1731968091/JS1731968274/Python1731968338.
+
+Hosted artifact9990885130,209960byte ZIP SHA-256
+`8301ace112bd29c92ba8df7bae69e75c60b7c2af60c3b74f3e6d9454709c828a`;
+evidence `055cd39e8d600ff259e89c5d645e70fed6244a437cc96c449d6e09bd243793ae`,
+DB seal `5d275bfe03cfb0415bc5aeb127740e8d50c11eb9f66d371128ed901dd0bc3769`.
+Authenticated archive metadata/digest, strict schema,408 bounded raw
+size/hash/204process/19terminal/206index/90blob bağı doğrulandı.
+Replay Node24.19.0 kullanıldı; yeni pinned execution gate diye sunulmaz.
+Artifact visibilityProof=false; authority authenticated API zinciridir.
+
+Trusted PR34038337401 Dependency Review ve boundary PASS; R-016101500419519
+gerçek FAIL/20: protected-control path/mode/stage/OID base parity reddi.
+Artifact9990875132 ZIP
+`b7f2a938c725336ccd69215d11f38092fdb8e0bf91779de9b2e06f2644aa39aa`;
+base schema True,16Git process, acquisition/tool/DB sayısı0/0/0.
+Bu beklenen control-bootstrap reddidir, trusted PASS değildir.
+
+**Cold verdict FAIL (High/High confidence):** authenticated quality job log'u
+`2026-09-06T14:09:32.1297196Z go version go1.26.0 linux/amd64`,
+GOROOT `/opt/hostedtoolcache/go/1.26.0/x64`, GOTOOLCHAIN local,
+GOVERSION go1.26.0 kanıtlıyor. `go.mod` minimum go1.26.0, toolchain go1.26.7;
+kanonik pin1.26.7. setup-go'nun go-version-file seçimi GOTOOLCHAIN local
+altında toolchain directive'ini kullanmamış. Execution SUCCESS, canonical
+hosted Go quality PASS değildir. PR #6 post-merge quality101488290888 ham
+logu da `2026-09-06T12:42:05.8297842Z go version go1.26.0 linux/amd64`
+ve aynı GOROOT/GOVERSION gösterir. Eski local pinned1.26.7 ve ayrı scanner
+kanıtları değişmez; main hosted Go admission yeniden açılır. Historical
+ledger satırları korunur, düzeltici olay eklenir.
+
+Fix acceptance: exact setup-go version1.26.7, source pin/gerçek executable
+parity before gofmt/source execution, regression negative tests ve yeni
+exact SHA local/hosted/full-tree/R-016/security/cold koşumu. Bu normal
+fail-closed regresyon düzeltmesi owner otonom talimatı kapsamındadır;
+main mutation veya kalite eşiği istisnası değildir. Effective reviewer
+model/effort UNKNOWN/UNKNOWN; exact20 merge-ready sayılmaz.
