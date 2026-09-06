@@ -23,6 +23,8 @@ const (
 	maximumDrainDelay        = 60 * time.Second
 	minimumShutdownTimeout   = time.Second
 	maximumShutdownTimeout   = 60 * time.Second
+	minimumReadinessTimeout  = 100 * time.Millisecond
+	maximumReadinessTimeout  = 5 * time.Second
 )
 
 var ErrInvalidAPIEnvironment = errors.New("invalid API environment")
@@ -35,6 +37,7 @@ type API struct {
 	IdleTimeout       time.Duration
 	DrainDelay        time.Duration
 	ShutdownTimeout   time.Duration
+	ReadinessTimeout  time.Duration
 	RetryAfterSeconds int
 	MaxHeaderBytes    int
 }
@@ -48,6 +51,7 @@ func DefaultAPI() API {
 		IdleTimeout:       60 * time.Second,
 		DrainDelay:        2 * time.Second,
 		ShutdownTimeout:   10 * time.Second,
+		ReadinessTimeout:  2 * time.Second,
 		RetryAfterSeconds: 5,
 		MaxHeaderBytes:    APIMaxHeaderBytes,
 	}
@@ -87,6 +91,7 @@ var apiEnvironmentNames = map[string]struct{}{
 	"HEDEFORA_API_LISTEN_ADDRESS":      {},
 	"HEDEFORA_API_READ_HEADER_TIMEOUT": {},
 	"HEDEFORA_API_READ_TIMEOUT":        {},
+	"HEDEFORA_API_READINESS_TIMEOUT":   {},
 	"HEDEFORA_API_RETRY_AFTER_SECONDS": {},
 	"HEDEFORA_API_SHUTDOWN_TIMEOUT":    {},
 	"HEDEFORA_API_WRITE_TIMEOUT":       {},
@@ -104,6 +109,8 @@ func applyAPIEnvironment(result *API, name, value string) error {
 		result.ReadHeaderTimeout = duration(value, minimumReadHeaderTimeout, maximumReadHeaderTimeout)
 	case "HEDEFORA_API_READ_TIMEOUT":
 		result.ReadTimeout = duration(value, minimumReadTimeout, maximumReadTimeout)
+	case "HEDEFORA_API_READINESS_TIMEOUT":
+		result.ReadinessTimeout = duration(value, minimumReadinessTimeout, maximumReadinessTimeout)
 	case "HEDEFORA_API_WRITE_TIMEOUT":
 		result.WriteTimeout = duration(value, minimumWriteTimeout, maximumWriteTimeout)
 	case "HEDEFORA_API_IDLE_TIMEOUT":
@@ -168,6 +175,10 @@ func ValidateAPI(value API) error {
 		return ErrInvalidAPIEnvironment
 	}
 	if value.MaxHeaderBytes != APIMaxHeaderBytes {
+		return ErrInvalidAPIEnvironment
+	}
+	if !durationWithin(value.ReadinessTimeout, minimumReadinessTimeout, maximumReadinessTimeout) ||
+		value.ReadinessTimeout >= value.WriteTimeout {
 		return ErrInvalidAPIEnvironment
 	}
 	return nil

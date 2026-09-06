@@ -8,11 +8,13 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"reflect"
 	"time"
 
 	"github.com/tahackr5/HedefOra-V1/internal/platform/config"
 	"github.com/tahackr5/HedefOra-V1/internal/platform/health"
 	httpapi "github.com/tahackr5/HedefOra-V1/internal/platform/http"
+	"github.com/tahackr5/HedefOra-V1/internal/platform/postgres"
 	"github.com/tahackr5/HedefOra-V1/internal/platform/telemetry"
 )
 
@@ -28,39 +30,97 @@ type apiRuntime struct {
 	server *http.Server
 }
 
-func RunAPI(ctx context.Context, value config.API, logger *slog.Logger) error {
-	if ctx == nil || logger == nil {
+type databasePool interface {
+	health.Readiness
+	Close(context.Context) error
+}
+
+type apiDependencies struct {
+	newPool func(context.Context, config.Postgres) (databasePool, error)
+	listen  func(string, string) (net.Listener, error)
+	entropy io.Reader
+}
+
+func RunAPI(ctx context.Context, value config.API, database config.Postgres, logger *slog.Logger) error {
+	if config.ValidatePostgres(database) != nil {
+		return ErrAPIStartup
+	}
+	return runAPI(ctx, value, database, logger, apiDependencies{
+		newPool: func(ctx context.Context, database config.Postgres) (databasePool, error) {
+			pool, err := postgres.New(ctx, database)
+			if err != nil {
+				return nil, err
+			}
+			return pool, nil
+		},
+		listen:  net.Listen,
+		entropy: rand.Reader,
+	})
+}
+
+func runAPI(ctx context.Context, value config.API, database config.Postgres, logger *slog.Logger, dependencies apiDependencies) (result error) {
+	if ctx == nil || logger == nil || config.ValidateAPI(value) != nil || dependencies.newPool == nil || dependencies.listen == nil {
 		return ErrAPIStartup
 	}
 	if ctx.Err() != nil {
 		return nil
 	}
-	runtime, err := buildAPIRuntime(value, logger, rand.Reader)
+	pool, err := dependencies.newPool(ctx, database)
+	if err != nil || isNilPool(pool) {
+		return ErrAPIStartup
+	}
+	defer func() {
+		closeContext, cancel := context.WithTimeout(context.Background(), value.ShutdownTimeout)
+		defer cancel()
+		if err := pool.Close(closeContext); err != nil {
+			result = errors.Join(result, ErrAPIShutdown)
+		}
+	}()
+	runtime, err := buildAPIRuntime(value, logger, dependencies.entropy, pool)
 	if err != nil {
 		return err
 	}
-	listener, err := net.Listen("tcp", value.ListenAddress)
+	defer runtime.health.BeginDrain()
+	listener, err := dependencies.listen("tcp", value.ListenAddress)
 	if err != nil {
 		return ErrAPIListen
 	}
 	return runAPIOnListener(ctx, value, runtime, listener, logger)
 }
 
-func buildAPIRuntime(value config.API, logger *slog.Logger, entropy io.Reader) (*apiRuntime, error) {
+func isNilPool(pool databasePool) bool {
+	if pool == nil {
+		return true
+	}
+	value := reflect.ValueOf(pool)
+	switch value.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return value.IsNil()
+	default:
+		return false
+	}
+}
+
+func buildAPIRuntime(value config.API, logger *slog.Logger, entropy io.Reader, readiness health.Readiness) (*apiRuntime, error) {
+	if logger == nil || config.ValidateAPI(value) != nil {
+		return nil, ErrAPIStartup
+	}
 	requestIDs, err := telemetry.NewRequestIDGenerator(entropy)
 	if err != nil {
 		return nil, ErrAPIStartup
 	}
-	healthService, err := health.NewService(value.RetryAfterSeconds)
+	healthService, err := health.NewService(value.RetryAfterSeconds, readiness, value.ReadinessTimeout)
 	if err != nil {
 		return nil, ErrAPIStartup
 	}
 	handler, err := httpapi.NewHandler(healthService, requestIDs, logger)
 	if err != nil {
+		healthService.BeginDrain()
 		return nil, ErrAPIStartup
 	}
 	server, err := httpapi.NewServer(value, handler, logger)
 	if err != nil {
+		healthService.BeginDrain()
 		return nil, ErrAPIStartup
 	}
 	return &apiRuntime{health: healthService, server: server}, nil
@@ -73,6 +133,8 @@ func runAPIOnListener(
 	listener net.Listener,
 	logger *slog.Logger,
 ) error {
+	defer runtime.server.Close()
+	defer runtime.health.BeginDrain()
 	serveResult := make(chan error, 1)
 	go func() {
 		serveResult <- runtime.server.Serve(listener)

@@ -192,7 +192,7 @@ test("only the exact sealed OpenAPI generated file is allowlisted", () => {
   );
 });
 
-test("only the exact T04D runtime source set is allowlisted", () => {
+test("only the exact T04FB runtime source set is allowlisted", () => {
   assert.deepEqual(
     [...allowedW001RuntimeSourceFiles],
     [
@@ -202,12 +202,16 @@ test("only the exact T04D runtime source set is allowlisted", () => {
       "internal/platform/app/api_test.go",
       "internal/platform/config/api.go",
       "internal/platform/config/api_test.go",
+      "internal/platform/config/postgres.go",
+      "internal/platform/config/postgres_test.go",
       "internal/platform/health/service.go",
       "internal/platform/health/service_test.go",
       "internal/platform/http/handler.go",
       "internal/platform/http/handler_test.go",
       "internal/platform/http/server.go",
       "internal/platform/http/server_test.go",
+      "internal/platform/postgres/pool.go",
+      "internal/platform/postgres/pool_test.go",
       "internal/platform/telemetry/telemetry.go",
       "internal/platform/telemetry/telemetry_test.go",
     ],

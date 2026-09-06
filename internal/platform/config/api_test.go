@@ -23,6 +23,7 @@ func TestLoadAPIDefaultsAndOverrides(t *testing.T) {
 		"HEDEFORA_API_READ_HEADER_TIMEOUT=2s",
 		"HEDEFORA_API_READ_TIMEOUT=3s",
 		"HEDEFORA_API_WRITE_TIMEOUT=4s",
+		"HEDEFORA_API_READINESS_TIMEOUT=500ms",
 		"HEDEFORA_API_IDLE_TIMEOUT=5s",
 		"HEDEFORA_API_DRAIN_DELAY=600ms",
 		"HEDEFORA_API_SHUTDOWN_TIMEOUT=6s",
@@ -36,6 +37,7 @@ func TestLoadAPIDefaultsAndOverrides(t *testing.T) {
 		ReadHeaderTimeout: 2 * time.Second,
 		ReadTimeout:       3 * time.Second,
 		WriteTimeout:      4 * time.Second,
+		ReadinessTimeout:  500 * time.Millisecond,
 		IdleTimeout:       5 * time.Second,
 		DrainDelay:        600 * time.Millisecond,
 		ShutdownTimeout:   6 * time.Second,
@@ -69,6 +71,9 @@ func TestValidateAPIRejectsDirectlyConstructedOutOfBoundsValues(t *testing.T) {
 		{name: "retry low", mutate: func(value *API) { value.RetryAfterSeconds = 0 }},
 		{name: "retry high", mutate: func(value *API) { value.RetryAfterSeconds = 61 }},
 		{name: "headers", mutate: func(value *API) { value.MaxHeaderBytes++ }},
+		{name: "readiness low", mutate: func(value *API) { value.ReadinessTimeout = minimumReadinessTimeout - time.Nanosecond }},
+		{name: "readiness high", mutate: func(value *API) { value.ReadinessTimeout = maximumReadinessTimeout + time.Nanosecond }},
+		{name: "readiness exhausts write budget", mutate: func(value *API) { value.ReadinessTimeout = value.WriteTimeout }},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -118,6 +123,9 @@ func TestLoadAPIRejectsInvalidBoundsAndAddress(t *testing.T) {
 		"HEDEFORA_API_DRAIN_DELAY=61s",
 		"HEDEFORA_API_SHUTDOWN_TIMEOUT=999ms",
 		"HEDEFORA_API_RETRY_AFTER_SECONDS=61",
+		"HEDEFORA_API_READINESS_TIMEOUT=99ms",
+		"HEDEFORA_API_READINESS_TIMEOUT=5001ms",
+		"HEDEFORA_API_READINESS_TIMEOUT=fixture-secret",
 	}
 	for _, entry := range cases {
 		if _, err := LoadAPI([]string{entry}); !errors.Is(err, ErrInvalidAPIEnvironment) {

@@ -38,7 +38,58 @@ Inert candidate metadata yalnız bu değişken adlarını taşır; `${...}` inte
 
 Materialize edilen local/test service yalnız açıkça production secret'ı olmayan izole test credential'ları kullanır. Init script üç LOGIN rolü girdisinin de en az 12 byte taşımasını client output'una değeri yazmadan doğrular; boş veya kısa bir değer role creation başlamadan SQLSTATE `22023` ve `ON_ERROR_STOP` kaynaklı nonzero psql sonucu ile fail-closed durur. `hedefora_readonly` için parola girdisi yoktur. Değerler yalnız izole local/test shell environment'ında verilir; gerçek staging/production credential'ı, `.env` dosyası veya paylaşılmış parola bu akışta kullanılmaz.
 
-## Init ve migration davranışı
+## Phase B API bağlantı sözleşmesi
+
+Bu adapter yalnız disposable geliştirme kimliğini kabul eder: database
+`hedefora_dev`, LOGIN rolü `hedefora_app`. Worker/migration kimliği, DSN,
+URL, Unix socket, çoklu host ve ortamdan keşfedilen libpq varsayılanları yoktur.
+Aşağıdaki alanlar environment üzerinden açıkça sağlanır; burada gerçek
+credential veya çalıştırılabilir service komutu yayımlanmaz:
+
+- `HEDEFORA_POSTGRES_HOST`, `HEDEFORA_POSTGRES_DATABASE`,
+  `HEDEFORA_POSTGRES_USER`, `HEDEFORA_POSTGRES_PASSWORD`,
+  `HEDEFORA_POSTGRES_ROOT_CA_PEM` zorunludur.
+- Port varsayılanı 5432; `HEDEFORA_POSTGRES_PORT` ile 1–65535 seçilebilir.
+- `HEDEFORA_POSTGRES_MAX_CONNECTIONS` varsayılan 4, sınır 1–8;
+  başlangıçta minimum/idle bağlantı 0'dır.
+- `HEDEFORA_POSTGRES_CONNECT_TIMEOUT` varsayılan 1s,
+  `HEDEFORA_POSTGRES_ACQUIRE_TIMEOUT` 500ms,
+  `HEDEFORA_POSTGRES_PROBE_TIMEOUT` 2s; her biri 100ms–5s.
+- `HEDEFORA_POSTGRES_CLOSE_TIMEOUT` varsayılan 5s, sınır 1s–10s.
+  `HEDEFORA_API_READINESS_TIMEOUT` varsayılan 2s, sınır 100ms–5s ve
+  HTTP write timeout'undan küçüktür.
+
+Alan adları exact büyük harflidir; tekrarlı, bilinmeyen veya case-variant
+`HEDEFORA_POSTGRES_*` alanları ile boş olsa dahi case-insensitive `PG*`
+ortam girdileri reddedilir. Parola boş olamaz; geçerli UTF-8, NUL'suz ve
+en fazla 4096 byte olmalıdır. CA girdisi en fazla 64 KiB, yalnız geçerli
+CA certificate PEM bloklarıdır. System trust store veya plaintext fallback
+yoktur: TLS en az 1.2, explicit CA ve özgün hostname/IP doğrulaması zorunludur.
+Config bütün değer olarak formatlandığında/slog'da redacted'dır; ayrı exported
+alanları loglamak yasaktır.
+
+Havuz yalnız `pgxpool` üzerinden acquire/probe/release yapar. DNS sorgusu ve
+tek seçilen IP bağlantısı ayrı connect bütçeleri kullanır; arka plan bağlantısı
+yaklaşık 2× connect timeout sürebilir. Probe toplam bütçesi ve çağıran context'i
+ayrıca korunur. İlk IP başarısızsa başka IP'ye geçiş yapılmaz; HA failover
+bu checkpoint kapsamında değildir. Parser seed'i discovery dosyası içeriğini
+okumaz; OS user/appdata metadata sorgusu yapabileceğinden “sıfır filesystem
+erişimi” iddiası yoktur.
+
+`/health/live` database'den bağımsızdır. `/health/ready` her istekte bounded
+probe yapar; unavailable/cancel/drain/late-success durumları generic 503 olur,
+provider hata/credential bilgisi response veya log'a taşınmaz. Startup ilk
+database probe'unu zorunlu tutmaz. Drain readiness'i kapatır, sonra HTTP ve
+havuz kapanır; typed-nil havuz constructor sonucu fail-closed reddedilir.
+Pool close kendi/çağıran bütçesini aşarsa timeout döner; pgx'in 15s destructor
+bütçesi nedeniyle bu actual provider completion demek değildir. Sonraki
+`Close` aynı gerçek tamamlanma olayını gözler. Başarı uydurulmaz.
+
+Bu kaynak sözleşmesi gerçek PG17 authentication/role/migration/TLS engine
+kanıtı yerine geçmez. Image admission `BLOCKED_EXTERNAL` olduğundan gerçek
+engine testleri ve service materialization çalıştırılmamıştır.
+
+## Init ve migration yürütme sınırı
 
 Service admission sonrasında official PostgreSQL entrypoint, `initdb/010_roles.sql` dosyasını yalnız boş data volume'unun ilk açılışında çalıştırır. Script sabit rol adlarıyla fail-closed çalışır; var olan cluster'a sessizce rol ekleme veya parola döndürme mekanizması değildir.
 
