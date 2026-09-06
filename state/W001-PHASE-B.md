@@ -496,3 +496,89 @@ Gerçek sealed-research byte replay yine exit0/28package/984entry/308link;
 `37f2914ca6eef3cdf9426472688483f6c9001cd1bf5ad9094ed541be4e400a03`.
 Eski8f349e/410a17e reviewer FAIL kaydı korunur; yeni source/ownership/full-tree/
 cold kanıtı ayrıca gerekir. Gerçek image/PG execution yapılmadı.
+
+### Alternatif image kanıtının bağımsız salt okunur replay'i
+
+Alpine supplemental HANDOFF SHA256
+`c3fcddc9f88cd2cfa2e6d9b92ae8fddf0292bae9634c5ba647b278df31cb3a63`,
+evidence-index `2720ea3098be41aa8e16c5dcd021651f6dacc3cb824d550569831d03f3341331`:
+24/24 size/hash girdisi ve origin probe24/24 input/report bağı eşleşti.
+Wolfi HANDOFF `29ae6d21a0214828cf641c349cbbb553402aeac4c35664e8faf5c80d70697e97`,
+index `77cc131f812ee59de1a66ce50d9b68d2e3f24e15e921d7de8f4403ec2016bebf`:
+41/41 size/hash girdisi eşleşti; bütün mismatch sayıları0. Bu replay yeni
+scanner/DB acquisition veya image admission değildir.
+
+Ham report sayımları: Alpine libxml2 2.13.9 raw2,4High/1Medium/4Low;
+supplemental28-APK OS-only raw0,2Medium; gerçek Perl APK canary raw2,
+2Critical/1High/1Medium (toplam4match, üç blocking tuple). Diğer11 source
+probe raw0; GCC diagnostic1Medium, kalan10match0. GCC compiler kurulu
+olmadığından diagnostic runtime-library coverage kanıtı değildir.
+Wolfi PG17.10 raw2,16High/8Medium/2Low; libxml2 2.15.4 raw2,1High/1Low.
+Bütün ignored0; Grype0.118.0, DB build2026-09-06T06:27:35Z. Hash-bound
+scanner `565446b4bc9fd7cc4a72d1066468650eab6941b19ba804ca4649e504c2c2a024`
+ve DB `b46475b87396aac20557f409356989900390786038759b213dc69a057051b598`
+önce/sonra aynı; replay bu executable'ı yeniden çalıştırmadı.
+
+İncelenen dört signed Alpine x86_64 index'te v3.24/main ve edge/main aynı
+libxml2 2.13.9-r2; edge/community/testing libxml2 replacement içermiyor.
+Raw High kimlikleri CVE-2025-6021/2026-6732/2025-7425/2026-11979.
+Secfix/backport veya eksik utility/libxslt attribution otomatik kapanış değildir;
+ham match ile actual installed-code exploitability aynı iddia değildir.
+Wolfi signed index'te PG17.11 yok, en yeni aday17.10-r1; sürüm düşürülmedi.
+Wolfi indexRSA-SHA256→Q1/SHA1control→SHA256payload bağı, doğrudan APK
+imzası veya Alpine ile eşdeğer execution profile kabulü değildir. glibc/
+SONAME16→musl/SONAME2 ABI closure doğrulanmadı; recipeHTTP404 ve doğru key'i
+doğrulanmamış ek Chainguard index diagnostic sonucu korunur. Lisans28paket/
+22origin inventory, tamamlanmış notice/source correspondence değildir.
+Image BLOCKED_SECURITY/R-026 BLOCKED_EXTERNAL; source hazırlığı devam eder.
+
+Tool availability yeniden kontrolünde CodeRabbit/Sonar executable veya
+bağlı callable gate bulunmadı; tarihsel BLOCKED_EXTERNAL korunur. GitHub
+API repositoryID1349011765/public/mainaba3d13 doğrulandı. Hosted runtime
+kapıları PR oluşunca yeni exact SHA'ya bağlanacaktır; sahte review yoktur.
+
+### Tarihsel exact410a17e tam yerel kalite
+
+Clean detached410a17e/tree65dee6c için quality-proof SHA256
+`dc550ac2fb0e4094403bd333f2d2258d4e866e9379b1be3935a94a3a96ffa558`;
+27required gate/30receipt, hash mismatch0. Node24.20/pnpm11.24 frozen0 ve
+ci:check0:377test/375PASS/iki mevcut Windows skip; Linux boundary14/14skip0;
+web3/3/coverage100. Actual LinuxGo1.26.7 fmt29/module verify/list/build/vet/
+uncached shuffle/race/W000 immutable+wrapper/W001continuous ownership0;
+tagged vet/compile0. PythonTOML4/4, actionlint, Gitleaks154patch-history0,
+typedUUIDcanary raw1, Compose0service, Gitclean/detached/fsck0.
+
+İlk Python ve Node raw1, agent'ın kendi TEMP clone'una eklediği Windows
+ReadOnly niteliğinin copytree negatif fixture'a taşınmasından kaynaklandı.
+Ara Python DAC_OVERRIDE denemesi raw0 kayıtta korunur fakat final gate
+değildir: yalnız own clone dosya nitelikleri ordinary checkout'a döndürüldü,
+final Python cap-dropALL/sourceRO ve Node tekrarları geçti. Kaynak/assertion/
+threshold değişmedi. Go read-only cache uyarıları ve Git dangling nesneleri
+gizlenmedi; ilgili komutların exit0 olması stderr/nesne sayısı0 iddiası değildir.
+CI log SHA `f08cc0c4a2afc7c5c83f4ac86802a6c8ac37dfba8158b8225ae22d48724f2ac6`,
+Go log SHA `b3a0f4cd8c130919b92ca665220f802b3c91eee9fc5c1772e1dec1d5c5679848`.
+410a17e hardlink review FAIL kaydı değişmez; af918cc veya sonraki source
+full-tree PASS olarak yeniden etiketlenmez. Yeni exact koşum zorunludur.
+
+### Tarihsel exact410a17e ayrı trusted-controller R-016
+
+Run `20260906T225318213Z-26992-c27d3edc` actual PASS/exit0; source410a17e/
+tree65dee6c, ayrı clean controlaba3d13/treeed51da4. Evidence SHA256
+`84945372c0ee591bee135a3db30d52ca6ca7ca0ffdaa4ae6c1d3331e151049a3`,
+DB-seal `adfcd8bbec8e25312b66bc644465ebafc1cffd0ba19d9cbe6678ec1a225edd6d`,
+driver `d532e57dc16570c1bad1bac10269217f2fab8fbbedb327f67d5d944d8a69724b`.
+Driver ayrı trusted clone'un run.mjs modülünü import etti; kendi target
+runner'ını trusted ilan etmedi. Bağımsız readonly replay exit0:
+494/494 saklanan raw stream size/hash,247process,19terminal,13process-backed
+terminal stream/exit bağı,120input blob ve31protected path parity; mismatch0.
+Disk496file, missing/extra/symlink0; evidence canonical348457byte.
+
+Node24.20/Go1.26.7/OSV2.5.1/Semgrep1.175.0 kayıtlı identity doğrulandı;
+vulnerability/license/SAST raw0, canaryraw1, missingDBraw127 korunur.
+Replay Node24.19 salt okunur integrity kontrolüdür; yeni kanonik scanner
+koşumu değildir. İlk iki replay-helper varsayım hatası raw1, doğru kanonik
+protected-set/lock eşlemesi raw0 ile düzeltildi.288redacted stream'in yalnız
+saklanan byte'ları doğrulanabilir. DB archive'ları artifact'ta saklanmadığından
+yeniden archive rehash/scan iddiası yok; seal ve validator-output bağı
+doğrulandı. Local-declaration/visibilityProof=false, hosted authority değildir.
+Bu PASS af918cc veya sonraki head'e, PG image veya engine gate'ine taşınmaz.

@@ -334,3 +334,15 @@ Her başarısız artifact korundu; hiçbiri `PASS` olarak yeniden adlandırılma
 PR #6 exact `01017a25` owner-approved ordered-parent/content-identical merge `7a1e124e432b51694e7d60c0d3d1589867a8835f` oldu. Main CI `34033868818` ve CodeQL `34033868551` SUCCESS, clean local full-tree ve local/hosted R-016 PASS. Ayrı Phase B manifest seal `bb57a51` R-016 exit 21 ile fail-closed kaldı; bu sonuç eski main PASS'ını bozmaz, yeni dependency admission değildir. Control-only task, kapsam, orijinal başarısız run, selected-graph/scanner sözleşmesi ve yeni exact sonuçlar: `state/W001-R016-GO-GRAPH.md`. Yeni controller ve runtime kendi kendisini trusted ilan edemez; ayrı iki-aşamalı owner gate korunur.
 
 Exact control-only `5b9dd0b` local full-tree, pinned R-016 `20260906T134514656Z-25268-432a0759`, independent security ve cold review PASS; evidence `99881619cc0a57696594cfa538a951ad80e6e80e582326eb279f2ffd3d51fd67`,408/408 raw replay. Detached pgx16graph `cf58f66` local admission PASS ayrı kapsamdır. Artifact compatibility geçişi, başarısız ilk CLI denemesi, test komut/count/hash ve final yeni-SHA NOT_RUN sınırları `state/W001-R016-GO-GRAPH.md` içinde açık kaydedildi. Bu kayıt yeni final seal/hosted/owner/post-merge kanıtı değildir.
+
+## 2026-09-07 — Phase B continuation exact kanıt ayrımı
+
+PR #7 aba3d13 post-merge/trusted integration, Stage S/kapalı live-runner ve
+hardlink forward-fix kayıtlarının güncel kaynağı `state/W001-PHASE-B.md`.
+Exact410a17e local quality-proof `dc550ac2fb0e4094403bd333f2d2258d4e866e9379b1be3935a94a3a96ffa558`
+ve ayrı trusted-controller R-016 evidence
+`84945372c0ee591bee135a3db30d52ca6ca7ca0ffdaa4ae6c1d3331e151049a3`
+PASS olsa da aynı source'un hardlink candidate review FAIL kaydı korunur.
+af918cc düzeltmesi yeni exact gate ister. Image BLOCKED_SECURITY/engine
+NOT_RUN/Phase B IN_PROGRESS; draft PR preparation release veya owner-merge
+admission değildir. Historical evidence, R-014 ve dış servis boşlukları saklanmaz.
