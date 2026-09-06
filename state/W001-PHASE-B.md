@@ -352,3 +352,45 @@ Compiler çıktısındaki no-tests-to-run canlı test değildir. Node exact
 boundary gate0; önceki üç-dosya boundary testinde12PASS/iki mevcut Windows
 skip vardı; dördüncü Linux-only unit yolu sonrasında full-tree ayrıca
 yenilenir. Gerçek PG17 image import/start/live SQL/race henüz NOT_RUN.
+
+## Ownership düzeltmesi ve SQL test entegrasyonu
+
+Graph-reconciliation manifest-only commit
+`27a7e9fbe97935eb7aca5f1e5202c1c49ae9e891` üzerinde izole canonical
+`go run ./tools/repolint/cmd/repolint -manifest state/W001-OWNERSHIP.json
+-all -base bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b -head HEAD`
+gerçek exit0 verdi. Verified-through b4dd51a, yalnız JSON trailing path1;
+log SHA-256 `b349cbe03c4a746fb1e00bed4c3e46bbc43e365ed3e5ba30c5e970b254612e5c`.
+Bu sonuç eski a3c0b91/5e8e599 ownership failure'ını geriye dönük PASS yapmaz.
+
+`tests/integration/postgres/live-sql.mjs` yeni gerçek-motor acceptance
+matrisidir; kendi process/filesystem/network yeteneği yoktur. Caller yalnız
+admitted immutable image ve kendine ait sentetik boş DB ile kullanabilir.
+İlk bağlantıdan önce gerçek static checks + exported collectMigrationPlan
+zorunludur; modül immutable up/down SHA ve exact v1 planını ayrıca doğrular.
+Üç gerçek LOGIN/SCRAM, readonly NOLOGIN/null-verifier, DB/schema/object/default
+ACL,16 advisory overload, migration v0/up/down/rerun/atomicity ve gerçek
+backend/lock/statement/idle timeout kanıtı gerekir. Superuser SET ROLE,
+gerçek LOGIN yerine sayılmaz; readonly capability ayrı bağlamdır.
+
+Executor shell=false/bounded/no raw error disclosure olmalıdır. Başarı da
+hata da explicit PostgreSQL origin ister; timeout/cancel/channel loss
+beklenen SQLSTATE sayılamaz. Startup SQLSTATE yalnız benzersiz application
+name ve owned-server log korelasyonundan gelir. Persistent session query
+aynı backend'i korur; client disconnect sonrası bağımsız admin backend ve
+lock yokluğunu doğrular. Ham password/SCRAM verifier rapora taşınmaz.
+
+Integrated source Node24.20 `--test live-sql.test.mjs run.test.mjs
+scripts/check-generated.test.mjs`:40test/38PASS/iki mevcut Windows skip,
+exit0; SQL-only18/18PASS. Test gerçek repository planını kullanır ve başarılı
+fake-engine matrisi üretmez. Log SHA-256
+`e6c3dd3ef98b2c3d5e5c7f96755d37e821c8ceacdf8a81554411808778ffc004`.
+SQL kaynakları ve init/checksum sözleşmesi değişmedi; yalnız canonical plan
+collector export edildi. Bu unit/static sonuç gerçek PG17 PASS değildir.
+
+Alternatif28-APK adayının supplemental XMLsoft upstream CPE taraması raw2
+verdi:9match/4High. `libxml2.grype.json` SHA-256
+`9ea118178e01d296c769de2b6d8dbe75035d6d6af4a5a45087cd28423a404984`.
+Önceki package-SBOM raw0 tek başına tam admission değildir. Backport/package
+attribution incelemesi sürer; findings silinmez, VEX/ignore/threshold waiver
+yoktur ve aday image execution BLOCKED_SECURITY kalır.

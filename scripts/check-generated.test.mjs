@@ -260,6 +260,8 @@ test("only the exact T04F database, infrastructure and PostgreSQL test files are
     [
       "tests/integration/postgres/cmd/tlsfixture/main.go",
       "tests/integration/postgres/cmd/tlsfixture/main_linux_test.go",
+      "tests/integration/postgres/live-sql.mjs",
+      "tests/integration/postgres/live-sql.test.mjs",
       "tests/integration/postgres/run.mjs",
       "tests/integration/postgres/run.test.mjs",
     ],
