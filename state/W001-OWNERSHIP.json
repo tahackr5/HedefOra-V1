@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "b4dd51a64609cf5956b46b66fc67efba43303ca4",
+  "verifiedThrough": "1aa996bc249103786d11dd9fd4d178381ea30c11",
   "trailingAllowedPaths": [
     "state/W001-OWNERSHIP.json"
   ],
@@ -816,6 +816,25 @@
       "allowedPaths": [
         "state/W001-OWNERSHIP.md",
         "state/W001-PHASE-B.md"
+      ]
+    },
+    "W001-T04FB-graph-reconciliation-seal": {
+      "base": "b4dd51a64609cf5956b46b66fc67efba43303ca4",
+      "head": "27a7e9fbe97935eb7aca5f1e5202c1c49ae9e891",
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
+    },
+    "W001-T04FB-live-sql-acceptance": {
+      "base": "27a7e9fbe97935eb7aca5f1e5202c1c49ae9e891",
+      "head": "1aa996bc249103786d11dd9fd4d178381ea30c11",
+      "allowedPaths": [
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "state/W001-PHASE-B.md",
+        "tests/integration/postgres/live-sql.mjs",
+        "tests/integration/postgres/live-sql.test.mjs",
+        "tests/integration/postgres/run.mjs"
       ]
     }
   }
