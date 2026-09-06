@@ -75,6 +75,8 @@
 
 ## Aktif W001 control-plane ve runtime foundation
 
+- `state/W001-PHASE-B.md` (PR #6 post-merge exact kanıtı, onaylı DQ-008/009/010 Phase B DAG/path ownership ve admission sınırları)
+
 - `state/W001-OWNERSHIP.md` (W001 immutable-base yazma sahipliği ve görev DAG'ı)
 - `state/W001-OWNERSHIP.json` (W001 commit aralığı ve path allowlist kanıtı)
 - `state/W001-EVIDENCE.md` (R-016 scanner, rule, advisory DB, fixture ve gate kanıtı)

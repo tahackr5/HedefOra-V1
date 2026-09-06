@@ -1,5 +1,9 @@
 # W001 R-016 Evidence
 
+## 2026-09-06 — PR #6 post-merge checkpoint
+
+Exact merge `7a1e124e432b51694e7d60c0d3d1589867a8835f`, tree `ec6d12847c657adedbd84e44565598d234c7b928`: clean local full-tree, hosted CI/CodeQL, local+hosted R-016 ve authenticated archive/raw rehash PASS. Literal command/exit, ordered parent, run/job/artifact/DB-seal/evidence SHA kimlikleri `state/W001-PHASE-B.md` içinde birlikte kaydedildi. Phase B writer base'i bu verified checkpoint'tir; canlı PostgreSQL veya Phase B completion değildir.
+
 > Orchestrator-owned living evidence. Bu dosya yalnız exact SHA/tree, literal command/exit ve doğrulanmış artifact kimliğiyle PASS kaydeder.
 
 ## Scope

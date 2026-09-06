@@ -117,6 +117,10 @@ Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERS
 
 ## W001-T04F — PostgreSQL 17 roles, migration ve readiness foundation
 
+### Phase B güncel sahiplik — 2026-09-06
+
+Owner-approved PR #6 exact `01017a25bf02f27924bf0361fd6b70abdc493ac0` merge'i `7a1e124e432b51694e7d60c0d3d1589867a8835f`, tree `ec6d12847c657adedbd84e44565598d234c7b928` local/hosted full-tree/R-016/CodeQL PASS sonrası ortak yeni immutable base'dir. Güncel disjoint task/path tablosu `state/W001-PHASE-B.md` içindedir; aşağıdaki cd81ee7/owner-pending anlatımı tarihsel Phase A kaydıdır. DQ-008 A, DQ-009 A ve DQ-010 B onaylıdır; runtime/engine admission kanıtı henüz PASS değildir. JSON ownership, `43a82ca → 01017a25` yalnız manifest seal'ini ve `01017a25 → 7a1e124` 26-path first-parent merge wrapper'ını ayrı kaydeder; content-identical endpoint diff boş olması gerçek wrapper delta'sını silmez.
+
 - Immutable task-phase base: `cd81ee7b36d5bc647bb297e8ede13b21a7f1c8f1`; tree `ce3cf10a186071f1f7c3fcb91347651fe0408b0d`. Branch/worktree: `codex/w001-t04f-postgres-foundation` / `C:\Users\ihsan\.codex\worktrees\HedefOra\W001\T04F`.
 - Orchestrator task-open/state owner: `delivery/TOOLCHAIN-LOCK.md`, `state/ACTIVE-WAVE.md`, `state/DECISION-QUEUE.md`, `state/RELEASE-LEDGER.md`, `state/RISK-REGISTER.md`, `state/W001-EVIDENCE.md`, `state/W001-OWNERSHIP.md`, `state/W001-OWNERSHIP.json`.
 - Dependency-free Phase A disjoint owners: architecture `contracts/database/**` + `db/migrations/**`; infra `infra/compose.dev.yml` + `infra/postgres/**`; quality `tests/integration/postgres/**`. Shared source-boundary ve default test-gate wiring yalnız orchestrator: `scripts/check-generated.mjs` + `scripts/check-generated.test.mjs` + `package.json`. Kök `infra/README.md`, inert Compose profiliyle bulunan documentation-parity çelişkisini kapatan exact `7a987f7` commit'inde orchestrator-owned shared documentation düzeltmesidir; bu kayıt gelecekte genel `infra/**` yazma yetkisi vermez.

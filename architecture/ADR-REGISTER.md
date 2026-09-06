@@ -123,4 +123,29 @@ Bu karar additive API sözleşmesini değiştirmez; DB/event/job veya veri migra
 
 ## Yeni ADR şablonu
 
+## ADR-0018 — Bounded pgxpool ve security-only graph pinleri
+
+- Durum: `Accepted`; owner onayı: `2026-09-06`, DQ-008 A.
+- Üretici: exact Go module graph. Tüketiciler: PostgreSQL adapter, test, SBOM ve R-016.
+
+pgx `v5.10.0` ve `x/text v0.41.0`, `x/mod v0.40.0`, `goldmark v1.7.17` security override'ları değerlendirmeye alınır. Bu karar scanner PASS değildir. Pool paylaşılır; acquired connection dışarı verilmez ve aynı connection üzerinde eşzamanlı kullanım, `Conn.Raw`, COPY ve provider tracer exposure ilk dilimde yoktur. Adapter yalnız bounded readiness ve kapanış yüzeyi açar. Parse öncesi ambient PG/service/passfile/TLS girişleri reddedilir; TLS hostname/CA doğrulaması zorunludur, plaintext fallback yasaktır. Raw credential/DSN/provider hataları dışarı taşınmaz.
+
+Go tidy'nin kaldırdığı security-only graph pinleri sahte import ile tutulmaz. Deterministik checker disposable tidy sonrasında yalnız kabul edilmiş exact security pinlerini yeniden uygulayıp manifest/checksum parity'yi doğrular; seçili bütün transitif modüller R-016'da taranır. Risk: upstream documented connection-ownership ihlalinin panic hazard'ı sürer; intended-use stress/race ve misuse boundary testleri zorunludur. API wire/veri migration etkisi yoktur. Rollback adapter tüketicileriyle dependency manifestlerini birlikte geri almaktır. River ve yeni migration library admission'ı bu karara dahil değildir.
+
+## ADR-0019 — İki-operation health compiler ve readiness
+
+- Durum: `Accepted`; owner onayı: `2026-09-06`, DQ-009 A.
+
+DEC-027 tek-operation profili ayrı bir compiler task'ında tam iki operation'a taşınır. `/health/live` mevcut process/drain semantiğini korur ve DB'den bağımsızdır. `/health/ready`, drain yokken bounded DB probe başarılıysa `200 {"status":"ready"}`, aksi halde mevcut generic typed `503` verir. Readiness migration ledger'ını okumaz; app rolünün `hedefora_meta` erişim yasağı korunur. Strict interface'in yeni metodu bütün internal consumer/test double'larıyla atomik değiştirilir; yeni TypeScript consumer bu task'a dahil değildir.
+
+Kanonik OpenAPI → fixed literal renderer → tek generated Go artifact sırası korunur. Yeni parser/dependency, spec kaynaklı symbol/import/path interpolation, limit artışı veya elle generated edit yoktur. İkinci operation için independent semantic parity, negative corpus, exact source/output digest, Go/HTTP testleri ve fresh security/cold review gerekir. Kamu API değişikliği additive'dir; geçerli DB config'in API startup ön koşulu olması internal startup compatibility değişikliğidir. Geçici DB kesintisi liveness listener'ını engellemez. Rollback runtime/contract/compiler'ı birlikte geri almaktır; SQL değişmez.
+
+## ADR-0020 — Hardened kaynak-build PostgreSQL 17 image
+
+- Durum: `Accepted`; owner onayı: `2026-09-06`, DQ-010 B.
+
+Eski critical/high sinyalli PostgreSQL image'leri inert kalır. Yeni image; digest-pinned base, SHA-pinned PostgreSQL source ve tam paket closure'ından ağsız build aşamalarıyla üretilir. Builder/runtime OS envanteri ve kaynak-build PostgreSQL CPE'si ayrı SBOM/tarama kapsamıdır; kaynak sürümü paket DB'sinde görünmediği için sıfır coverage PASS olamaz. Scanner binary ve advisory DB byte kimliği, freshness, extraction/package parity, known-vulnerable canary, unknown severity ve process error negatifleri zorunludur. CVSS ≥7, High/Critical veya bilinmeyen severity fail-closed kalır; ignore/VEX/only-fixed ile eşik düşürülmez.
+
+Npm/Go R-016 policy dosyaları değiştirilmez. Image paket lisansları ve varsa dağıtım/source yükümlülükleri ayrı kayıt ve review ister; image üretim onayı dağıtım/lisans exception'ı değildir. Başlangıç hedefi yalnız disposable local/CI ortamıdır; registry yayınlama veya staging/production deployment yoktur. Kaynak/DB publisher compromise ve reproducible-build riskleri kanıtta açık tutulur. Execution admission, canonical scan ve bağımsız security kabulünden sonra açılır. Rollback inert Compose'u korumak ve yalnız bu task'ın disposable kaynaklarını temizlemektir; production/veri migration etkisi yoktur.
+
 `templates/ADR.md` kullanılır. Yeni karar burada yalnız tek satır özetle indekslenir.

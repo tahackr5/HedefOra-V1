@@ -34,6 +34,13 @@ Bu dosya yalnız kabul edilmiş, repository çapında etkili kararların kısa k
 
 ## Değiştirme kuralı
 
+### 2026-09-06 — Owner onaylı Phase B kararları
+
+- DEC-028 (ACCEPTED; ADR-0018): DQ-008 A ile pgx `v5.10.0`, exact security override'ları ve pgxpool-only adapter yolu kabul edildi. All-scope R-016/lisans, secret/TLS sınırı ve intended-use cancel/close stress/race kapıları korunur. Testcontainers/golang-migrate admission'ı verilmez.
+- DEC-029 (ACCEPTED; ADR-0019): DQ-009 A ile ayrı security-critical compiler task'ında yalnız `/health/live` ve `/health/ready` iki-operation profili kabul edildi. DEC-027'nin interpolation, dependency, filesystem ve deterministik üretim sınırları değişmez; genişleme fresh security review ister.
+- DEC-030 (ACCEPTED; ADR-0020): DQ-010 B ile repository-owned hardened PG17 image geliştirme/değerlendirmesi kabul edildi. Pinned source/base/package closure, SBOM/provenance, ayrı OS/source vulnerability ve lisans kanıtı olmadan execution admission yoktur; eski blocked image'ler çalıştırılmaz.
+- DEC-026 uygulama kaydı: Owner-onaylı PR #6 head `01017a25bf02f27924bf0361fd6b70abdc493ac0`, content-identical merge `7a1e124e432b51694e7d60c0d3d1589867a8835f` ve local/hosted post-merge PASS sonrası Phase B'nin ortak immutable base'i bu merge'dir; historical wave start değişmez.
+
 Bir ACCEPTED karar yalnız:
 
 1. yeni ADR,

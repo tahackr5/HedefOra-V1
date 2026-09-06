@@ -6,18 +6,24 @@
 - Status: IN_PROGRESS
 - Historical wave start commit: `bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b`
 - Historical wave start tree: `7a2ae76ee31b6c85ec5b3839c78306cde2bd3f23`
-- Current task-phase base (W001-T04F): `cd81ee7b36d5bc647bb297e8ede13b21a7f1c8f1`
-- Current task-phase base tree (W001-T04F): `ce3cf10a186071f1f7c3fcb91347651fe0408b0d`
+- Current task-phase base (W001-T04F Phase B): `7a1e124e432b51694e7d60c0d3d1589867a8835f`
+- Current task-phase base tree (W001-T04F Phase B): `ec6d12847c657adedbd84e44565598d234c7b928`
 - Trusted control base: `ecf71c0eb8139c0d7ff911ebb9f33afa6a1164ee`
 - Trusted control base tree: `d72efaddd2f0aa7b819d68b740717491d92d54f8`
 - Trusted control reviewed head: `2577e2649402f753c8216ca7e2ab6b27d6e60c0c`
-- Integration branch: `codex/w001-t04f-postgres-foundation`
-- Worktree: `C:\Users\ihsan\.codex\worktrees\HedefOra\W001\T04F`
+- Integration branch: `codex/w001-t04f-phase-b`
+- Worktree: `C:\Users\ihsan\.codex\worktrees\HedefOra\W001\T04FB`
 - Started at: `2026-08-28T21:50:57+03:00` (`2026-08-28T18:50:57Z`)
 - Last checkpoint: exact remediation seal `5b3fc79507f5784c47661ef01dad914e9c61bdc1`, tree `57038663eb3f89f6262dc1ff5c79c3f1bef0e073`, dependency-free PostgreSQL statik Phase A ACL remediation local-exit checkpoint'idir. Living ownership zinciri exact sealed head'e ulaştı; clean exact-head full-tree, local R-016, fresh security ve cold review `PASS`. Immutable task-phase base `cd81ee7b36d5bc647bb297e8ede13b21a7f1c8f1` değişmez. Bu sonuç canlı PostgreSQL veya T04F completion değildir.
 - Current objective: Exact `5b3fc79507f5784c47661ef01dad914e9c61bdc1` local-exit kanıtını state promotion + manifest-only final seal ile kaydetmek; final sealed SHA üzerinde local kapıları yeniden çalıştırıp branch push/trusted PR/Dependency Review/CodeQL/hosted R-016 owner gate'ine ilerlemek. PostgreSQL driver/migration yolu DQ-008, `/health/ready` compiler genişlemesi DQ-009, image execution/canlı PostgreSQL doğrulaması DQ-010 owner/security kararını bekler; hiçbir eşik gevşetilmez.
 
 ## Active tasks
+
+### Güncel checkpoint — 2026-09-06
+
+Üstteki eski Phase A last-checkpoint/objective anlatımı tarihsel local-exit kaydıdır; güncel hedef Phase B'dir. PR #6 exact head `01017a25bf02f27924bf0361fd6b70abdc493ac0` owner onayıyla `7a1e124e432b51694e7d60c0d3d1589867a8835f` olarak birleştirildi. Ordered parents `cd81ee7b36d5bc647bb297e8ede13b21a7f1c8f1` + approved head; tree approved head ile birebir aynı. Local full-tree, hosted CI `34033868818`, CodeQL `34033868551` ve local/hosted R-016 PASS; ayrıntılar `state/W001-PHASE-B.md` içinde.
+
+DQ-008 A, DQ-009 A, DQ-010 B owner tarafından onaylandı; eski tablolardaki karar-bekliyor kayıtları tarihsel Phase A durumudur. Yeni image/adapter/live-integration admission henüz PASS değildir. Phase B'nin DAG/path sahipliği ve güncel gate'leri `state/W001-PHASE-B.md` source of truth'udur. Geliştirme/test/refactor/PR hazırlığı için ara onay beklenmez; güvenlik eşikleri, protected control-plane ayrımı ve deployment/irreversible/credential eşikleri korunur.
 
 | Task                                                  | Agent                                                             | Branch/worktree                                       | Owned paths                                                                                                                                                                                                            | Status      | Depends on                                                    |
 | ----------------------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------- |
