@@ -1,43 +1,47 @@
 # Yerel altyapı
 
-`compose.dev.yml` yalnız yerel geliştirme ve test içindir. Staging veya production desired-state'i değildir; gerçek kullanıcı ya da production verisiyle kullanılmaz.
+`compose.dev.yml`, gelecekteki yerel geliştirme/test ortamı için fail-closed
+bir aday sözleşmesidir. Staging veya production desired-state'i değildir; gerçek
+kullanıcı ya da production verisiyle kullanılmaz.
 
-## Başlatma
+## Mevcut çalıştırma durumu
 
-Docker Compose v2 veya daha yenisi gerekir.
+Dosya şu anda `services: {}` taşır. PostgreSQL container'ı, port'u, volume'u,
+healthcheck'i veya environment mapping'i materialize edilmemiştir. Bu nedenle:
 
-```bash
-docker compose --project-name hedefora-local --file infra/compose.dev.yml up --detach --wait
-```
+- `up`, `down`, `exec` veya `ps` ile yönetilebilecek service yoktur,
+- varsayılan kullanıcı/parola ya da çalışan local database yoktur,
+- environment değerleri inert candidate metadata içine render edilmez,
+- PostgreSQL image pull/run/start bu checkpoint'te yasaktır.
 
-PostgreSQL varsayılan olarak şu yerel değerlerle açılır:
+Exact OCI adayı, planlanan loopback/network/storage ve credential değişken
+adları yalnız `x-hedefora-postgres-candidate` metadata'sındadır. Bu metadata
+çalıştırılabilir Compose service değildir.
 
-- host: `127.0.0.1`
-- port: `5432`
-- database: `hedefora_dev`
-- user: `hedefora_dev`
-- password: `local-dev-only-not-a-secret`
+## Güvenli statik doğrulama
 
-Parola açıkça secret olmayan bir local placeholder'dır; başka bir ortamda kullanılmaz. Gerektiğinde `HEDEFORA_DEV_POSTGRES_PASSWORD`, port çakışmasında `HEDEFORA_DEV_POSTGRES_PORT` yalnız yerel shell environment'ında değiştirilebilir. Gerçek credential veya `.env` içeriği repoya eklenmez.
-
-Port yalnız `127.0.0.1` üzerinde publish edilir; bunun tek amacı host üzerinde çalışan geliştirme araçları ve testlerin PostgreSQL'e erişmesidir. Uzak ağ erişimi bilinçli olarak açık değildir.
-
-`postgres_data` named volume'u container yeniden oluşturulduğunda yerel veriyi korur. Normal durdurma volume'u silmez:
+Yalnız config parse doğrulaması dış süreç veya service oluşturmaz:
 
 ```bash
-docker compose --project-name hedefora-local --file infra/compose.dev.yml down
+docker compose --file infra/compose.dev.yml config --quiet
 ```
 
-## Doğrulama
-
-Compose dosyasını servis başlatmadan doğrulamak için:
+Kanonik statik harness ayrıca exact candidate profilini, `services` sayısının
+sıfır olduğunu ve synthetic environment değerlerinin render edilmediğini
+doğrular:
 
 ```bash
-docker compose --project-name hedefora-local --file infra/compose.dev.yml config --quiet
+node tests/integration/postgres/run.mjs --static
 ```
 
-Servis durumunu ve healthcheck sonucunu görmek için:
+`--live` modu owner/security image admission'ı tamamlanana kadar fail-closed
+`IMAGE_ADMISSION_BLOCKED` sonucu verir; canlı test `PASS` sayılmaz.
 
-```bash
-docker compose --project-name hedefora-local --file infra/compose.dev.yml ps
-```
+## Aktivasyon kapısı
+
+Bir service ancak exact-digest canonical vulnerability scan, owner/security
+admission ve ayrı reviewed materialization değişikliğinden sonra eklenebilir.
+Bu değişiklik gerçek secret içermeyen izole test credential mapping'ini,
+loopback-only port'u, disposable volume/cleanup sınırını ve canlı PostgreSQL 17
+negative-privilege testlerini birlikte taşımak zorundadır. Ayrıntılı rol/init
+sözleşmesi `infra/postgres/README.md` içindedir.

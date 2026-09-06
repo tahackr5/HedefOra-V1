@@ -26,7 +26,7 @@
     "audit:prod": "pnpm audit --prod --audit-level high",
     "ci:check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm generated:check && pnpm todo:check && pnpm licenses:check && pnpm audit:prod",
     "contracts:lint": "node scripts/validate-contracts.mjs",
-    "format:check": "prettier --check contracts scripts security/*.json package.json pnpm-workspace.yaml .spectral.yaml && pnpm --filter @hedefora/web format:check",
+    "format:check": "prettier --check contracts infra scripts tests security/*.json package.json pnpm-workspace.yaml .spectral.yaml && pnpm --filter @hedefora/web format:check",
     "generated:check": "node scripts/generate-openapi.mjs --check && node scripts/check-generated.mjs",
     "generated:write": "node scripts/generate-openapi.mjs --write",
     "governance:check": "node scripts/validate-governance.mjs",
@@ -34,7 +34,7 @@
     "lint": "pnpm contracts:lint && pnpm governance:check && pnpm --filter @hedefora/web lint",
     "supply-chain:check": "node scripts/supply-chain/run.mjs",
     "supply-chain:test": "node --test scripts/supply-chain/*.test.mjs",
-    "test": "node --test scripts/*.test.mjs scripts/supply-chain/*.test.mjs && pnpm --filter @hedefora/web test:coverage",
+    "test": "node --test scripts/*.test.mjs scripts/supply-chain/*.test.mjs tests/integration/postgres/*.test.mjs && pnpm --filter @hedefora/web test:coverage",
     "todo:check": "node scripts/check-todos.mjs",
     "typecheck": "pnpm --filter @hedefora/web typecheck"
   },
