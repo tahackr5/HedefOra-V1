@@ -261,9 +261,18 @@ export function validateVirtualTree(entries) {
         continue;
       }
       const entry = map.get([...resolved, part].join("/"));
-      if (entry?.type === "1" || entry?.type === "2") {
+      if (entry?.type === "1") {
+        // Linux hardlinks preserve a symlink inode instead of following it.
+        // This closed profile accepts only a direct canonical regular target.
+        check(
+          archiveName(entry.link) === entry.link &&
+            map.get(entry.link)?.type === "0",
+          "HARDLINK_TARGET",
+        );
+        resolved = entry.link.split("/");
+      } else if (entry?.type === "2") {
         check(++hops <= 40, "LINK_CYCLE");
-        if (entry.type === "1" || entry.link.startsWith("/")) resolved = [];
+        if (entry.link.startsWith("/")) resolved = [];
         pending = [...entry.link.split("/"), ...pending];
       } else resolved.push(part);
     }

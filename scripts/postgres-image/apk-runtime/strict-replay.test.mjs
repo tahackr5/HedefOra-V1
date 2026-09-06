@@ -286,12 +286,76 @@ test("virtual link traversal expands symlinks before parent components", () => {
       file("d/file"),
       sym("a", "d"),
       sym("x", "a/../a/file"),
-      { ...file("hard", ""), type: "1", link: "x" },
+      { ...file("hard", ""), type: "1", link: "d/file" },
     ]),
     { entries: 5, links: 3 },
   );
   assert.doesNotThrow(() =>
     validateVirtualTree([file("implicit/file"), sym("x", "implicit/./file")]),
+  );
+});
+test("hardlinks require direct regular targets and never dereference symlink inodes", () => {
+  const dir = (name) => ({ ...file(name, ""), type: "5" });
+  const sym = (name, link) => ({ ...file(name, ""), type: "2", link });
+  const hard = (name, link) => ({ ...file(name, ""), type: "1", link });
+  assert.throws(
+    () =>
+      validateVirtualTree([
+        dir("d"),
+        file("safe"),
+        sym("d/s", "../safe"),
+        hard("h", "d/s"),
+      ]),
+    /HARDLINK_TARGET/,
+  );
+  assert.throws(
+    () =>
+      validateVirtualTree([
+        dir("d"),
+        dir("e"),
+        dir("e/f"),
+        file("h"),
+        sym("d/s", "../h"),
+        hard("e/f/h", "d/s"),
+        sym("e/h", "f/h"),
+      ]),
+    /HARDLINK_TARGET/,
+  );
+  for (const target of [
+    "s",
+    "first",
+    "d",
+    "missing",
+    "./safe",
+    "/safe",
+    "d/../safe",
+    "safe/",
+  ]) {
+    assert.throws(
+      () =>
+        validateVirtualTree([
+          dir("d"),
+          file("safe"),
+          sym("s", "safe"),
+          hard("first", "safe"),
+          hard("h", target),
+        ]),
+      /HARDLINK_TARGET|TAR_PATH/,
+    );
+  }
+  assert.deepEqual(
+    validateVirtualTree([
+      dir("d"),
+      file("d/safe"),
+      hard("h", "d/safe"),
+      sym("s", "h"),
+    ]),
+    { entries: 4, links: 2 },
+  );
+  assert.throws(
+    () =>
+      validateVirtualTree([file("safe"), hard("h", "safe"), sym("s", "h/..")]),
+    /NON_DIRECTORY_ANCESTOR/,
   );
 });
 test("synthetic RSA-SHA1 verification rejects altered control and wrong key", () => {

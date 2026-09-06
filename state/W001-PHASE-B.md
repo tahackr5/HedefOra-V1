@@ -466,3 +466,33 @@ Güvenli draft PR hazırlanabilir; T04F exit/READY_TO_MERGE değildir. Yeni
 exact main merge ayrı owner gate'idir. Rollback: merge etmeme/review'lu dar
 revert; immutable SQL ve protected public control-plane korunur.
 VPS/production/DNS/SSH/kullanıcı verisi mutation'ı yoktur.
+
+### Tek-cycle candidate review ve hardlink forward-fix
+
+Fresh read-only candidate review exact8f349e/treec37509f (410a17e source parity)
+FAIL verdi: F-S01'in type1 hardlink hedefindeki symlink'i dereference etmesi,
+Linux inode semantiğiyle uyuşmuyor. `d/s -> ../safe`, `h -> d/s` type1 örneği
+ve başka yerde cycle oluşturan yedi-entry varyant kabul edildi; Medium/High.
+Mevcut literal artifact pinlerinin aşılabildiği gösterilmedi; authority null.
+77 seçili artifactless Node24.20 testinin exit0 sonucu bu FAIL'i kapatmaz.
+Reviewer LR-01/02/03 için başka source-backed bypass doğrulamadı; Go gerçek
+engine/release/full-tree PASS iddiası vermedi. Dosya/TEMP yazımı yapmadı.
+
+Root, [Linux link(2)](https://www.man7.org/linux/man-pages/man2/link.2.html)
+ve [GNU tar hardlink](https://www.gnu.org/software/tar/manual/html_node/hard-links.html)
+semantiğini ayrıca kontrol etti. Dar forward-fix type1 hedefini canonical
+archive-root-relative, doğrudan type0 regular kayda sınırlar. Symlink,
+hardlink-chain, directory, missing ve traversal hedefleri reddedilir;
+symlink'in normal dosyaya bağlı hardlink'i izlemesi korunur. İlk pozitif
+hardlink-to-symlink örneği yanlış acceptance idi; gerçek regular hedefle
+değiştirildi ve iki adversarial örnek negatif regresyon oldu.
+
+`node --test scripts/postgres-image/apk-runtime/*.test.mjs
+tests/integration/postgres/live/runner.test.mjs` Node24.20:84/84PASS/skip0,
+exit0; log SHA256
+`02bc024e7036802d2a28646a4102350ea78bf4bd254b3a523aa925f1fa776800`.
+Gerçek sealed-research byte replay yine exit0/28package/984entry/308link;
+önceki transport artifact ile birebir aynı SHA256
+`37f2914ca6eef3cdf9426472688483f6c9001cd1bf5ad9094ed541be4e400a03`.
+Eski8f349e/410a17e reviewer FAIL kaydı korunur; yeni source/ownership/full-tree/
+cold kanıtı ayrıca gerekir. Gerçek image/PG execution yapılmadı.
