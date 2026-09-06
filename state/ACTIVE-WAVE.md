@@ -15,7 +15,7 @@
 - Worktree: `C:\Users\ihsan\.codex\worktrees\HedefOra\W001\T04FB-CONTROL`
 - Started at: `2026-08-28T21:50:57+03:00` (`2026-08-28T18:50:57Z`)
 - Last checkpoint: Owner-approved PR #6 two-parent/content-identical merge `7a1e124`; post-merge clean local full-tree, hosted CI `34033868818`, CodeQL `34033868551`, local/hosted R-016 PASS. Bu Phase A checkpoint'idir; Phase B veya canlı PostgreSQL PASS değildir.
-- Current objective: Phase B pgx graph'ında ortaya çıkan R-016 manifest-only/call-analysis ve transitive extraction uyumsuzluğunu ayrı control-only branch'te düzeltmek; exact local/full-tree/security/cold/hosted ve owner merge kapılarını hazırlamak. Owner DQ-008 A, DQ-009 A, DQ-010 B'yi ve kesintisiz normal geliştirmeyi onayladı. Runtime/image ayrı sibling branch'lerde; bu branch runtime dependency eklemez. Kanıt: `state/W001-R016-GO-GRAPH.md`.
+- Current objective: Control-only selected-Go-graph remediation exact5b9 local full-tree/R-016/security/cold PASS kanıtını final evidence-promotion ve ownership seal ile kaydetmek; yeni exact final head'te applicable local/hosted/CodeQL/Dependency Review kapılarını çalıştırıp owner merge paketini hazırlamak. Runtime bağımlılığı/PG image bu branch'te yoktur; parent Phase B sibling worktree'lerde güvenli yerel geliştirmeyi sürdürür. Canonical controller henüz trusted main'e katılmadı.
 
 ## Historical task/gate record (PR #6 öncesi)
 
