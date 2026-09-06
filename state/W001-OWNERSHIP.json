@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "73ce81a3b6e2db766cc415693d7edea8874d772f",
+  "verifiedThrough": "d8d7f0c9b2876ad6f6d8ed68226bac75b2f0348c",
   "trailingAllowedPaths": [
     "state/W001-OWNERSHIP.json"
   ],
@@ -892,6 +892,25 @@
         "state/ACTIVE-WAVE.md",
         "state/RELEASE-LEDGER.md",
         "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-PHASE-B.md"
+      ]
+    },
+    "W001-T04FB-checkpoint-evidence-seal": {
+      "base": "73ce81a3b6e2db766cc415693d7edea8874d772f",
+      "head": "4446c8f0733a10c5e2191f8c769394ce0e0ad1b3",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-hosted-cleanup-numeric-proof": {
+      "base": "4446c8f0733a10c5e2191f8c769394ce0e0ad1b3",
+      "head": "d8d7f0c9b2876ad6f6d8ed68226bac75b2f0348c",
+      "allowedPaths": [
+        "internal/platform/config/postgres.go",
+        "internal/platform/config/postgres_test.go",
+        "scripts/check-go-mod.mjs",
+        "scripts/check-go-mod.test.mjs",
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
         "state/W001-EVIDENCE.md",
         "state/W001-PHASE-B.md"
       ]
