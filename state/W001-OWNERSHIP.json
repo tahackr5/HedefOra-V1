@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "1aa996bc249103786d11dd9fd4d178381ea30c11",
+  "verifiedThrough": "8f349e03e5dee82404a2cd90be1c5d3f119fb6a1",
   "trailingAllowedPaths": [
     "state/W001-OWNERSHIP.json"
   ],
@@ -835,6 +835,40 @@
         "tests/integration/postgres/live-sql.mjs",
         "tests/integration/postgres/live-sql.test.mjs",
         "tests/integration/postgres/run.mjs"
+      ]
+    },
+    "W001-T04FB-live-sql-seal": {
+      "base": "1aa996bc249103786d11dd9fd4d178381ea30c11",
+      "head": "2ee64c140b0812e6b0eae63c6a7f187a0440a7f9",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-closed-runner-byte-inspector": {
+      "base": "2ee64c140b0812e6b0eae63c6a7f187a0440a7f9",
+      "head": "8f349e03e5dee82404a2cd90be1c5d3f119fb6a1",
+      "allowedPaths": [
+        "FILE-INDEX.md",
+        "internal/platform/app/api_integration_test.go",
+        "internal/platform/postgres/pool_integration_test.go",
+        "internal/platform/postgres/pool_test.go",
+        "package.json",
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "scripts/postgres-image/apk-runtime/apk-byte-replay.mjs",
+        "scripts/postgres-image/apk-runtime/apk-cpe-templates.mjs",
+        "scripts/postgres-image/apk-runtime/apk-cpe-templates.test.mjs",
+        "scripts/postgres-image/apk-runtime/archive-data.mjs",
+        "scripts/postgres-image/apk-runtime/fixed-authority.mjs",
+        "scripts/postgres-image/apk-runtime/inspector-cli.mjs",
+        "scripts/postgres-image/apk-runtime/sealed-io.mjs",
+        "scripts/postgres-image/apk-runtime/strict-replay.test.mjs",
+        "state/W001-OWNERSHIP.md",
+        "state/W001-PHASE-B.md",
+        "tests/integration/postgres/live/RUNNER-CONTRACT.md",
+        "tests/integration/postgres/live/live-runtime.mjs",
+        "tests/integration/postgres/live/process.mjs",
+        "tests/integration/postgres/live/psql.mjs",
+        "tests/integration/postgres/live/run-live.mjs",
+        "tests/integration/postgres/live/runner.test.mjs"
       ]
     }
   }
