@@ -39,6 +39,15 @@ node tests/integration/postgres/run.mjs --static
 
 ## Aktivasyon kapısı
 
+Owner DQ-010 B ile repository-owned kaynak derleme stratejisini onayladı.
+`postgres/image/` altındaki altı dosya, bu stratejinin engellenmiş hazırlığıdır:
+builder canonical Critical/High finding taşıyor, kaynak derlemesi eksik header
+ile başarısız oldu ve runtime OCI üretilmedi. Provenance/coverage/lisans
+admission da açık kalır. Ayrıntılar `postgres/image/README.md` içindedir.
+Bu dosyaların source allowlist'e alınması execution izni vermez; mevcut inert
+Compose ve `--live` fail-closed sınırı değişmez. Kalıcı acquisition/runner ve
+gerçek PostgreSQL kabul testleri henüz tamamlanmadı.
+
 Bir service ancak exact-digest canonical vulnerability scan, owner/security
 admission ve ayrı reviewed materialization değişikliğinden sonra eklenebilir.
 Bu değişiklik gerçek secret içermeyen izole test credential mapping'ini,

@@ -240,6 +240,12 @@ test("only the exact T04F database, infrastructure and PostgreSQL test files are
       "infra/README.md",
       "infra/compose.dev.yml",
       "infra/postgres/README.md",
+      "infra/postgres/image/.dockerignore",
+      "infra/postgres/image/Dockerfile",
+      "infra/postgres/image/README.md",
+      "infra/postgres/image/entrypoint.sh",
+      "infra/postgres/image/inputs.lock.json",
+      "infra/postgres/image/package-sources.lock.json",
       "infra/postgres/initdb/010_roles.sql",
     ],
   );
@@ -261,6 +267,9 @@ test("only the exact T04F database, infrastructure and PostgreSQL test files are
     "db/migrations/000001_database_foundation.UP.sql",
     "db/migrations/000002_unreviewed.up.sql",
     "infra/postgres/bootstrap.sh",
+    "infra/postgres/image/.env",
+    "infra/postgres/image/Dockerfile.extra",
+    "infra/postgres/image/helper.sh",
     "tests/integration/postgres/Run.mjs",
     "tests/integration/postgres/helper.mjs",
   ]) {
@@ -284,9 +293,18 @@ test("only the exact T04F database, infrastructure and PostgreSQL test files are
       path.join(root, "tests", "integration", "postgres", "helper.mjs"),
       "export {};\n",
     );
+    for (const name of [".env", "Dockerfile.extra", "helper.sh"]) {
+      await writeFile(
+        path.join(root, "infra", "postgres", "image", name),
+        "fixture\n",
+      );
+    }
     assert.deepEqual(await findGeneratedArtifacts(root), [
       "db/migrations/000002_unreviewed.up.sql#unexpected-runtime-source",
       "infra/postgres/bootstrap.sh#unexpected-runtime-source",
+      "infra/postgres/image/.env#unexpected-runtime-source",
+      "infra/postgres/image/Dockerfile.extra#unexpected-runtime-source",
+      "infra/postgres/image/helper.sh#unexpected-runtime-source",
       "tests/integration/postgres/helper.mjs#unexpected-runtime-source",
     ]);
   } finally {

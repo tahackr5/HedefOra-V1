@@ -71,6 +71,12 @@ export const allowedW001InfrastructureFiles = new Set([
   "infra/README.md",
   "infra/compose.dev.yml",
   "infra/postgres/README.md",
+  "infra/postgres/image/.dockerignore",
+  "infra/postgres/image/Dockerfile",
+  "infra/postgres/image/README.md",
+  "infra/postgres/image/entrypoint.sh",
+  "infra/postgres/image/inputs.lock.json",
+  "infra/postgres/image/package-sources.lock.json",
   "infra/postgres/initdb/010_roles.sql",
 ]);
 export const allowedW001PostgresTestSourceFiles = new Set([

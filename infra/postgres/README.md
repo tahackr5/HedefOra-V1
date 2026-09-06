@@ -6,6 +6,13 @@ Bu dizin, ileride owner-admitted `infra/compose.dev.yml` değişikliğiyle açı
 
 ## Roller ve sınırlar
 
+Güncel Phase B stratejisi owner-approved DQ-010 B / repository-owned kaynak
+derlemesidir; `image/README.md` exact failed preparation ve canonical builder
+blocker'larını kaydeder. Aşağıdaki official-image anlatımı mevcut inert Phase A
+adayının tarihsel sözleşmesidir; bu aday aktif seçilmiş güvenli image değildir.
+Yeni kaynak-built image için de aynı immutable rol SQL'i, engine privilege
+kanıtı ve ayrı materialization gate'i zorunludur.
+
 `hedefora_dev`, official image'in local bootstrap ve database-owner rolüdür. Uygulama veya worker runtime'ı bu rolle bağlanmaz.
 
 | Rol                  | Amaç                                   | Oturum / database yetkisi   |
