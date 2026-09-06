@@ -15,7 +15,7 @@
 - Worktree: `C:\Users\ihsan\.codex\worktrees\HedefOra\W001\T04FB`
 - Started at: `2026-08-28T21:50:57+03:00` (`2026-08-28T18:50:57Z`)
 - Last checkpoint: Owner-approved PR #6 exact `01017a25` two-parent/content-identical merge `7a1e124` / tree `ec6d128`; post-merge full-tree, CI/CodeQL, local/hosted R-016 PASS. Current Phase B component kanıtları `state/W001-PHASE-B.md` içindedir; Phase B completion değildir.
-- Current objective: Owner-approved DQ-008 A / DQ-009 A / DQ-010 B kapsamında Phase B geliştirmesi; selected-Go-graph R-016 control-only düzeltmesi, bounded TLS/pool ve iki-health runtime entegrasyonu. Image builder canonical Critical/High nedeniyle BLOCKED_EXTERNAL; image CPE/origin coverage remediation sürüyor. Normal yerel geliştirme/test/PR hazırlığı için ara onay beklenmez; hiçbir eşik düşürülmez.
+- Current objective: Phase B bounded TLS/pool ve iki-health runtime kaynak checkpoint'i exact43d419d local full-tree/Go race/ownership ve scoped security PASS. F-01/F-02/F-03 component regresyonları giderildi; image builder canonical Critical/High nedeniyle BLOCKED_EXTERNAL ve gerçek PG17 engine admission NOT_RUN. Ayrı control-only PR #7 exact7459265 yeni hosted Go kimliği/R-016/cold kapılarıyla owner paketine hazırlanıyor; henüz trusted base değildir. Runtime source+aday controller disposable d3938bb deneyinde local R-016 PASS; bu trusted runtime gate veya full Phase B completion değildir. Normal güvenli hazırlıklar için ara onay beklenmez; eşikler düşürülmez.
 
 ## Active tasks
 

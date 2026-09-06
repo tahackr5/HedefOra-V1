@@ -107,3 +107,65 @@ VPS/SSH/DNS/Cloudflare/production mutation yoktur. Yeni image execution ve graph
   kanonik Go1.26.7 admission sonucu türetilmez; pinned local kanıtı ayrıdır.
   Yeni source R-016, trusted runtime PR, full Phase B exit ve deployment
   bu checkpoint'te NOT_RUN/BLOCKED_EVIDENCE kalır.
+
+## Exact43 yerel kalite ve güvenlik kanıtı
+
+- `43d419da9027a8fb88fbf2e7c70705d8213742ed`, tree
+  `4ce08b9c304605015d9619379a758432bd933873`; immutable source/index temiz.
+  `6131759` üzerinden yalnız JSON seal; W001 continuous ownership ve
+  historical W000 immutable/merge-wrapper exit0.
+- Fresh detached kalite clone'u `hedefora-runtime-quality-d1fe7fd6e24f4e948e982c8edaa2333b`.
+  `quality-proof.json` SHA-256
+  `4c04c9bed7ac4ef11f6131b540da0ef823702171a0ea4ae76f1c5ed5d39bc5f0`,
+  26 sealed log rehash mismatch0.
+- Node24.20.0/pnpm11.24.0 frozen install + `pnpm ci:check` exit0:
+  272 repository test,270PASS/2 mevcut Windows literal-backslash skip;
+  web3/3, scaffold coverage100%; Spectral59, exact generated/boundary ve
+  actual Go tidy/security-only üç pin parity PASS. CI log
+  `13b49bf7dc423f1fc5b075220e98b3e6529532b2ac253f3d09ffd9051a72097c`.
+- Pinned Linux Go1.26.7, RO source/module cache ve ağ kapalı:25 tracked
+  gofmt; mod verify/list/build/vet/uncached-shuffle/race exit0;101 üst düzey
+  test normal ve race koşusunda geçti. F-03 nil/typed-nil regression PASS.
+  Go log `29a033b872608b5b86331401886d9a8f6581684c244c505843c6dc3559cf5cfc`.
+  Cache metadata-write uyarıları korundu; offline/RO sınırı gevşetilmedi.
+- Linux Node24.20.0 official archive SHA-256
+  `855d581f8a4eb1a8117e3426de25fe02770592febcfb31369aee1ffbfee9e8ec`;
+  exact boundary14/14/skip0 ve actual source boundary PASS.
+  Log `15fb87e2fd7d8fd7aa9dff90356710bdb48c4cc4ebb65876775f371a50bf7d14`.
+- Python3.12.13 TOML4, actionlint1.7.12, Gitleaks8.30.1 history140/bulgu0
+  +exact typed-UUID sibling expected raw1, inert Compose services0 ve Git
+  integrity exit0. 11 mevcut dangling blob corruption sayılmaz.
+- Fresh read-only security scoped PASS, yeni doğrulanmış bulgu0:
+  config/PG ambient boundary, explicit CA/SNI/TLS, bounded pool ownership/
+  cancellation/actual close, provider redaction, drain/late-success,
+  typed-nil ve sealed compiler incelendi. Reviewer Windows scoped Go
+  yürütmesinde HTTP testexe OS-blocked; scope vet, compiler59 ve Node
+  testleri geçti. Linux bütün-suite kanıtı ayrı kalite koşumudur.
+  Reviewer model/effort UNKNOWN/UNKNOWN; gerçek engine admission yoktur.
+
+## Disposable yeni controller + runtime R-016 deneyi
+
+`hedefora-runtime-control-candidate-d7e06a08288b404399f166583ff7e602`
+detached `d3938bbf285463dc0d57ec2415f3daddf48062cf`, tree
+`b311dff3735092ab06159976f494932e91ddc6ad`: exact43 runtime üstüne
+control745'in yalnız sekiz controller/workflow/fixture/schema yolu
+apply_patch ile eklendi. Bu clone unpushed ve untrusted'dır; gerçek runtime
+branch'inin protected byte'ları değişmedi ve main sahibi gibi davranılmaz.
+
+Canonical local run `20260906T144111466Z-1128-291ec645` PASS0,
+19 terminal PASS; source/control exact d3938bb. Evidence SHA-256
+`504cb1f88045b79a69d138731e6a3d6fd4880b0dfe52901a11795d7d1ea2078b`,
+DB seal `4d4c45f713b90d3d99cebb2cddf55606e49b0279209717dd29967af06866079e`.
+Strict JSON schema True/0;426/426 regular bounded raw size/SHA rehash
+mismatch0. Selected MVS17total/16thirdparty, scanner manifest678byte
+`9fcca37de4ca5682de3b87247fb5d3c57a061cb4c172cdd91086cfe45a986c08`;
+inventory `13ae19001033ab3cc48d63c04df4f3aeabb2c67c91715f7d333bdd1804671670`.
+All-scope vulnerability/license/SAST PASS yalnız bu exact deney içindir.
+VisibilityProof=false/local-declaration, hosted/trusted authority değildir.
+
+Bu kanıt-promotion ve sonraki seal için yeni exact local kalite tekrarı
+gereklidir. Runtime trusted R-016/hosted/CodeQL, owner merge/post-merge ve
+gerçek PG17 auth/roles/migrations/TLS gate'i pending kalır. CPE-policy
+hardening canlı image/engine completion olarak sunulmaz. Merge öncesi
+rollback coherent runtime/dependency/compiler slice'ını birlikte terk
+etmektir; immutable SQL, veri, production veya remote main değiştirilmedi.
