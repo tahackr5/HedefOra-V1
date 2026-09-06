@@ -199,6 +199,7 @@ test("only the exact T04FB runtime source set is allowlisted", () => {
       "cmd/hedefora/main.go",
       "cmd/hedefora/main_test.go",
       "internal/platform/app/api.go",
+      "internal/platform/app/api_integration_test.go",
       "internal/platform/app/api_test.go",
       "internal/platform/config/api.go",
       "internal/platform/config/api_test.go",
@@ -211,6 +212,7 @@ test("only the exact T04FB runtime source set is allowlisted", () => {
       "internal/platform/http/server.go",
       "internal/platform/http/server_test.go",
       "internal/platform/postgres/pool.go",
+      "internal/platform/postgres/pool_integration_test.go",
       "internal/platform/postgres/pool_test.go",
       "internal/platform/telemetry/telemetry.go",
       "internal/platform/telemetry/telemetry_test.go",
@@ -256,6 +258,8 @@ test("only the exact T04F database, infrastructure and PostgreSQL test files are
   assert.deepEqual(
     [...allowedW001PostgresTestSourceFiles],
     [
+      "tests/integration/postgres/cmd/tlsfixture/main.go",
+      "tests/integration/postgres/cmd/tlsfixture/main_linux_test.go",
       "tests/integration/postgres/run.mjs",
       "tests/integration/postgres/run.test.mjs",
     ],

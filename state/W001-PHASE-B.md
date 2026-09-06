@@ -311,3 +311,36 @@ Source-family libpq18.6, signer trust anchor ve APKv2 RSA-SHA1 legacy
 sınırı ayrıca incelenir. Package scripts, builder ve PostgreSQL çalıştırma0.
 Yeni runtime profilinin/test runner'ın source integration, independent
 security review, gerçek engine ve final hosted PR kapıları pending'dir.
+
+## Gerçek-engine test kaynağı hazırlığı
+
+Altı `TestPG17*` girişini içeren `pool_integration_test.go` ve
+`api_integration_test.go` yalnız explicit integration build tag'i altında
+çalışır. Eksik admission/fixture fatal'dır; tag tek başına image execution
+yetkisi değildir. İzin veren launcher henüz bağlanmadı. Gerçek PG17 TLS ve
+SCRAM, ambient discovery, kapasite/deadline/reuse/actual close, in-flight
+cancel, DB outage/recovery ve drain/late-success matrisi hazırlanmıştır;
+bu kaynakların varlığı gerçek engine PASS oluşturmaz.
+
+Go-stdlib `tlsfixture` yalnız Linux/private temporary parent700 altında yeni
+directory700/files600 üretir: ECDSA P256, serverAuth, loopback SAN, ayrı
+wrong-CA/wrong-host ve bir saat expiry. CA private key saklanmaz. Maintained
+Linux unit'leri chain/key/usage/time/SAN/mode ve existing/relative/outside/
+symbolic/non-private parent reddini doğrular. Runtime API veya dependency
+eklenmedi; yalnız dört exact Go test/tool yolu boundary'ye eklendi.
+
+Root draft review plaintext-auth witness'ı mevcut fixed hostnossl-reject HBA
+ile çeliştiği için değiştirdi: negatif ssl=off engine gerçek SSLRequest'e N
+yanıtını verir, runner ayrıca local SCRAM socket ile exact version/ssl=off
+gözler. Test için bile plaintext authentication açılmaz. Uzun pg_sleep testi
+caller/lease iptalini ölçer; otomatik server-side SQL abort iddia etmez ve
+yalnız exact same-role sentetik query cleanup'ını açıkça doğrular.
+
+Integrated pending-index component koşumu: pinli Linux Go1.26.7,
+network=none/read-only source+module cache/cap-drop ALL; TLS generator gerçek
+unit0, iki tagged package compile-only `-run '^$'`0 ve tagged vet0. Log SHA
+`66a58bc34c617a7d4ef3332bfd6b4e830f299d6a9764510f693734ec2fb624c7`.
+Compiler çıktısındaki no-tests-to-run canlı test değildir. Node exact
+boundary gate0; önceki üç-dosya boundary testinde12PASS/iki mevcut Windows
+skip vardı; dördüncü Linux-only unit yolu sonrasında full-tree ayrıca
+yenilenir. Gerçek PG17 image import/start/live SQL/race henüz NOT_RUN.

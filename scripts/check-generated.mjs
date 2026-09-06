@@ -50,6 +50,7 @@ export const allowedW001RuntimeSourceFiles = new Set([
   "cmd/hedefora/main.go",
   "cmd/hedefora/main_test.go",
   "internal/platform/app/api.go",
+  "internal/platform/app/api_integration_test.go",
   "internal/platform/app/api_test.go",
   "internal/platform/config/api.go",
   "internal/platform/config/api_test.go",
@@ -62,6 +63,7 @@ export const allowedW001RuntimeSourceFiles = new Set([
   "internal/platform/http/server.go",
   "internal/platform/http/server_test.go",
   "internal/platform/postgres/pool.go",
+  "internal/platform/postgres/pool_integration_test.go",
   "internal/platform/postgres/pool_test.go",
   "internal/platform/telemetry/telemetry.go",
   "internal/platform/telemetry/telemetry_test.go",
@@ -84,6 +86,8 @@ export const allowedW001InfrastructureFiles = new Set([
   "infra/postgres/initdb/010_roles.sql",
 ]);
 export const allowedW001PostgresTestSourceFiles = new Set([
+  "tests/integration/postgres/cmd/tlsfixture/main.go",
+  "tests/integration/postgres/cmd/tlsfixture/main_linux_test.go",
   "tests/integration/postgres/run.mjs",
   "tests/integration/postgres/run.test.mjs",
 ]);
