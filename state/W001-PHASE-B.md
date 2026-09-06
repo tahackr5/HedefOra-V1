@@ -223,9 +223,9 @@ DEC-026 ile continuation task-phase/trusted controller base artık aba3d13.
 Mevcut02ef7cf runtime first-parent zinciri korunarak merge edilir. Dört
 governance conflict semantik çözülür: release ledger iki dalın tarihsel
 satırlarını korur, risk kayıtları birleşir, current base ilerler; ownership
-JSON runtime continuous first-parent zincirini tutar. Kontrolün kendi
-immutable ownership'i approved head/ikinci parent'ta korunur; yeni merge'in
-gerçek first-parent path union'ı sonraki manifest-only seal'de kaydedilir.
+JSON için ilk dar runtime-chain önerisi aşağıda kaydedilen ancestry kontrolünü
+geçmedi. İki dalın immutable dar manifestleri Git tarihinde korunur; yaşayan
+manifest ortak7a1e124 → f19cca1 graph-reconciliation envelope'ını kullanır.
 Eski writer worktree'leri yeniden açılmış sayılmaz; continuation'da root
 tek source writer, diğer ajanlar immutable-source TEMP proposal/read-only.
 
@@ -242,14 +242,22 @@ açılır. Sonraki PR hazırlanabilir; yeni exact-head main merge ayrı owner ga
 `f19cca198e7236e15f2ac7d764c12f8312b0f348` runtime integration merge'inin
 ordered parents'ı `02ef7cf2379c563d398571a6f439920331e16a80` ve trusted
 `aba3d13ed057bbe80a2e67486058180479c3c50e`'dir. Bu runtime integration
-merge'i content-identical owner/main merge diye sunulmaz; actual first-parent
-18-path diff sahiplik manifestinde ayrı görev olarak kaydedildi. Manifest-only
-seal `a3c0b9197386e093bb80b922b0bacc91f5763a6f`, tree
-`1d0c40d27faba492b815532b43b5b2298d8f11a9`; W001 continuous ownership0,
-governance0 ve controller unit124/124/skip0. İlk repolint komutu yanlışlıkla
-non-main `./tools/repolint` paketini hedefleyip exit1 verdi; gerçek
-`./tools/repolint/cmd/repolint -manifest state/W001-OWNERSHIP.json -all
--base bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b -head HEAD` exit0.
+merge'i content-identical owner/main merge diye sunulmaz. İlk a3c0b919
+manifest-only seal (tree1d0c40d27faba492b815532b43b5b2298d8f11a9),
+02ef7cf → f19cca1 dar18-path aralığını hatalı modelledi. Önceki metindeki
+continuous ownership0 iddiası geri çekildi: birden fazla komut içeren shell'in
+son başarılı okuması, repolint'in exit sonucunu örtmüştü. Non-main paketi
+hedefleyen ilk komut da exit1'dir. İzole gerçek CLI,5e8e599 üzerinde exit1:
+77c8a2c374a92fabb8642a1731d3011ca6208a84 reachable fakat02ef7cf'nin
+descendant'ı değil. Node/R-016 ayrı sonuçları bu ownership hatasını kapatmaz.
+
+R-023'teki mevcut graph-reconciliation yaklaşımı uygulanır: ortak7a1e124
+prefix'i korunur,7a1e124 → f19cca1 içindeki24 reachable commit'in her birinin
+first-parent diff endpoint union'ı exact65 path olarak mühürlenir. Bütün
+commit'ler ortak base'in descendant'ı olmalıdır; validator veya eşik değişmez.
+Runtime02ef7cf ve control7459265 dar manifestleri immutable tarihsel kanıttır.
+Aggregate yalnız bu kapanmış aralığa aittir, gelecekte yazma yetkisi değildir.
+Yeni manifest ve izole exit doğrulaması tamamlanmadan PASS iddiası yoktur.
 
 Exact a3c0b91 Node24.20.0/pnpm11.24.0 `ci:check`0: repository274PASS,
 iki mevcut Windows literal-backslash skip; web3/3/scaffold coverage100,

@@ -170,8 +170,12 @@ yazılmaz. Root tek source writer olarak kontrol merge'ini ve shared
 governance'ı birleştirir; diğer ajanlar TEMP proposal-only/read-only.
 Protected kontrol dosyaları aba3d13 ile exact parity taşır. Controller'ın
 ayrı continuous ownership'i7459265 immutable commit'inde korunur; yaşayan
-manifest runtime chain + yeni merge'in actual first-parent path union'ını
-mühürler, iki divergent chain'i lineer task listesi gibi birleştirmez.
+manifest ortak7a1e124 → f19cca1 graph-reconciliation envelope'ını mühürler:
+24 reachable commit'in actual first-parent endpoint union'ında exact65 path.
+02ef7cf → f19cca1 dar task denemesi ikinci-parent ancestry nedeniyle exit1
+vermiştir; önceki birleşik shell exit0 ownership PASS değildir. Runtime02ef7cf
+ve control7459265 dar sealed manifestleri Git tarihinde korunur. Bu kapalı
+aralığın allowlist'i gelecekte yazma yetkisi değildir; validator değişmez.
 
 ## Secret ve artifact sınırı
 
