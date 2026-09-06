@@ -248,6 +248,7 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     "R016-OSV-VULNERABILITY-CANARY": 1,
     "R016-OSV-VULNERABILITY-DEVELOPMENT-CANARY": 1,
     "R016-OSV-GO-ADVISORY-CANARY": 1,
+    "R016-OSV-GO-TRANSITIVE-CANARY": 1,
     "R016-OSV-GO-LICENSE-DENIED-CANARY": 1,
     "R016-OSV-LICENSE-DENIED-CANARY": 1,
     "R016-OSV-LICENSE-UNKNOWN-CANARY": 1,
@@ -265,6 +266,7 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     "R016-OSV-VULNERABILITY-CANARY",
     "R016-OSV-VULNERABILITY-DEVELOPMENT-CANARY",
     "R016-OSV-GO-ADVISORY-CANARY",
+    "R016-OSV-GO-TRANSITIVE-CANARY",
     "R016-OSV-GO-LICENSE-DENIED-CANARY",
     "R016-OSV-LICENSE-DENIED-CANARY",
     "R016-OSV-LICENSE-UNKNOWN-CANARY",
@@ -314,6 +316,7 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     "PROCESS-OSV-VULNERABILITY-CANARY",
     "PROCESS-OSV-VULNERABILITY-DEVELOPMENT-CANARY",
     "PROCESS-OSV-GO-ADVISORY-CANARY",
+    "PROCESS-OSV-GO-TRANSITIVE-CANARY",
     "PROCESS-OSV-GO-LICENSE-DENIED-CANARY",
     "PROCESS-OSV-LICENSE-DENIED-CANARY",
     "PROCESS-OSV-LICENSE-UNKNOWN-CANARY",
@@ -403,6 +406,11 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
       thirdPartyModuleCount: 1,
       goModSha256: validatorFiles[0].sha256,
       goSumSha256: null,
+      scannerManifest: {
+        format: "go-selected-modules-v1",
+        sha256: "8".repeat(64),
+        size: 128,
+      },
       editIdentity: {
         modulePath: "github.com/tahackr5/HedefOra-V1",
         replaceCount: 0,
@@ -450,6 +458,16 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
       "scripts/fixtures/supply-chain/sast-typescript-blocking.ts.txt",
       "7ab546d1e0b094db952c930c056a4e072d27d2c2a2c7a0e7452b731701513756",
       79,
+    ],
+    [
+      "scripts/fixtures/supply-chain/transitive-go.mod.txt",
+      "59c15a0750877d1e5dd52c029f3be54fd8b65db5823fc8d3d4c4a214d421395c",
+      102,
+    ],
+    [
+      "scripts/fixtures/supply-chain/transitive-go.sum.txt",
+      "ff8df1f3f2c7941bde1dd91a18fe4b2baabfece1b3909d34893185ce9495ed23",
+      2098,
     ],
   ];
   const fixtureInputs = [];
@@ -535,6 +553,8 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     ...semgrepRuleFiles.map(({ path: rulePath }) => ruleProcessId(rulePath)),
     "PROCESS-GO-MOD-EDIT-GO.MOD",
     "PROCESS-GO-LIST-GO.MOD",
+    "PROCESS-GO-MOD-EDIT-TRANSITIVE-CANARY",
+    "PROCESS-GO-LIST-TRANSITIVE-CANARY",
   ];
   const processRawExit = (id) => {
     if (id === "PROCESS-OSV-MISSING-DATABASE-NEGATIVE") return 127;
@@ -542,6 +562,7 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
       id === "PROCESS-OSV-VULNERABILITY-CANARY" ||
       id === "PROCESS-OSV-VULNERABILITY-DEVELOPMENT-CANARY" ||
       id === "PROCESS-OSV-GO-ADVISORY-CANARY" ||
+      id === "PROCESS-OSV-GO-TRANSITIVE-CANARY" ||
       id === "PROCESS-OSV-GO-LICENSE-DENIED-CANARY" ||
       id === "PROCESS-OSV-LICENSE-DENIED-CANARY" ||
       id === "PROCESS-OSV-LICENSE-UNKNOWN-CANARY" ||
@@ -569,6 +590,7 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     "json",
     "--all-packages",
     "--all-vulns",
+    "--no-call-analysis=go",
   ];
   const productionLockfiles = [
     ...pnpmInput.documents.map(({ source }) => source),
@@ -1012,9 +1034,33 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
         },
       );
     }
+    if (id === "PROCESS-OSV-GO-TRANSITIVE-CANARY") {
+      return dockerRun(
+        id,
+        image,
+        [
+          ...osvBase,
+          "--offline",
+          "--offline-vulnerabilities",
+          "--lockfile",
+          "/scan/go-module-1/go.mod",
+        ],
+        {
+          environment: osvEnvironment,
+          memory: "768m",
+          mounts: [
+            ["go-transitive-scan-input", "/scan", true],
+            ["osv-cache", "/cache", true],
+          ],
+          user: "65534:65534",
+        },
+      );
+    }
     if (
       id === "PROCESS-GO-MOD-EDIT-GO.MOD" ||
-      id === "PROCESS-GO-LIST-GO.MOD"
+      id === "PROCESS-GO-LIST-GO.MOD" ||
+      id === "PROCESS-GO-MOD-EDIT-TRANSITIVE-CANARY" ||
+      id === "PROCESS-GO-LIST-TRANSITIVE-CANARY"
     ) {
       return dockerRun(
         id,
@@ -1025,7 +1071,15 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
         {
           environment: goEnvironment,
           memory: "768m",
-          mounts: [["scan-input/go-module-1", "/module", true]],
+          mounts: [
+            [
+              id.endsWith("TRANSITIVE-CANARY")
+                ? "go-transitive-resolve-input/go-module-1"
+                : "go-resolve-input/go-module-1",
+              "/module",
+              true,
+            ],
+          ],
           network: id.includes("LIST") ? "bridge" : "none",
           user: "65534:65534",
           workdir: "/module",
@@ -1557,6 +1611,34 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     packageName: "golang.org/x/text",
     version: "0.3.7",
   });
+  setTerminal("R016-OSV-GO-TRANSITIVE-CANARY", {
+    advisoryId: "GO-2026-5970",
+    ecosystem: "Go",
+    extractionCount: 12,
+    packageName: "golang.org/x/text",
+    version: "0.29.0",
+    input: {
+      manifest: "scripts/fixtures/supply-chain/transitive-go.mod.txt",
+      source: "/scan/go-module-1/go.mod",
+      mainModule: "example.invalid/hedefora-transitive-canary",
+      discoveredModuleCount: 13,
+      thirdPartyModuleCount: 12,
+      goModSha256: fixtureInputs[8].sha256,
+      goSumSha256: fixtureInputs[9].sha256,
+      scannerManifest: {
+        format: "go-selected-modules-v1",
+        sha256:
+          "608829e45188403974bf17ba846c365d4cd244dd92158d139bb3ff3c80e2a992",
+        size: 568,
+      },
+      editIdentity: {
+        modulePath: "example.invalid/hedefora-transitive-canary",
+        replaceCount: 0,
+      },
+      inventorySha256:
+        "687be052dbb437cced8347c223df251527ac3230fafb18f7af3563853cbb3c6e",
+    },
+  });
   const goLicenseInventory = [
     {
       ecosystem: "Go",
@@ -1672,6 +1754,7 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
     "R016-OSV-VULNERABILITY-DEVELOPMENT-CANARY":
       "PROCESS-OSV-VULNERABILITY-DEVELOPMENT-CANARY",
     "R016-OSV-GO-ADVISORY-CANARY": "PROCESS-OSV-GO-ADVISORY-CANARY",
+    "R016-OSV-GO-TRANSITIVE-CANARY": "PROCESS-OSV-GO-TRANSITIVE-CANARY",
     "R016-OSV-GO-LICENSE-DENIED-CANARY": "PROCESS-OSV-GO-LICENSE-DENIED-CANARY",
     "R016-OSV-LICENSE-DENIED-CANARY": "PROCESS-OSV-LICENSE-DENIED-CANARY",
     "R016-OSV-LICENSE-UNKNOWN-CANARY": "PROCESS-OSV-LICENSE-UNKNOWN-CANARY",
@@ -2321,6 +2404,113 @@ test("PASS evidence requires complete exact terminal, input, tool, and database 
   const missingGoManifest = structuredClone(golden);
   delete missingGoManifest.inputs.go[0].manifest;
   assert.throws(() => validateCoSealed(missingGoManifest), /Go input|schema/u);
+
+  for (const mutate of [
+    (input) => {
+      delete input.scannerManifest;
+    },
+    (input) => {
+      input.scannerManifest.format = "original-go-mod";
+    },
+    (input) => {
+      input.scannerManifest.size = 0;
+    },
+    (input) => {
+      input.scannerManifest.sha256 = "invalid";
+    },
+    (input) => {
+      input.scannerManifest.untracked = true;
+    },
+  ]) {
+    const invalid = structuredClone(golden);
+    mutate(invalid.inputs.go[0]);
+    assert.throws(
+      () => validateCoSealed(invalid),
+      /Go input|scannerManifest|schema/u,
+    );
+  }
+  const overloadedOriginalGoHash = structuredClone(golden);
+  overloadedOriginalGoHash.inputs.go[0].goModSha256 =
+    overloadedOriginalGoHash.inputs.go[0].scannerManifest.sha256;
+  assert.throws(
+    () => validateCoSealed(overloadedOriginalGoHash),
+    /tracked|Go input|blob|digest/u,
+  );
+
+  for (const check of golden.checks.filter(
+    (item) =>
+      item.id.startsWith("PROCESS-OSV-") &&
+      item.arguments?.includes("--no-call-analysis=go"),
+  )) {
+    const invalid = structuredClone(golden);
+    const processCheck = invalid.checks.find(({ id }) => id === check.id);
+    processCheck.arguments = processCheck.arguments.filter(
+      (argument) => argument !== "--no-call-analysis=go",
+    );
+    processCheck.argumentCount = processCheck.arguments.length;
+    assert.throws(
+      () => validateCoSealed(invalid),
+      /Docker run contract/u,
+      `${check.id} must disable automatic Go call analysis`,
+    );
+  }
+  for (const mutate of [
+    (terminal) => {
+      delete terminal.input;
+    },
+    (terminal) => {
+      terminal.advisoryId = "GO-2022-1059";
+    },
+    (terminal) => {
+      terminal.packageName = "github.com/jackc/pgx/v5";
+    },
+    (terminal) => {
+      terminal.extractionCount = 2;
+    },
+    (terminal) => {
+      terminal.input.goModSha256 = "0".repeat(64);
+    },
+    (terminal) => {
+      terminal.input.goSumSha256 = "0".repeat(64);
+    },
+    (terminal) => {
+      terminal.input.inventorySha256 = "0".repeat(64);
+    },
+    (terminal) => {
+      terminal.input.scannerManifest.sha256 = "0".repeat(64);
+    },
+    (terminal) => {
+      terminal.input.scannerManifest.size -= 1;
+    },
+    (terminal) => {
+      terminal.input.scannerManifest.extra = true;
+    },
+  ]) {
+    const invalid = structuredClone(golden);
+    mutate(
+      invalid.checks.find(({ id }) => id === "R016-OSV-GO-TRANSITIVE-CANARY"),
+    );
+    assert.throws(
+      () => validateCoSealed(invalid),
+      /Go input|transitive|scannerManifest|schema|terminal R016-OSV-GO-TRANSITIVE-CANARY/u,
+    );
+  }
+  for (const id of [
+    "R016-OSV-GO-TRANSITIVE-CANARY",
+    "PROCESS-OSV-GO-TRANSITIVE-CANARY",
+    "PROCESS-GO-MOD-EDIT-TRANSITIVE-CANARY",
+    "PROCESS-GO-LIST-TRANSITIVE-CANARY",
+  ]) {
+    const invalid = structuredClone(golden);
+    invalid.checks = invalid.checks.filter((check) => check.id !== id);
+    invalid.rawArtifacts = invalid.rawArtifacts.filter(
+      (artifact) => artifact.processId !== id,
+    );
+    assert.throws(
+      () => validateCoSealed(invalid),
+      /missing|required|process|terminal/u,
+    );
+  }
 
   const minimalPnpmShape = structuredClone(golden);
   minimalPnpmShape.inputs.pnpm = { documents: [{}] };

@@ -278,7 +278,7 @@
     },
     "goInput": {
       "type": "object",
-      "minProperties": 9,
+      "minProperties": 10,
       "required": [
         "manifest",
         "source",
@@ -287,6 +287,7 @@
         "thirdPartyModuleCount",
         "goModSha256",
         "goSumSha256",
+        "scannerManifest",
         "editIdentity",
         "inventorySha256"
       ],
@@ -299,6 +300,16 @@
         "goModSha256": { "$ref": "#/$defs/sha256" },
         "goSumSha256": {
           "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/sha256" }]
+        },
+        "scannerManifest": {
+          "type": "object",
+          "required": ["format", "sha256", "size"],
+          "properties": {
+            "format": { "const": "go-selected-modules-v1" },
+            "sha256": { "$ref": "#/$defs/sha256" },
+            "size": { "type": "integer", "minimum": 1, "maximum": 16777216 }
+          },
+          "additionalProperties": false
         },
         "editIdentity": { "$ref": "#/$defs/goEditIdentity" },
         "inventorySha256": { "$ref": "#/$defs/sha256" }

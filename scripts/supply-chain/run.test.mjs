@@ -22,10 +22,13 @@ import {
   assertNetworkMountIsolation,
   assertOsvGoAdvisoryCanary,
   assertOsvGoLicenseCanary,
+  assertOsvGoTransitiveCanary,
+  assertOsvGoSourceInventoryParity,
   assertOsvMissingDatabaseFailure,
   assertOsvExtractionCoverage,
   applyTemporaryCleanupFailure,
   buildSemgrepMinifiedLargeFixture,
+  combinedExpectedInventory,
   expectedCheckoutShaIsRequired,
   failureSummaryForConsole,
   goModuleEnvironment,
@@ -39,6 +42,7 @@ import {
   parseJsonSequence,
   parseTrustedExecutableArguments,
   prepareArtifactDirectories,
+  renderGoScannerManifest,
   removeContainerAndVerify,
   repositoryUseContextFromEnvironment,
   runDocker,
@@ -65,6 +69,7 @@ import {
   validateProtectedControlPlane,
   validateRepositoryBinding,
   verifyArtifactFilesystemSeals,
+  verifyGoScannerInputs,
   writeEvidenceFinalizationFailure,
   writeEvidenceWithoutMaskingFailure,
 } from "./run.mjs";
@@ -1116,6 +1121,7 @@ test("OSV config is license-only and vulnerability scans cannot consume ignores"
     "json",
     "--all-packages",
     "--all-vulns",
+    "--no-call-analysis=go",
     "--offline",
     "--offline-vulnerabilities",
     "--lockfile",
@@ -1128,6 +1134,7 @@ test("OSV config is license-only and vulnerability scans cannot consume ignores"
     "json",
     "--all-packages",
     "--all-vulns",
+    "--no-call-analysis=go",
     "--config",
     "/fixture/osv-scanner.toml",
     "--data-source",
@@ -1339,6 +1346,219 @@ test("Go advisory canary requires the exact pinned module and GO advisory", () =
     () => assertOsvGoAdvisoryCanary(wrongAdvisory),
     /did not report exact/u,
   );
+});
+
+test("Go scanner manifest preserves all sixteen selected MVS modules and rejects unsafe identities", () => {
+  const main = "github.com/tahackr5/HedefOra-V1";
+  const entries = [
+    "github.com/davecgh/go-spew v1.1.1",
+    "github.com/jackc/pgpassfile v1.0.0",
+    "github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761",
+    "github.com/jackc/pgx/v5 v5.10.0",
+    "github.com/jackc/puddle/v2 v2.2.2",
+    "github.com/kr/pretty v0.3.0",
+    "github.com/pmezard/go-difflib v1.0.0",
+    "github.com/stretchr/objx v0.1.0",
+    "github.com/stretchr/testify v1.11.1",
+    "github.com/yuin/goldmark v1.7.17",
+    "golang.org/x/mod v0.40.0",
+    "golang.org/x/sync v0.22.0",
+    "golang.org/x/text v0.41.0",
+    "golang.org/x/tools v0.49.0",
+    "gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c",
+    "gopkg.in/yaml.v3 v3.0.1",
+  ].map((entry) => {
+    const [name, version] = entry.split(" ");
+    return { ecosystem: "Go", name, version, scope: "unknown" };
+  });
+  const bytes = renderGoScannerManifest(main, entries);
+  assert.deepEqual(
+    bytes,
+    renderGoScannerManifest(main, [...entries].reverse()),
+  );
+  assert.equal(
+    bytes
+      .toString()
+      .split("\n")
+      .filter((line) => line.startsWith("\t")).length,
+    16,
+  );
+  assert.ok(bytes.toString().includes("\tgolang.org/x/tools v0.49.0\n"));
+  assert.ok(!bytes.toString().includes("replace"));
+  assert.ok(!bytes.toString().includes("\t" + main));
+  const source = "/scan/go-module-1/go.mod";
+  const document = {
+    results: [
+      {
+        source: { path: source, type: "lockfile" },
+        packages: entries.map(({ name, version }) => ({
+          package: { ecosystem: "Go", name, version: version.slice(1) },
+        })),
+      },
+    ],
+  };
+  const evaluate = (input) =>
+    evaluateOsvVulnerabilities({
+      document: JSON.stringify(input),
+      rawExit: 0,
+      expectedBySource: combinedExpectedInventory({
+        documentInputs: [],
+        goInventory: [{ containerPath: source, thirdParty: entries }],
+      }),
+      policy: { blockAtOrAbove: 7 },
+    });
+  assert.equal(evaluate(document).exitCode, EXIT_CODES.PASS);
+  const module = { containerPath: source, thirdParty: entries };
+  assert.equal(assertOsvGoSourceInventoryParity(document, module), true);
+  assert.ok(entries.every((item) => item.version.startsWith("v")));
+  const wrongVersion = structuredClone(document);
+  wrongVersion.results[0].packages[0].package.version = "1.1.0";
+  assert.equal(evaluate(wrongVersion).exitCode, EXIT_CODES.CONTRACT);
+  const missingTransitive = structuredClone(document);
+  missingTransitive.results[0].packages =
+    missingTransitive.results[0].packages.filter(
+      ({ package: item }) => item.name !== "golang.org/x/tools",
+    );
+  assert.equal(evaluate(missingTransitive).exitCode, EXIT_CODES.CONTRACT);
+  assert.throws(
+    () => assertOsvGoSourceInventoryParity(missingTransitive, module),
+    /differs from the selected MVS graph/u,
+  );
+  const duplicateTransitive = structuredClone(document);
+  duplicateTransitive.results[0].packages.push(
+    duplicateTransitive.results[0].packages[0],
+  );
+  assert.throws(
+    () => assertOsvGoSourceInventoryParity(duplicateTransitive, module),
+    /differs from the selected MVS graph/u,
+  );
+  assert.throws(
+    () =>
+      assertOsvExtractionCoverage(
+        `Scanned ${source} file and found 9 packages`,
+        {
+          documentInputs: [],
+          goInventory: [{ ...module, discoveredModuleCount: 17 }],
+        },
+      ),
+    /differs from 16/u,
+  );
+  assert.equal(
+    assertOsvExtractionCoverage(
+      `Scanned ${source} file and found 16 packages`,
+      {
+        documentInputs: [],
+        goInventory: [{ ...module, discoveredModuleCount: 17 }],
+      },
+    ),
+    true,
+  );
+  assert.equal(
+    renderGoScannerManifest(main, []).toString().includes("require (\n)"),
+    true,
+  );
+  for (const altered of [
+    [...entries, entries[0]],
+    [{ ...entries[0], name: main }],
+    [{ ...entries[0], name: "example.invalid/a\nreplace x => y" }],
+    [{ ...entries[0], version: 'v1.0.0"\n)' }],
+    [{ ...entries[0], version: "latest" }],
+    [{ ...entries[0], scope: "production" }],
+  ]) {
+    assert.throws(
+      () => renderGoScannerManifest(main, altered),
+      /invalid|duplicate/u,
+    );
+  }
+  assert.throws(
+    () => renderGoScannerManifest('bad"\nrequire x v1.0.0', entries),
+    /invalid/u,
+  );
+});
+
+test("Go scanner manifest seal detects changed staged bytes", async () => {
+  const root = await mkdtemp(
+    path.join(os.tmpdir(), "hedefora-go-scanner-seal-"),
+  );
+  try {
+    const directory = path.join(root, "go-module-1");
+    await mkdir(directory);
+    const bytes = renderGoScannerManifest("example.invalid/main", []);
+    const filename = path.join(directory, "go.mod");
+    await writeFile(filename, bytes);
+    const inventory = {
+      scanInputRoot: root,
+      goInventory: [
+        {
+          scannerManifest: { sha256: sha256Hex(bytes), size: bytes.byteLength },
+        },
+      ],
+    };
+    await verifyGoScannerInputs(inventory);
+    await writeFile(filename, Buffer.concat([bytes, Buffer.from("\n")]));
+    await assert.rejects(
+      () => verifyGoScannerInputs(inventory),
+      /changed after derivation/u,
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("Go transitive canary root excludes x/text and its scanner result requires the exact advisory", async () => {
+  const root = await readFile(
+    path.join(
+      repositoryRoot,
+      "scripts/fixtures/supply-chain/transitive-go.mod.txt",
+    ),
+    "utf8",
+  );
+  assert.equal(
+    root,
+    "module example.invalid/hedefora-transitive-canary\n\ngo 1.26.0\n\nrequire github.com/jackc/pgx/v5 v5.10.0\n",
+  );
+  assert.ok(!root.includes("golang.org/x/text"));
+  const document = {
+    results: [
+      {
+        source: { path: "/scan/go-module-1/go.mod", type: "lockfile" },
+        packages: [
+          {
+            package: {
+              ecosystem: "Go",
+              name: "golang.org/x/text",
+              version: "0.29.0",
+            },
+            vulnerabilities: [{ id: "GO-2026-5970" }],
+          },
+        ],
+      },
+    ],
+  };
+  assert.equal(
+    assertOsvGoTransitiveCanary(document).advisoryId,
+    "GO-2026-5970",
+  );
+  for (const mutate of [
+    (input) => input.results[0].packages.splice(0),
+    (input) => {
+      input.results[0].packages[0].package.version = "0.41.0";
+    },
+    (input) => {
+      input.results[0].packages[0].vulnerabilities[0].id = "GO-2022-1059";
+    },
+    (input) =>
+      input.results[0].packages.push(
+        structuredClone(input.results[0].packages[0]),
+      ),
+  ]) {
+    const altered = structuredClone(document);
+    mutate(altered);
+    assert.throws(
+      () => assertOsvGoTransitiveCanary(altered),
+      /omitted GO-2026-5970/u,
+    );
+  }
 });
 
 test("Go license canary requires the exact fixture, package, and denied license", async () => {
@@ -1872,12 +2092,18 @@ test("OSV extraction logs must prove every split document and Go manifest", () =
         packageCount: 527,
       },
     ],
-    goInventory: [{ containerPath: "/repo/go.mod", discoveredModuleCount: 1 }],
+    goInventory: [
+      {
+        containerPath: "/repo/go.mod",
+        discoveredModuleCount: 1,
+        thirdParty: [],
+      },
+    ],
   };
   const complete = [
     "Scanned /scan/pnpm-document-1/pnpm-lock.yaml file and found 19 packages",
     "Scanned /scan/pnpm-document-2/pnpm-lock.yaml file and found 527 packages",
-    "Scanned /repo/go.mod file and found 1 package",
+    "Scanned /repo/go.mod file and found 0 packages",
   ].join("\n");
   assert.equal(assertOsvExtractionCoverage(complete, inventory), true);
   assert.throws(

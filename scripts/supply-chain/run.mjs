@@ -421,6 +421,7 @@ async function runGate(context, now) {
 
   await runOsvVulnerabilityCanaries(context, configuration, databases);
   await runOsvGoAdvisoryCanary(context, configuration, databases);
+  await runOsvGoTransitiveCanary(context, configuration, databases);
   await runOsvGoLicenseCanary(context, configuration);
   await runOsvLicenseCanaries(context, configuration);
   await runOsvVulnerabilityGate(context, configuration, inventory, databases);
@@ -2056,22 +2057,36 @@ async function resolveGoInventory(
   configuration,
   manifests,
   scanInputRoot,
+  {
+    controlFixture = false,
+    resolverDirectory = "go-resolve-input",
+    processSuffix = null,
+    fixtureSum = null,
+  } = {},
 ) {
   const scanners = configuration.scanners;
   const resolved = [];
+  const resolverRoot = path.join(context.temporaryRoot, resolverDirectory);
+  await mkdir(resolverRoot, { recursive: false });
   for (const [manifestIndex, manifest] of manifests.entries()) {
     const stagedDirectoryName = `go-module-${manifestIndex + 1}`;
-    const stagedDirectory = path.join(scanInputRoot, stagedDirectoryName);
+    const stagedDirectory = path.join(resolverRoot, stagedDirectoryName);
     await mkdir(stagedDirectory, { recursive: false });
-    const goModBytes = await readTrackedInput(context, manifest, manifest);
+    const readInput = controlFixture
+      ? readTrackedControlInput
+      : readTrackedInput;
+    const inputIndex = controlFixture
+      ? context.controlTrackedIndex
+      : context.trackedIndex;
+    const goModBytes = await readInput(context, manifest, manifest);
     await writeFile(path.join(stagedDirectory, "go.mod"), goModBytes, {
       flag: "wx",
       mode: 0o444,
     });
-    const sumPath = POSIX.join(POSIX.dirname(manifest), "go.sum");
+    const sumPath = fixtureSum ?? POSIX.join(POSIX.dirname(manifest), "go.sum");
     let goSumSha256 = null;
-    if (context.trackedIndex.has(sumPath)) {
-      const goSumBytes = await readTrackedInput(context, sumPath, sumPath);
+    if (inputIndex.has(sumPath)) {
+      const goSumBytes = await readInput(context, sumPath, sumPath);
       await writeFile(path.join(stagedDirectory, "go.sum"), goSumBytes, {
         flag: "wx",
         mode: 0o444,
@@ -2092,7 +2107,7 @@ async function resolveGoInventory(
     };
     const editResult = await runDocker(
       context,
-      `go-mod-edit-${safeArtifactName(manifest)}`,
+      `go-mod-edit-${processSuffix ?? safeArtifactName(manifest)}`,
       scanners.goToolchainImage.image,
       ["go", "mod", "edit", "-json"],
       { ...commonOptions, network: "none" },
@@ -2105,7 +2120,7 @@ async function resolveGoInventory(
     const editIdentity = validateGoModEdit(editDocument, manifest);
     const result = await runDocker(
       context,
-      `go-list-${safeArtifactName(manifest)}`,
+      `go-list-${processSuffix ?? safeArtifactName(manifest)}`,
       scanners.goToolchainImage.image,
       ["go", "list", "-mod=readonly", "-m", "-json", "all"],
       {
@@ -2164,6 +2179,16 @@ async function resolveGoInventory(
         scope: "unknown",
       });
     }
+    thirdParty.sort((left, right) =>
+      left.name < right.name ? -1 : left.name > right.name ? 1 : 0,
+    );
+    const scannerBytes = renderGoScannerManifest(mainModule.Path, thirdParty);
+    const scannerDirectory = path.join(scanInputRoot, stagedDirectoryName);
+    await mkdir(scannerDirectory, { recursive: false });
+    await writeFile(path.join(scannerDirectory, "go.mod"), scannerBytes, {
+      flag: "wx",
+      mode: 0o444,
+    });
     resolved.push({
       manifest,
       containerPath: `/scan/${stagedDirectoryName}/go.mod`,
@@ -2172,10 +2197,93 @@ async function resolveGoInventory(
       thirdParty,
       goModSha256: sha256Hex(goModBytes),
       goSumSha256,
+      scannerManifest: {
+        format: "go-selected-modules-v1",
+        sha256: sha256Hex(scannerBytes),
+        size: scannerBytes.byteLength,
+      },
       editIdentity,
     });
   }
   return resolved;
+}
+
+export function renderGoScannerManifest(mainModule, thirdParty) {
+  const pathToken = /^[A-Za-z0-9][A-Za-z0-9._~+/-]*$/u;
+  const versionToken =
+    /^v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/u;
+  if (
+    typeof mainModule !== "string" ||
+    mainModule.length > 4096 ||
+    !pathToken.test(mainModule) ||
+    !Array.isArray(thirdParty) ||
+    thirdParty.length > 100_000
+  ) {
+    throw new ContractError(
+      "Go scanner manifest identity or module count is invalid",
+    );
+  }
+  const names = new Set([mainModule]);
+  const selected = [];
+  for (const item of thirdParty) {
+    if (
+      item?.ecosystem !== "Go" ||
+      item.scope !== "unknown" ||
+      typeof item.name !== "string" ||
+      item.name.length > 4096 ||
+      !pathToken.test(item.name) ||
+      typeof item.version !== "string" ||
+      item.version.length > 512 ||
+      !versionToken.test(item.version) ||
+      names.has(item.name)
+    ) {
+      throw new ContractError(
+        "Go scanner manifest has an invalid or duplicate selected module",
+      );
+    }
+    names.add(item.name);
+    selected.push(item);
+  }
+  selected.sort((left, right) =>
+    left.name < right.name ? -1 : left.name > right.name ? 1 : 0,
+  );
+  const lines = [
+    "// Derived scanner inventory; never used as a build manifest.",
+    `module ${mainModule}`,
+    "",
+    "require (",
+    ...selected.map(({ name, version }) => `\t${name} ${version}`),
+    ")",
+    "",
+  ];
+  const bytes = Buffer.from(lines.join("\n"), "utf8");
+  if (bytes.byteLength > 16 * 1024 * 1024) {
+    throw new ContractError("Go scanner manifest exceeds the bounded size");
+  }
+  return bytes;
+}
+
+export async function verifyGoScannerInputs(inventory) {
+  for (const [index, module] of inventory.goInventory.entries()) {
+    const file = path.join(
+      inventory.scanInputRoot,
+      `go-module-${index + 1}`,
+      "go.mod",
+    );
+    const stats = await lstat(file);
+    if (!stats.isFile() || stats.isSymbolicLink()) {
+      throw new ContractError("Go scanner manifest is not a regular file");
+    }
+    const observed = await hashFile(file);
+    if (
+      observed.sha256 !== module.scannerManifest.sha256 ||
+      observed.contentLength !== module.scannerManifest.size
+    ) {
+      throw new ContractError(
+        "Go scanner manifest bytes changed after derivation",
+      );
+    }
+  }
 }
 
 export function parseJsonSequence(text, label = "JSON sequence") {
@@ -2246,6 +2354,7 @@ function summarizeGoInventory(inventory) {
       thirdParty,
       goModSha256,
       goSumSha256,
+      scannerManifest,
       editIdentity,
     }) => ({
       manifest,
@@ -2255,6 +2364,7 @@ function summarizeGoInventory(inventory) {
       thirdPartyModuleCount: thirdParty.length,
       goModSha256,
       goSumSha256,
+      scannerManifest,
       editIdentity,
       inventorySha256: sha256Hex(canonicalJson(thirdParty)),
     }),
@@ -2266,6 +2376,7 @@ async function runOsvMissingDatabaseNegativeGate(
   configuration,
   inventory,
 ) {
+  await verifyGoScannerInputs(inventory);
   const emptyCache = path.join(context.temporaryRoot, "osv-empty-cache");
   await mkdir(emptyCache, { recursive: false });
   await Promise.all([
@@ -2612,6 +2723,7 @@ export function osvCanaryArguments() {
     "json",
     "--all-packages",
     "--all-vulns",
+    "--no-call-analysis=go",
     "--offline",
     "--offline-vulnerabilities",
     "--lockfile",
@@ -2682,6 +2794,145 @@ async function runOsvGoAdvisoryCanary(context, configuration, databases) {
   });
 }
 
+async function runOsvGoTransitiveCanary(context, configuration, databases) {
+  const scanInputRoot = path.join(
+    context.temporaryRoot,
+    "go-transitive-scan-input",
+  );
+  await mkdir(scanInputRoot, { recursive: false });
+  const goInventory = await resolveGoInventory(
+    context,
+    configuration,
+    ["scripts/fixtures/supply-chain/transitive-go.mod.txt"],
+    scanInputRoot,
+    {
+      controlFixture: true,
+      resolverDirectory: "go-transitive-resolve-input",
+      processSuffix: "transitive-canary",
+      fixtureSum: "scripts/fixtures/supply-chain/transitive-go.sum.txt",
+    },
+  );
+  const inventory = { scanInputRoot, documentInputs: [], goInventory };
+  await verifyGoScannerInputs(inventory);
+  const result = await runDocker(
+    context,
+    "osv-go-transitive-canary",
+    configuration.scanners.osvScanner.image,
+    osvScanArguments(configuration, inventory, {
+      offline: true,
+      license: false,
+    }),
+    {
+      network: "none",
+      memory: "768m",
+      timeoutMs: configuration.policy.timeoutsSeconds.scanner * 1_000,
+      user: "65534:65534",
+      mounts: [
+        dockerMount(scanInputRoot, "/scan", true),
+        dockerMount(databases[0].cacheRoot, "/cache", true),
+      ],
+      env: {
+        HOME: "/tmp/home",
+        OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY: "/cache",
+      },
+    },
+  );
+  requireRawExit(result, [1], "OSV transitive-only Go advisory canary");
+  await verifyGoScannerInputs(inventory);
+  assertOsvExtractionCoverage(result.stderr, inventory);
+  const document = parseStrictJson(
+    result.stdout,
+    "OSV transitive-only Go advisory output",
+  );
+  const finding = assertOsvGoTransitiveCanary(document);
+  assertOsvGoSourceInventoryParity(document, goInventory[0]);
+  recordTerminalCheck(context, {
+    id: "R016-OSV-GO-TRANSITIVE-CANARY",
+    status: "PASS",
+    rawExit: result.exitCode,
+    ...finding,
+    extractionCount: goInventory[0].thirdParty.length,
+    input: summarizeGoInventory(goInventory)[0],
+    ...processEvidenceReference(context, "osv-go-transitive-canary"),
+  });
+}
+
+export function assertOsvGoTransitiveCanary(document) {
+  const results = document?.results;
+  if (
+    !Array.isArray(results) ||
+    results.length !== 1 ||
+    results[0]?.source?.path !== "/scan/go-module-1/go.mod" ||
+    results[0].source.type !== "lockfile" ||
+    !Array.isArray(results[0].packages)
+  ) {
+    throw new ContractError("OSV transitive-only Go canary source is invalid");
+  }
+  const matches = results[0].packages.filter(
+    (item) =>
+      item?.package?.ecosystem === "Go" &&
+      item.package.name === "golang.org/x/text" &&
+      item.package.version === "0.29.0" &&
+      Array.isArray(item.vulnerabilities) &&
+      item.vulnerabilities.some(({ id }) => id === "GO-2026-5970"),
+  );
+  if (matches.length !== 1) {
+    throw new ContractError(
+      "OSV transitive-only Go canary omitted GO-2026-5970",
+    );
+  }
+  return {
+    advisoryId: "GO-2026-5970",
+    ecosystem: "Go",
+    packageName: "golang.org/x/text",
+    version: "0.29.0",
+  };
+}
+
+export function assertOsvGoSourceInventoryParity(document, module) {
+  const results = document?.results;
+  if (
+    !Array.isArray(results) ||
+    results.length !== 1 ||
+    results[0]?.source?.path !== module.containerPath ||
+    results[0].source.type !== "lockfile" ||
+    !Array.isArray(results[0].packages)
+  ) {
+    throw new ContractError("OSV Go source inventory is invalid");
+  }
+  const actual = results[0].packages
+    .map((item) => {
+      if (
+        item?.package?.ecosystem !== "Go" ||
+        typeof item.package.name !== "string" ||
+        typeof item.package.version !== "string" ||
+        (item.scope !== undefined && item.scope !== "unknown") ||
+        (item.package.scope !== undefined && item.package.scope !== "unknown")
+      ) {
+        throw new ContractError("OSV Go package identity is invalid");
+      }
+      return canonicalJson({
+        ecosystem: "Go",
+        name: item.package.name,
+        version: item.package.version,
+        scope: "unknown",
+      });
+    })
+    .sort();
+  const expected = combinedExpectedInventory({
+    documentInputs: [],
+    goInventory: [module],
+  })
+    [module.containerPath].map((item) => canonicalJson(item))
+    .sort();
+  if (canonicalJson(actual) !== canonicalJson(expected)) {
+    throw new ContractError(
+      "OSV Go source inventory differs from the selected MVS graph",
+    );
+  }
+  return true;
+}
+
 export function osvGoCanaryArguments() {
   return [
     "scan",
@@ -2690,6 +2941,7 @@ export function osvGoCanaryArguments() {
     "json",
     "--all-packages",
     "--all-vulns",
+    "--no-call-analysis=go",
     "--offline",
     "--offline-vulnerabilities",
     "--lockfile",
@@ -2853,6 +3105,7 @@ export function osvGoLicenseCanaryArguments(configuration) {
     "json",
     "--all-packages",
     "--all-vulns",
+    "--no-call-analysis=go",
     "--config",
     "/fixture/osv-scanner.toml",
     "--data-source",
@@ -3040,6 +3293,7 @@ export function osvLicenseCanaryArguments(configuration) {
     "json",
     "--all-packages",
     "--all-vulns",
+    "--no-call-analysis=go",
     "--config",
     "/fixture/osv-scanner.toml",
     "--data-source",
@@ -3335,6 +3589,7 @@ async function runOsvVulnerabilityGate(
   inventory,
   databases,
 ) {
+  await verifyGoScannerInputs(inventory);
   const scanner = configuration.scanners.osvScanner;
   const cacheRoot = databases[0].cacheRoot;
   const args = osvScanArguments(configuration, inventory, {
@@ -3362,6 +3617,7 @@ async function runOsvVulnerabilityGate(
     },
   );
   requireRawExit(result, [0, 1], "OSV vulnerability scan");
+  await verifyGoScannerInputs(inventory);
   const document = parseStrictJson(result.stdout, "OSV vulnerability output");
   assertOsvExtractionCoverage(result.stderr, inventory);
   assertNpmParity(document, inventory.documentInputs);
@@ -3388,6 +3644,7 @@ async function runOsvVulnerabilityGate(
 }
 
 async function runOsvLicenseGate(context, configuration, inventory) {
+  await verifyGoScannerInputs(inventory);
   const scanner = configuration.scanners.osvScanner;
   const result = await runDocker(
     context,
@@ -3407,6 +3664,7 @@ async function runOsvLicenseGate(context, configuration, inventory) {
     },
   );
   requireRawExit(result, [0, 1], "OSV license scan");
+  await verifyGoScannerInputs(inventory);
   const document = parseStrictJson(result.stdout, "OSV license output");
   assertOsvExtractionCoverage(result.stderr, inventory);
   assertNpmParity(document, inventory.documentInputs);
@@ -3442,6 +3700,7 @@ export function osvScanArguments(
     "json",
     "--all-packages",
     "--all-vulns",
+    "--no-call-analysis=go",
   ];
   if (offline) args.push("--offline", "--offline-vulnerabilities");
   if (license) {
@@ -3462,7 +3721,7 @@ export function osvScanArguments(
   return args;
 }
 
-function combinedExpectedInventory(inventory) {
+export function combinedExpectedInventory(inventory) {
   const expected = Object.create(null);
   for (const document of inventory.documentInputs) {
     expected[document.containerPath] = document.packages.map(
@@ -3476,7 +3735,12 @@ function combinedExpectedInventory(inventory) {
   }
   for (const module of inventory.goInventory) {
     if (module.thirdParty.length > 0) {
-      expected[module.containerPath] = module.thirdParty;
+      // OSV's Go extractor removes the canonical module-version prefix. Keep
+      // MVS pins and their evidence unchanged; adapt only scanner identities.
+      expected[module.containerPath] = module.thirdParty.map((item) => ({
+        ...item,
+        version: item.version.replace(/^v/u, ""),
+      }));
     }
   }
   return expected;
@@ -3508,7 +3772,7 @@ export function assertOsvExtractionCoverage(stderr, inventory) {
     assertExtractionCount(
       stderr,
       source.containerPath,
-      source.discoveredModuleCount,
+      source.thirdParty.length,
     );
   }
   return true;
