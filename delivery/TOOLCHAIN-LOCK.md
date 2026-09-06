@@ -79,6 +79,12 @@ Bu kayıt ekleme izni değildir; W001 task'ı gerçek producer/consumer, lisans,
 
 ## Supply-chain gate'leri
 
+### 2026-09-06 Phase B kabul kaydı
+
+DQ-008 A / DEC-028, pgx `v5.10.0` ve yukarıdaki üç exact security override'ın bounded değerlendirmesini onaylar; DQ-009 A / DEC-029 two-operation compiler'ı, DQ-010 B / DEC-030 hardened source-build image yolunu açar. Eski owner-pending anlatımı Phase A tarihsel kanıtıdır; gate eşikleri değişmez. Yeni selected 16-module graph'ın exact `bb57a51` R-016 koşumu manifest-only automatic govulncheck ve root-require/full-MVS extraction ayrımı nedeniyle fail-closed oldu; ayrı protected control-plane remediation ve transitive canary tamamlanmadan dependency admission PASS değildir.
+
+Runtime Go tidy parity `scripts/check-go-mod.mjs` ile ölçülür: manifest-only network acquisition, actual source ile offline tidy, yalnız exact `goldmark v1.7.17`, `x/mod v0.40.0`, `x/text v0.41.0` graph pinlerinin geri uygulanması, checksum+manifest byte karşılaştırması. Security-only pin için fake import/tool directive veya replace kullanılmaz. Pinned Go sürümü CLI'da da doğrulanır; mismatch/nonzero/error/stderr kaynak detayını dışarı sızdırmadan fail-closed olur.
+
 - npm direct dependencies exact, lockfile commitli ve CI install `--frozen-lockfile`.
 - Registry publish-age politikası 24 saattir ve missing-time fail-closed'dur. 27 Ağustos 2026'da yayımlanan, exact integrity/lisansı incelenmiş `@testing-library/react@16.3.3` ilk lock üretimi için version-scoped istisnadır; pattern veya package-wide istisna değildir.
 - Go standard library dışı dependency W000'da yoktur; `go mod verify` ve tidy drift kontrol edilir.
