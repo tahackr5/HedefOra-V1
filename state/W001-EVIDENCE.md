@@ -2,6 +2,17 @@
 
 > Orchestrator-owned living evidence. Bu dosya yalnız exact SHA/tree, literal command/exit ve doğrulanmış artifact kimliğiyle PASS kaydeder.
 
+## Güncel control checkpoint — 2026-09-06
+
+PR #7 exact20e91 local/hosted R-016 artifact ve raw replay kimlikleri,
+CodeQL/Dependency Review bağları ve trusted parity FAIL20/acquisition0:
+`state/W001-R016-GO-GRAPH.md`. Fresh final cold verdict **FAIL**: authenticated
+hosted quality Go1.26.0, canonical1.26.7 değil. Main7a1 post-merge job'unda
+aynı mismatch doğrulandı; eski hosted execution SUCCESS kayıtları kanonik
+Go admission sayılmaz. Local pinned1.26.7 ve ayrı R-016 kanıtları korunur.
+R-027 remediation yeni exact workflow pin/assertion ve full revalidation
+gerektirir; hiçbir geçmiş SHA yeni PASS olarak yeniden etiketlenmez.
+
 ## Scope
 
 W001 runtime davranışından önce aşağıdaki telafi paketi zorunludur:
@@ -313,3 +324,9 @@ Her başarısız artifact korundu; hiçbiri `PASS` olarak yeniden adlandırılma
 - Go advisory ve Go denied-license fixture/process/terminal sözleşmeleri exact live run içinde sırasıyla `GO-2022-1059` ve `GPL-3.0-or-later` bulgularını raw exit `1` ile kanıtladı.
 - Semgrep image'in OCI label'ı private packaging repository'sine işaret etse de gate login/pro engine kullanmaz; resmi CLI `--oss-only` sözleşmesi ve LGPL CE engine'i zorlanır. Packaging reproducibility ile interfile false-negative residual riskleri kalır; bootstrap CodeQL `PASS`, yeni runtime target CodeQL ise PR oluşana kadar `NOT_RUN`dır.
 - Advisory DB publisher signature sunmuyor; same-run generation/ETag/Last-Modified/size/MD5/SHA-256 seal + offline rehash origin compromise'ını çözmez. Bu residual risk saklanmaz.
+
+## 2026-09-06 — selected Go graph control-only remediation
+
+PR #6 exact `01017a25` owner-approved ordered-parent/content-identical merge `7a1e124e432b51694e7d60c0d3d1589867a8835f` oldu. Main CI `34033868818` ve CodeQL `34033868551` SUCCESS, clean local full-tree ve local/hosted R-016 PASS. Ayrı Phase B manifest seal `bb57a51` R-016 exit 21 ile fail-closed kaldı; bu sonuç eski main PASS'ını bozmaz, yeni dependency admission değildir. Control-only task, kapsam, orijinal başarısız run, selected-graph/scanner sözleşmesi ve yeni exact sonuçlar: `state/W001-R016-GO-GRAPH.md`. Yeni controller ve runtime kendi kendisini trusted ilan edemez; ayrı iki-aşamalı owner gate korunur.
+
+Exact control-only `5b9dd0b` local full-tree, pinned R-016 `20260906T134514656Z-25268-432a0759`, independent security ve cold review PASS; evidence `99881619cc0a57696594cfa538a951ad80e6e80e582326eb279f2ffd3d51fd67`,408/408 raw replay. Detached pgx16graph `cf58f66` local admission PASS ayrı kapsamdır. Artifact compatibility geçişi, başarısız ilk CLI denemesi, test komut/count/hash ve final yeni-SHA NOT_RUN sınırları `state/W001-R016-GO-GRAPH.md` içinde açık kaydedildi. Bu kayıt yeni final seal/hosted/owner/post-merge kanıtı değildir.

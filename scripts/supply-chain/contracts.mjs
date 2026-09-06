@@ -19,6 +19,7 @@ const PASS_TERMINAL_CHECK_IDS = [
   "R016-OSV-VULNERABILITY-CANARY",
   "R016-OSV-VULNERABILITY-DEVELOPMENT-CANARY",
   "R016-OSV-GO-ADVISORY-CANARY",
+  "R016-OSV-GO-TRANSITIVE-CANARY",
   "R016-OSV-GO-LICENSE-DENIED-CANARY",
   "R016-OSV-LICENSE-DENIED-CANARY",
   "R016-OSV-LICENSE-UNKNOWN-CANARY",
@@ -103,6 +104,9 @@ const PASS_REQUIRED_PROCESS_IDS = [
   "PROCESS-OSV-VULNERABILITY-CANARY",
   "PROCESS-OSV-VULNERABILITY-DEVELOPMENT-CANARY",
   "PROCESS-OSV-GO-ADVISORY-CANARY",
+  "PROCESS-OSV-GO-TRANSITIVE-CANARY",
+  "PROCESS-GO-MOD-EDIT-TRANSITIVE-CANARY",
+  "PROCESS-GO-LIST-TRANSITIVE-CANARY",
   "PROCESS-OSV-GO-LICENSE-DENIED-CANARY",
   "PROCESS-OSV-LICENSE-DENIED-CANARY",
   "PROCESS-OSV-LICENSE-UNKNOWN-CANARY",
@@ -293,6 +297,16 @@ const CONTROL_PROTECTED_PREFIXES = Object.freeze([
 ]);
 const CONTROL_ONLY_INPUT_PATHS = Object.freeze(["go.mod"]);
 const TRACKED_CANARY_FIXTURES = Object.freeze([
+  {
+    path: "scripts/fixtures/supply-chain/transitive-go.mod.txt",
+    sha256: "59c15a0750877d1e5dd52c029f3be54fd8b65db5823fc8d3d4c4a214d421395c",
+    size: 102,
+  },
+  {
+    path: "scripts/fixtures/supply-chain/transitive-go.sum.txt",
+    sha256: "ff8df1f3f2c7941bde1dd91a18fe4b2baabfece1b3909d34893185ce9495ed23",
+    size: 2098,
+  },
   {
     path: "scripts/fixtures/supply-chain/vulnerable-pnpm-lock.yaml.txt",
     sha256: "cd4c80acc334311c3732e510d98dcf8773c0b005c0e1c3f9145ddf2b6de5cccf",
@@ -1277,8 +1291,8 @@ function validateRequiredProcessChecks(processChecks, evidence, trusted) {
     gitBlobs.length === 0 ||
     controlGitBlobs.length === 0 ||
     ruleBlobs.length !== inputs.semgrepRules.files.length ||
-    goModEdits.length !== inputs.go.length ||
-    goLists.length !== inputs.go.length
+    goModEdits.length !== inputs.go.length + 1 ||
+    goLists.length !== inputs.go.length + 1
   ) {
     throw new ContractError(
       "PASS evidence dynamic process inventory is incomplete",
@@ -1309,6 +1323,7 @@ function validateRequiredProcessChecks(processChecks, evidence, trusted) {
       "R016-OSV-VULNERABILITY-DEVELOPMENT-CANARY",
     ],
     ["PROCESS-OSV-GO-ADVISORY-CANARY", "R016-OSV-GO-ADVISORY-CANARY"],
+    ["PROCESS-OSV-GO-TRANSITIVE-CANARY", "R016-OSV-GO-TRANSITIVE-CANARY"],
     [
       "PROCESS-OSV-GO-LICENSE-DENIED-CANARY",
       "R016-OSV-GO-LICENSE-DENIED-CANARY",
@@ -1676,6 +1691,7 @@ function acceptedProcessRawExits(id) {
     id === "PROCESS-OSV-VULNERABILITY-CANARY" ||
     id === "PROCESS-OSV-VULNERABILITY-DEVELOPMENT-CANARY" ||
     id === "PROCESS-OSV-GO-ADVISORY-CANARY" ||
+    id === "PROCESS-OSV-GO-TRANSITIVE-CANARY" ||
     id === "PROCESS-OSV-GO-LICENSE-DENIED-CANARY" ||
     id === "PROCESS-OSV-LICENSE-DENIED-CANARY" ||
     id === "PROCESS-OSV-LICENSE-UNKNOWN-CANARY" ||
@@ -1983,6 +1999,7 @@ function expectedDockerRunContract(id, evidence, configuration, temporaryRoot) {
     "json",
     "--all-packages",
     "--all-vulns",
+    "--no-call-analysis=go",
   ];
   const offlineOsv = [...osvBase, "--offline", "--offline-vulnerabilities"];
   const productionLockfiles = [
@@ -2141,6 +2158,27 @@ function expectedDockerRunContract(id, evidence, configuration, temporaryRoot) {
       user: "65534:65534",
     });
   }
+  if (id === "PROCESS-OSV-GO-TRANSITIVE-CANARY") {
+    return contract({
+      commandArguments: [
+        ...offlineOsv,
+        "--lockfile",
+        "/scan/go-module-1/go.mod",
+      ],
+      environment: osvEnvironment,
+      image: scanners.osvScanner.image,
+      memory: "768m",
+      mounts: [
+        {
+          source: "go-transitive-scan-input",
+          destination: "/scan",
+          readOnly: true,
+        },
+        { source: "osv-cache", destination: "/cache", readOnly: true },
+      ],
+      user: "65534:65534",
+    });
+  }
   if (
     id === "PROCESS-OSV-LICENSE-DENIED-CANARY" ||
     id === "PROCESS-OSV-LICENSE-UNKNOWN-CANARY" ||
@@ -2268,6 +2306,27 @@ function expectedDockerRunContract(id, evidence, configuration, temporaryRoot) {
   }
   const goProcess = /^PROCESS-GO-(MOD-EDIT|LIST)-(.+)$/u.exec(id);
   if (goProcess) {
+    if (goProcess[2] === "TRANSITIVE-CANARY") {
+      return contract({
+        commandArguments:
+          goProcess[1] === "MOD-EDIT"
+            ? ["go", "mod", "edit", "-json"]
+            : ["go", "list", "-mod=readonly", "-m", "-json", "all"],
+        environment: goEnvironment,
+        image: scanners.goToolchainImage.image,
+        memory: "768m",
+        mounts: [
+          {
+            source: "go-transitive-resolve-input/go-module-1",
+            destination: "/module",
+            readOnly: true,
+          },
+        ],
+        network: goProcess[1] === "LIST" ? "bridge" : "none",
+        user: "65534:65534",
+        workdir: "/module",
+      });
+    }
     const module = evidence.inputs.go.find(
       ({ manifest }) =>
         manifest.replaceAll(/[^A-Za-z0-9._-]/gu, "-").toUpperCase() ===
@@ -2287,7 +2346,7 @@ function expectedDockerRunContract(id, evidence, configuration, temporaryRoot) {
       memory: "768m",
       mounts: [
         {
-          source: `scan-input/go-module-${moduleIndex}`,
+          source: `go-resolve-input/go-module-${moduleIndex}`,
           destination: "/module",
           readOnly: true,
         },
@@ -2580,7 +2639,7 @@ function validatePnpmInputEvidence(pnpm, policy) {
   }
 }
 
-function validateGoInputEvidence(modules) {
+function validateGoInputEvidence(modules, { controlCanary = false } = {}) {
   const manifests = new Set();
   for (const [index, module] of modules.entries()) {
     requireRecord(module, `evidence.inputs.go[${index}]`);
@@ -2594,6 +2653,7 @@ function validateGoInputEvidence(modules) {
         "thirdPartyModuleCount",
         "goModSha256",
         "goSumSha256",
+        "scannerManifest",
         "editIdentity",
         "inventorySha256",
       ],
@@ -2601,7 +2661,10 @@ function validateGoInputEvidence(modules) {
     );
     validateRepositoryPath(module.manifest, `evidence Go manifest ${index}`);
     if (
-      POSIX.basename(module.manifest) !== "go.mod" ||
+      (controlCanary
+        ? module.manifest !==
+          "scripts/fixtures/supply-chain/transitive-go.mod.txt"
+        : POSIX.basename(module.manifest) !== "go.mod") ||
       manifests.has(module.manifest) ||
       module.source !== `/scan/go-module-${index + 1}/go.mod`
     ) {
@@ -2626,6 +2689,29 @@ function validateGoInputEvidence(modules) {
       );
     }
     validateSha256(module.goModSha256, `evidence Go input ${index} go.mod`);
+    requireRecord(
+      module.scannerManifest,
+      `evidence Go input ${index} scanner manifest`,
+    );
+    assertExactObjectKeys(
+      module.scannerManifest,
+      ["format", "sha256", "size"],
+      `evidence Go input ${index} scanner manifest`,
+    );
+    if (
+      module.scannerManifest.format !== "go-selected-modules-v1" ||
+      !Number.isSafeInteger(module.scannerManifest.size) ||
+      module.scannerManifest.size < 1 ||
+      module.scannerManifest.size > 16 * 1024 * 1024
+    ) {
+      throw new ContractError(
+        `evidence Go input ${index} scanner manifest is invalid`,
+      );
+    }
+    validateSha256(
+      module.scannerManifest.sha256,
+      `evidence Go input ${index} scanner manifest`,
+    );
     if (module.goSumSha256 !== null) {
       validateSha256(module.goSumSha256, `evidence Go input ${index} go.sum`);
     }
@@ -3976,6 +4062,37 @@ function validateTerminalSemantics(
     );
   }
 
+  const transitiveCanary = terminalById.get("R016-OSV-GO-TRANSITIVE-CANARY");
+  validateGoInputEvidence([transitiveCanary?.input], { controlCanary: true });
+  const transitiveInput = transitiveCanary.input;
+  if (
+    transitiveCanary.rawExit !== 1 ||
+    transitiveCanary.advisoryId !== "GO-2026-5970" ||
+    transitiveCanary.ecosystem !== "Go" ||
+    transitiveCanary.packageName !== "golang.org/x/text" ||
+    transitiveCanary.version !== "0.29.0" ||
+    transitiveCanary.extractionCount !== 12 ||
+    transitiveInput.mainModule !==
+      "example.invalid/hedefora-transitive-canary" ||
+    transitiveInput.discoveredModuleCount !== 13 ||
+    transitiveInput.thirdPartyModuleCount !== 12 ||
+    transitiveInput.goModSha256 !==
+      trackedFixture("scripts/fixtures/supply-chain/transitive-go.mod.txt")
+        .sha256 ||
+    transitiveInput.goSumSha256 !==
+      trackedFixture("scripts/fixtures/supply-chain/transitive-go.sum.txt")
+        .sha256 ||
+    transitiveInput.inventorySha256 !==
+      "687be052dbb437cced8347c223df251527ac3230fafb18f7af3563853cbb3c6e" ||
+    transitiveInput.scannerManifest.sha256 !==
+      "608829e45188403974bf17ba846c365d4cd244dd92158d139bb3ff3c80e2a992" ||
+    transitiveInput.scannerManifest.size !== 568
+  ) {
+    throw new ContractError(
+      "PASS evidence transitive-only Go canary semantics are invalid",
+    );
+  }
+
   const goLicenseCanary = terminalById.get("R016-OSV-GO-LICENSE-DENIED-CANARY");
   if (
     goLicenseCanary?.rawExit !== 1 ||
@@ -4214,6 +4331,14 @@ function validateExactTerminalShapes(evidence, terminalById) {
       "version",
       "extractionCount",
       "fixtureSha256",
+    ),
+    "R016-OSV-GO-TRANSITIVE-CANARY": processTerminal(
+      "advisoryId",
+      "ecosystem",
+      "packageName",
+      "version",
+      "extractionCount",
+      "input",
     ),
     "R016-OSV-GO-LICENSE-DENIED-CANARY": processTerminal(
       "ecosystem",

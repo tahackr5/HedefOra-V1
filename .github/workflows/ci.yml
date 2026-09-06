@@ -80,12 +80,32 @@ jobs:
             ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
             git . --redact --no-banner --no-color
 
-      - name: Set up Go from go.mod
+      - name: Set up exact Go toolchain
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           cache: false
           check-latest: false
-          go-version-file: go.mod
+          go-version: 1.26.7
+
+      - name: Verify Go toolchain identity and manifest parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected_go_version="go1.26.7"
+          actual_go_version="$(go env GOVERSION)"
+          [[ "${GOTOOLCHAIN}" == "local" ]]
+          [[ "$(go env GOTOOLCHAIN)" == "local" ]]
+          [[ "${actual_go_version}" == "${expected_go_version}" ]]
+          module_go_version="$(awk '$1 == "go" { if (NF != 2) exit 1; print $2 }' go.mod)"
+          module_go_toolchain="$(awk '$1 == "toolchain" { if (NF != 2) exit 1; print $2 }' go.mod)"
+          tool_versions_go="$(awk '$1 == "golang" { if (NF != 2) exit 1; print $2 }' .tool-versions)"
+          [[ "${module_go_version}" == "1.26.0" ]]
+          [[ "${module_go_toolchain}" == "${expected_go_version}" ]]
+          [[ "go${tool_versions_go}" == "${expected_go_version}" ]]
+          go_root="$(go env GOROOT)"
+          [[ "$(realpath "$(command -v go)")" == "$(realpath "${go_root}/bin/go")" ]]
+          [[ "$(realpath "$(command -v gofmt)")" == "$(realpath "${go_root}/bin/gofmt")" ]]
+          printf 'Verified Go toolchain: %s (GOTOOLCHAIN=local; manifest parity passed)\n' "${actual_go_version}"
 
       - name: Check tracked Go formatting
         shell: bash
@@ -186,8 +206,14 @@ jobs:
       - name: Vet Go packages
         run: go vet ./...
 
+      - name: Build Go packages
+        run: go build ./...
+
       - name: Test Go packages
-        run: go test ./...
+        run: go test -count=1 -shuffle=on ./...
+
+      - name: Race-test Go packages
+        run: go test -race -count=1 -shuffle=on ./...
 
   supply-chain:
     name: R-016 supply-chain gate

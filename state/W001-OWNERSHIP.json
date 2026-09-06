@@ -1,8 +1,10 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "43a82caffe7dba5a3b1305dbb79f0e52c24151ea",
-  "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
+  "verifiedThrough": "35596914d829863ae52fef3ccd75d08ca86efb9c",
+  "trailingAllowedPaths": [
+    "state/W001-OWNERSHIP.json"
+  ],
   "tasks": {
     "W001-T00-wave-open": {
       "base": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
@@ -26,7 +28,9 @@
     "W001-T01-ownership-seal": {
       "base": "4d958a2f1d1e31667ca6a4db5336098f8bf90ec0",
       "head": "02caed4b933ec64bd93044ad6719878ef1618ebf",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T02-supply-chain": {
       "base": "02caed4b933ec64bd93044ad6719878ef1618ebf",
@@ -52,7 +56,9 @@
     "W001-T02-ownership-seal": {
       "base": "7d77f1b10bd159f895c49e53623dec18e70aed7d",
       "head": "1d171e726e9d36d8c2e6ffc8b93a36605b5beaf5",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T02-manifest-inspection": {
       "base": "1d171e726e9d36d8c2e6ffc8b93a36605b5beaf5",
@@ -69,17 +75,23 @@
     "W001-T02-manifest-inspection-seal": {
       "base": "6cac36d661bc6d2f679792a430d38c0f3079eacc",
       "head": "f631af27dcd00ba6de2c98d08a6ff1effd9d3dfd",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T02-rule-lock-byte-identity": {
       "base": "f631af27dcd00ba6de2c98d08a6ff1effd9d3dfd",
       "head": "6c086ed18e971fe4b92b12513b77955b7a9c2ae5",
-      "allowedPaths": ["security/scanners.lock.json"]
+      "allowedPaths": [
+        "security/scanners.lock.json"
+      ]
     },
     "W001-T02-rule-lock-byte-identity-seal": {
       "base": "6c086ed18e971fe4b92b12513b77955b7a9c2ae5",
       "head": "28cdd95686568bc465561f61bff8475fb2016360",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T02-database-archive-limit": {
       "base": "28cdd95686568bc465561f61bff8475fb2016360",
@@ -98,7 +110,9 @@
     "W001-T02-database-archive-limit-seal": {
       "base": "d9340b6fe72db378546c1a7d342ee1c7802c047e",
       "head": "9ba25b2932316ba381ec543b7663dd16b959d00a",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T02-osv-scope-provenance": {
       "base": "9ba25b2932316ba381ec543b7663dd16b959d00a",
@@ -116,7 +130,9 @@
     "W001-T02-osv-scope-provenance-seal": {
       "base": "dbb06fe482575554ade4c65a47c167cfa755cd78",
       "head": "058d2ac2111ade4de7cb077830127aa3cc49d61a",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T02-semgrep-minified-contract": {
       "base": "058d2ac2111ade4de7cb077830127aa3cc49d61a",
@@ -132,7 +148,9 @@
     "W001-T02-semgrep-minified-contract-seal": {
       "base": "7f09a2a607620f625bc11773caec3aed870a9de5",
       "head": "adba09573bbe8ec12e7af21371d67e327ff271b8",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T02-control-evidence-path-order": {
       "base": "adba09573bbe8ec12e7af21371d67e327ff271b8",
@@ -145,7 +163,9 @@
     "W001-T02-control-evidence-path-order-seal": {
       "base": "84ee9e0fde0dfe312159e3751ddcd801a815c837",
       "head": "22112f69a36844f0452058fe477fe268ae32a684",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T02-semgrep-evidence-path-order": {
       "base": "22112f69a36844f0452058fe477fe268ae32a684",
@@ -159,7 +179,9 @@
     "W001-T02-semgrep-evidence-path-order-seal": {
       "base": "d857b5731258a16caab48900b6cf635aa617f066",
       "head": "7e866ce96658fd297692257a1630df6dcc2b85fe",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T02-go-process-environment-contract": {
       "base": "7e866ce96658fd297692257a1630df6dcc2b85fe",
@@ -172,7 +194,9 @@
     "W001-T02-go-process-environment-contract-seal": {
       "base": "37543b1c6bb928d09618cb31924a7fead534e448",
       "head": "9ec363c6515de20eea5bd9c9ffd036dad957da6b",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T02-local-pass-evidence": {
       "base": "9ec363c6515de20eea5bd9c9ffd036dad957da6b",
@@ -187,17 +211,23 @@
     "W001-T02-local-pass-evidence-seal": {
       "base": "37abd4b508151013732014c2dbb9e0b5780b01fc",
       "head": "955c7769662c5153c351fd74e8fb8eb64c8f6e6a",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T02-release-ledger-byte-preservation": {
       "base": "955c7769662c5153c351fd74e8fb8eb64c8f6e6a",
       "head": "5d60c01c92cd3cfa2f12e47da79e0a283f5e99c2",
-      "allowedPaths": ["state/RELEASE-LEDGER.md"]
+      "allowedPaths": [
+        "state/RELEASE-LEDGER.md"
+      ]
     },
     "W001-T02-release-ledger-byte-preservation-seal": {
       "base": "5d60c01c92cd3cfa2f12e47da79e0a283f5e99c2",
       "head": "452b8f219c470609b0fc56502a2dd99c5adb6561",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T02-linux-ci-portability": {
       "base": "452b8f219c470609b0fc56502a2dd99c5adb6561",
@@ -211,7 +241,9 @@
     "W001-T02-linux-ci-portability-seal": {
       "base": "a378a98fcfe0715dfcf45e500d87e056c5928718",
       "head": "e3ca17d9ed000f7758cdb43d28dd22862b20cdd3",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T02-public-repository-boundary": {
       "base": "e3ca17d9ed000f7758cdb43d28dd22862b20cdd3",
@@ -243,7 +275,9 @@
     "W001-T02-public-repository-boundary-seal": {
       "base": "8c25694be0ba16d8167527347e5d186110937cdd",
       "head": "64817bf4168c7a75df0eb2d2d6485e2408c7755e",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T02-public-hosted-marker-fix": {
       "base": "64817bf4168c7a75df0eb2d2d6485e2408c7755e",
@@ -257,7 +291,9 @@
     "W001-T02-public-hosted-marker-fix-seal": {
       "base": "361f0a2d9605d224293d5b6e3c162dd22f29ea58",
       "head": "c59a46e8cd466620f5654708a2b1cac8c0371683",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T02-public-workflow-provenance": {
       "base": "c59a46e8cd466620f5654708a2b1cac8c0371683",
@@ -284,7 +320,9 @@
     "W001-T02-public-workflow-provenance-seal": {
       "base": "0de06961e7afaf66bf2084b7782506363148f8a9",
       "head": "f43554592428a2a0d779a110c66bff2af9c68d6a",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T02-public-linux-portability": {
       "base": "f43554592428a2a0d779a110c66bff2af9c68d6a",
@@ -303,7 +341,9 @@
     "W001-T02-public-linux-portability-seal": {
       "base": "43d7c02bdf718704dd64aab22cdfa3a23ca5a10a",
       "head": "ac637de57d4f7c3a7f51c4933365f596e0b3817b",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T03-bootstrap-merge-wrapper": {
       "base": "ac637de57d4f7c3a7f51c4933365f596e0b3817b",
@@ -417,7 +457,9 @@
     "W001-T04I-codeql-fixture-remediation": {
       "base": "54a7b709bcda9ceecccb6898c23e3e19f65dcea2",
       "head": "8a007b12e39478932387c2107c6dfc8665c0fea8",
-      "allowedPaths": ["scripts/generate-openapi.test.mjs"]
+      "allowedPaths": [
+        "scripts/generate-openapi.test.mjs"
+      ]
     },
     "W001-T04I-graph-integration-promotion": {
       "base": "8a007b12e39478932387c2107c6dfc8665c0fea8",
@@ -433,7 +475,9 @@
     "W001-T04I-graph-integration-seal": {
       "base": "a393f2dcdf4220eda4e14b280342a4dc8f2ff72d",
       "head": "89d9632b1fefdd8b0cd2e6c5e9e432076f63836b",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T04I-owner-merge-wrapper": {
       "base": "89d9632b1fefdd8b0cd2e6c5e9e432076f63836b",
@@ -500,7 +544,9 @@
     "W001-T04F-task-open-seal": {
       "base": "1aa09c174f8fbbfd96e9027426a27413423c8a25",
       "head": "fc69dc4dd78206c4106d2c8d8c528aa08c198a8c",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T04F-governance-correction": {
       "base": "fc69dc4dd78206c4106d2c8d8c528aa08c198a8c",
@@ -517,12 +563,17 @@
     "W001-T04F-governance-correction-evidence": {
       "base": "92be98e2e949904f15ff3b1ff72d783f6c80b475",
       "head": "8948294dc12f139d307b5d3d18e84507d15722ab",
-      "allowedPaths": ["state/RELEASE-LEDGER.md", "state/W001-EVIDENCE.md"]
+      "allowedPaths": [
+        "state/RELEASE-LEDGER.md",
+        "state/W001-EVIDENCE.md"
+      ]
     },
     "W001-T04F-governance-correction-seal": {
       "base": "8948294dc12f139d307b5d3d18e84507d15722ab",
       "head": "948f7a1c3ba97ef586cad9d0347696f2e026b6d8",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T04F-phase-a-implementation": {
       "base": "948f7a1c3ba97ef586cad9d0347696f2e026b6d8",
@@ -561,7 +612,9 @@
     "W001-T04F-phase-a-static-evidence-seal": {
       "base": "4cacb40d178f3e79f04cc0a5d5ece09ba6962f0f",
       "head": "b9e1ab5b927da93d9782e3da600420f7885b5a01",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T04F-phase-a-security-remediation": {
       "base": "b9e1ab5b927da93d9782e3da600420f7885b5a01",
@@ -579,7 +632,10 @@
     "W001-T04F-phase-a-documentation-parity": {
       "base": "659c1cb642d56ec36d168bd585841981c989fba4",
       "head": "7a987f7bb85643c30ce3607367cbbca74f49abd2",
-      "allowedPaths": ["infra/README.md", "infra/postgres/README.md"]
+      "allowedPaths": [
+        "infra/README.md",
+        "infra/postgres/README.md"
+      ]
     },
     "W001-T04F-phase-a-remediation-evidence": {
       "base": "7a987f7bb85643c30ce3607367cbbca74f49abd2",
@@ -595,7 +651,9 @@
     "W001-T04F-phase-a-remediation-evidence-seal": {
       "base": "98738c7c986164486068564cca327462c841a57c",
       "head": "5b3fc79507f5784c47661ef01dad914e9c61bdc1",
-      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
     },
     "W001-T04F-phase-a-local-exit-evidence": {
       "base": "5b3fc79507f5784c47661ef01dad914e9c61bdc1",
@@ -607,6 +665,109 @@
         "state/W001-EVIDENCE.md",
         "state/W001-OWNERSHIP.md"
       ]
+    },
+    "W001-T04F-approved-head-seal": {
+      "base": "43a82caffe7dba5a3b1305dbb79f0e52c24151ea",
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ],
+      "head": "01017a25bf02f27924bf0361fd6b70abdc493ac0"
+    },
+    "W001-T04F-phase-a-owner-merge": {
+      "base": "01017a25bf02f27924bf0361fd6b70abdc493ac0",
+      "allowedPaths": [
+        "architecture/ADR-REGISTER.md",
+        "contracts/database/migrations.yaml",
+        "contracts/database/README.md",
+        "contracts/database/roles.yaml",
+        "db/migrations/000001_database_foundation.down.sql",
+        "db/migrations/000001_database_foundation.up.sql",
+        "db/migrations/SHA256SUMS",
+        "DECISIONS.md",
+        "delivery/TOOLCHAIN-LOCK.md",
+        "FILE-INDEX.md",
+        "infra/compose.dev.yml",
+        "infra/postgres/initdb/010_roles.sql",
+        "infra/postgres/README.md",
+        "infra/README.md",
+        "package.json",
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.json",
+        "state/W001-OWNERSHIP.md",
+        "tests/integration/postgres/run.mjs",
+        "tests/integration/postgres/run.test.mjs"
+      ],
+      "head": "7a1e124e432b51694e7d60c0d3d1589867a8835f"
+    },
+    "W001-T04FB-control-task-open": {
+      "base": "7a1e124e432b51694e7d60c0d3d1589867a8835f",
+      "allowedPaths": [
+        "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
+        "FILE-INDEX.md",
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md",
+        "state/W001-R016-GO-GRAPH.md"
+      ],
+      "head": "77c8a2c374a92fabb8642a1731d3011ca6208a84"
+    },
+    "W001-T04FB-control-graph-remediation": {
+      "base": "77c8a2c374a92fabb8642a1731d3011ca6208a84",
+      "allowedPaths": [
+        "scripts/fixtures/supply-chain/transitive-go.mod.txt",
+        "scripts/fixtures/supply-chain/transitive-go.sum.txt",
+        "scripts/supply-chain/contracts.mjs",
+        "scripts/supply-chain/contracts.test.mjs",
+        "scripts/supply-chain/run.mjs",
+        "scripts/supply-chain/run.test.mjs",
+        "security/r016-evidence.schema.json"
+      ],
+      "head": "4972c06e9432e6072ce5799cc751fca8be9db2eb"
+    },
+    "W001-T04FB-control-implementation-seal": {
+      "base": "4972c06e9432e6072ce5799cc751fca8be9db2eb",
+      "head": "5b9dd0b514d5165bb91202ad6113421c0c9d2cd6",
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
+    },
+    "W001-T04FB-control-local-evidence": {
+      "base": "5b9dd0b514d5165bb91202ad6113421c0c9d2cd6",
+      "head": "3a16a3452e3be8bef3df7c47bb6af9cbbc4060ce",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-R016-GO-GRAPH.md"
+      ]
+    },
+    "W001-T04FB-control-local-evidence-seal": {
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ],
+      "head": "20e91e0e6d367015058eaae4b82db25b56693e1a",
+      "base": "3a16a3452e3be8bef3df7c47bb6af9cbbc4060ce"
+    },
+    "W001-T04FB-control-exact-go-identity-fix": {
+      "allowedPaths": [
+        ".github/workflows/ci.yml",
+        "scripts/supply-chain/run.test.mjs",
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md",
+        "state/W001-R016-GO-GRAPH.md"
+      ],
+      "head": "35596914d829863ae52fef3ccd75d08ca86efb9c",
+      "base": "20e91e0e6d367015058eaae4b82db25b56693e1a"
     }
   }
 }
