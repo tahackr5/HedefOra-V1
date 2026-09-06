@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "f19cca198e7236e15f2ac7d764c12f8312b0f348",
+  "verifiedThrough": "aa4469d815df62e94a13be84abeedb5c5ac65c5c",
   "trailingAllowedPaths": [
     "state/W001-OWNERSHIP.json"
   ],
@@ -889,6 +889,33 @@
         "state/W001-OWNERSHIP.md",
         "state/W001-PHASE-B.md",
         "state/W001-R016-GO-GRAPH.md"
+      ]
+    },
+    "W001-T04FB-trusted-integration-seal": {
+      "base": "f19cca198e7236e15f2ac7d764c12f8312b0f348",
+      "head": "a3c0b9197386e093bb80b922b0bacc91f5763a6f",
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
+    },
+    "W001-T04FB-trusted-runtime-scan-evidence": {
+      "base": "a3c0b9197386e093bb80b922b0bacc91f5763a6f",
+      "head": "a70d5c522b0c37f4bba254bfbab84c281a801fd8",
+      "allowedPaths": [
+        "state/W001-PHASE-B.md"
+      ]
+    },
+    "W001-T04FB-engine-test-preparation": {
+      "base": "a70d5c522b0c37f4bba254bfbab84c281a801fd8",
+      "head": "aa4469d815df62e94a13be84abeedb5c5ac65c5c",
+      "allowedPaths": [
+        "internal/platform/app/api_integration_test.go",
+        "internal/platform/postgres/pool_integration_test.go",
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "state/W001-PHASE-B.md",
+        "tests/integration/postgres/cmd/tlsfixture/main.go",
+        "tests/integration/postgres/cmd/tlsfixture/main_linux_test.go"
       ]
     }
   }
