@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "aa4469d815df62e94a13be84abeedb5c5ac65c5c",
+  "verifiedThrough": "b4dd51a64609cf5956b46b66fc67efba43303ca4",
   "trailingAllowedPaths": [
     "state/W001-OWNERSHIP.json"
   ],
@@ -705,120 +705,32 @@
         "tests/integration/postgres/run.test.mjs"
       ]
     },
-    "W001-T04FB-task-open": {
+    "W001-T04FB-pr7-runtime-graph-reconciliation": {
       "base": "7a1e124e432b51694e7d60c0d3d1589867a8835f",
-      "head": "7cbf26e6605b8129cbeb498cd60984550fd8afad",
+      "head": "f19cca198e7236e15f2ac7d764c12f8312b0f348",
       "allowedPaths": [
+        ".github/workflows/ci.yml",
+        ".spectral.yaml",
         "DECISIONS.md",
         "FILE-INDEX.md",
         "architecture/ADR-REGISTER.md",
-        "state/ACTIVE-WAVE.md",
-        "state/DECISION-QUEUE.md",
-        "state/RELEASE-LEDGER.md",
-        "state/W001-EVIDENCE.md",
-        "state/W001-OWNERSHIP.md",
-        "state/W001-PHASE-B.md"
-      ]
-    },
-    "W001-T04FB-dependency-pins": {
-      "base": "7cbf26e6605b8129cbeb498cd60984550fd8afad",
-      "head": "9d5c7774f58c67cdf656d457be186876c298e8b1",
-      "allowedPaths": [
-        "go.mod",
-        "go.sum"
-      ]
-    },
-    "W001-T04FB-dependency-seal": {
-      "head": "bb57a51bfe3cd0c3cae6d3197ef2b69462d38b17",
-      "base": "9d5c7774f58c67cdf656d457be186876c298e8b1",
-      "allowedPaths": [
-        "state/W001-OWNERSHIP.json"
-      ]
-    },
-    "W001-T04FB-health-compiler": {
-      "head": "8a110b72649f5974ba723192ebe6bd84ec7bb1c6",
-      "base": "bb57a51bfe3cd0c3cae6d3197ef2b69462d38b17",
-      "allowedPaths": [
-        ".spectral.yaml",
+        "cmd/hedefora/main.go",
+        "cmd/hedefora/main_test.go",
         "contracts/README.md",
         "contracts/openapi/openapi.yaml",
-        "internal/generated/openapi/openapi.gen.go",
-        "scripts/fixtures/openapi-generator-negative-mutations.mjs",
-        "scripts/fixtures/openapi-negative-mutations.mjs",
-        "scripts/generate-openapi.mjs",
-        "scripts/generate-openapi.test.mjs"
-      ]
-    },
-    "W001-T04FB-offline-tidy-checker": {
-      "head": "bf35cc1032d734078d103ab7a95e56e1831ec705",
-      "base": "8a110b72649f5974ba723192ebe6bd84ec7bb1c6",
-      "allowedPaths": [
-        "package.json",
-        "scripts/check-go-mod.mjs",
-        "scripts/check-go-mod.test.mjs"
-      ]
-    },
-    "W001-T04FB-component-status": {
-      "head": "9c3100b7a4944d8a12355208621bc36095c60bea",
-      "base": "bf35cc1032d734078d103ab7a95e56e1831ec705",
-      "allowedPaths": [
+        "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
         "delivery/TOOLCHAIN-LOCK.md",
-        "state/W001-PHASE-B.md"
-      ]
-    },
-    "W001-T04FB-tidy-replacement-fix": {
-      "head": "a9e939b76acfccf1cbb348fc5c684450e430d997",
-      "base": "9c3100b7a4944d8a12355208621bc36095c60bea",
-      "allowedPaths": [
-        "scripts/check-go-mod.mjs",
-        "scripts/check-go-mod.test.mjs"
-      ]
-    },
-    "W001-T04FB-image-blocked-preparation": {
-      "head": "5848d9c44f02bb7e2a275f8f275292c6398b9503",
-      "base": "a9e939b76acfccf1cbb348fc5c684450e430d997",
-      "allowedPaths": [
+        "go.mod",
+        "go.sum",
+        "infra/README.md",
+        "infra/postgres/README.md",
         "infra/postgres/image/.dockerignore",
         "infra/postgres/image/Dockerfile",
         "infra/postgres/image/README.md",
         "infra/postgres/image/entrypoint.sh",
         "infra/postgres/image/inputs.lock.json",
-        "infra/postgres/image/package-sources.lock.json"
-      ]
-    },
-    "W001-T04FB-component-review-evidence": {
-      "head": "cafe57567d6b52f432e43ec7152db63c2a6c6051",
-      "base": "5848d9c44f02bb7e2a275f8f275292c6398b9503",
-      "allowedPaths": [
-        "state/ACTIVE-WAVE.md",
-        "state/DECISION-QUEUE.md",
-        "state/RELEASE-LEDGER.md",
-        "state/RISK-REGISTER.md",
-        "state/W001-PHASE-B.md"
-      ]
-    },
-    "W001-T04FB-image-semantic-policy": {
-      "head": "a20d3feaa9f32f7040c6ea6043871251a66597e0",
-      "base": "cafe57567d6b52f432e43ec7152db63c2a6c6051",
-      "allowedPaths": [
-        "infra/README.md",
-        "infra/postgres/README.md",
-        "package.json",
-        "scripts/check-generated.mjs",
-        "scripts/check-generated.test.mjs",
-        "scripts/postgres-image/README.md",
-        "scripts/postgres-image/policy.mjs",
-        "scripts/postgres-image/policy.test.mjs",
-        "security/postgres-image-scanners.lock.json"
-      ]
-    },
-    "W001-T04FB-integrated-pool-readiness": {
-      "head": "b4d9d87809b5a0dec6a724d405cc76b6e0adff4f",
-      "base": "a20d3feaa9f32f7040c6ea6043871251a66597e0",
-      "allowedPaths": [
-        "cmd/hedefora/main.go",
-        "cmd/hedefora/main_test.go",
-        "infra/postgres/README.md",
+        "infra/postgres/image/package-sources.lock.json",
+        "internal/generated/openapi/openapi.gen.go",
         "internal/platform/app/api.go",
         "internal/platform/app/api_test.go",
         "internal/platform/config/api.go",
@@ -833,59 +745,32 @@
         "internal/platform/http/server_test.go",
         "internal/platform/postgres/pool.go",
         "internal/platform/postgres/pool_test.go",
+        "package.json",
         "scripts/check-generated.mjs",
-        "scripts/check-generated.test.mjs"
-      ]
-    },
-    "W001-T04FB-integrated-runtime-evidence": {
-      "head": "6131759845b90a675e672cadba8d326a1fe78a12",
-      "base": "b4d9d87809b5a0dec6a724d405cc76b6e0adff4f",
-      "allowedPaths": [
-        "state/W001-PHASE-B.md"
-      ]
-    },
-    "W001-T04FB-integrated-runtime-evidence-seal": {
-      "base": "6131759845b90a675e672cadba8d326a1fe78a12",
-      "head": "43d419da9027a8fb88fbf2e7c70705d8213742ed",
-      "allowedPaths": [
-        "state/W001-OWNERSHIP.json"
-      ]
-    },
-    "W001-T04FB-runtime-local-promotion": {
-      "base": "43d419da9027a8fb88fbf2e7c70705d8213742ed",
-      "head": "f26897399d828c6d9657b14c87205ae20134288e",
-      "allowedPaths": [
-        "state/ACTIVE-WAVE.md",
-        "state/RELEASE-LEDGER.md",
-        "state/W001-PHASE-B.md"
-      ]
-    },
-    "W001-T04FB-runtime-local-promotion-seal": {
-      "base": "f26897399d828c6d9657b14c87205ae20134288e",
-      "head": "02ef7cf2379c563d398571a6f439920331e16a80",
-      "allowedPaths": [
-        "state/W001-OWNERSHIP.json"
-      ]
-    },
-    "W001-T04FB-trusted-pr7-integration": {
-      "base": "02ef7cf2379c563d398571a6f439920331e16a80",
-      "head": "f19cca198e7236e15f2ac7d764c12f8312b0f348",
-      "allowedPaths": [
-        ".github/workflows/ci.yml",
-        "DECISIONS.md",
-        "FILE-INDEX.md",
-        "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
+        "scripts/check-generated.test.mjs",
+        "scripts/check-go-mod.mjs",
+        "scripts/check-go-mod.test.mjs",
+        "scripts/fixtures/openapi-generator-negative-mutations.mjs",
+        "scripts/fixtures/openapi-negative-mutations.mjs",
         "scripts/fixtures/supply-chain/transitive-go.mod.txt",
         "scripts/fixtures/supply-chain/transitive-go.sum.txt",
+        "scripts/generate-openapi.mjs",
+        "scripts/generate-openapi.test.mjs",
+        "scripts/postgres-image/README.md",
+        "scripts/postgres-image/policy.mjs",
+        "scripts/postgres-image/policy.test.mjs",
         "scripts/supply-chain/contracts.mjs",
         "scripts/supply-chain/contracts.test.mjs",
         "scripts/supply-chain/run.mjs",
         "scripts/supply-chain/run.test.mjs",
+        "security/postgres-image-scanners.lock.json",
         "security/r016-evidence.schema.json",
         "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
         "state/RELEASE-LEDGER.md",
         "state/RISK-REGISTER.md",
         "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.json",
         "state/W001-OWNERSHIP.md",
         "state/W001-PHASE-B.md",
         "state/W001-R016-GO-GRAPH.md"
@@ -916,6 +801,21 @@
         "state/W001-PHASE-B.md",
         "tests/integration/postgres/cmd/tlsfixture/main.go",
         "tests/integration/postgres/cmd/tlsfixture/main_linux_test.go"
+      ]
+    },
+    "W001-T04FB-engine-test-preparation-seal": {
+      "base": "aa4469d815df62e94a13be84abeedb5c5ac65c5c",
+      "head": "5e8e5995265878cd38e819f5312aa7921414338f",
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
+    },
+    "W001-T04FB-ownership-evidence-correction": {
+      "base": "5e8e5995265878cd38e819f5312aa7921414338f",
+      "head": "b4dd51a64609cf5956b46b66fc67efba43303ca4",
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.md",
+        "state/W001-PHASE-B.md"
       ]
     }
   }
