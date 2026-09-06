@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "6131759845b90a675e672cadba8d326a1fe78a12",
+  "verifiedThrough": "f26897399d828c6d9657b14c87205ae20134288e",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T00-wave-open": {
@@ -783,6 +783,20 @@
       "head": "6131759845b90a675e672cadba8d326a1fe78a12",
       "base": "b4d9d87809b5a0dec6a724d405cc76b6e0adff4f",
       "allowedPaths": [
+        "state/W001-PHASE-B.md"
+      ]
+    },
+    "W001-T04FB-integrated-runtime-evidence-seal": {
+      "base": "6131759845b90a675e672cadba8d326a1fe78a12",
+      "head": "43d419da9027a8fb88fbf2e7c70705d8213742ed",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-runtime-local-promotion": {
+      "base": "43d419da9027a8fb88fbf2e7c70705d8213742ed",
+      "head": "f26897399d828c6d9657b14c87205ae20134288e",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
         "state/W001-PHASE-B.md"
       ]
     }
