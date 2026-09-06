@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "4972c06e9432e6072ce5799cc751fca8be9db2eb",
+  "verifiedThrough": "3a16a3452e3be8bef3df7c47bb6af9cbbc4060ce",
   "trailingAllowedPaths": [
     "state/W001-OWNERSHIP.json"
   ],
@@ -730,6 +730,23 @@
         "security/r016-evidence.schema.json"
       ],
       "head": "4972c06e9432e6072ce5799cc751fca8be9db2eb"
+    },
+    "W001-T04FB-control-implementation-seal": {
+      "base": "4972c06e9432e6072ce5799cc751fca8be9db2eb",
+      "head": "5b9dd0b514d5165bb91202ad6113421c0c9d2cd6",
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
+    },
+    "W001-T04FB-control-local-evidence": {
+      "base": "5b9dd0b514d5165bb91202ad6113421c0c9d2cd6",
+      "head": "3a16a3452e3be8bef3df7c47bb6af9cbbc4060ce",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-R016-GO-GRAPH.md"
+      ]
     }
   }
 }
