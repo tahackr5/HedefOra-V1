@@ -41,6 +41,8 @@ Bu dosya yalnız kabul edilmiş, repository çapında etkili kararların kısa k
 - DEC-030 (ACCEPTED; ADR-0020): DQ-010 B ile repository-owned hardened PG17 image geliştirme/değerlendirmesi kabul edildi. Pinned source/base/package closure, SBOM/provenance, ayrı OS/source vulnerability ve lisans kanıtı olmadan execution admission yoktur; eski blocked image'ler çalıştırılmaz.
 - DEC-026 uygulama kaydı: Owner-onaylı PR #6 head `01017a25bf02f27924bf0361fd6b70abdc493ac0`, content-identical merge `7a1e124e432b51694e7d60c0d3d1589867a8835f` ve local/hosted post-merge PASS sonrası Phase B'nin ortak immutable base'i bu merge'dir; historical wave start değişmez.
 
+- DEC-026 continuation kaydı: Owner-approved PR #7 exact `7459265b2f5744d7aa40feddfc85cb8fcabb8567` → two-parent/content-identical `aba3d13ed057bbe80a2e67486058180479c3c50e` / tree `ed51da48638d362ff52169658321604dedba442a`, gerçek local/hosted Go1.26.7 full-tree, R-016, CodeQL ve independent cold PASS sonrasında Phase B continuation'ın immutable/trusted control base'i aba3d13'tür. Historical wave start ve önceki runtime first-parent lineage korunur; kanıt `state/W001-PHASE-B.md` içindedir.
+
 Bir ACCEPTED karar yalnız:
 
 1. yeni ADR,

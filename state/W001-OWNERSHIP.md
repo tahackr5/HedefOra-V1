@@ -161,7 +161,23 @@ Owner-approved PR #6 exact `01017a25bf02f27924bf0361fd6b70abdc493ac0` merge'i `7
 
 Squash/rebase/direct push kabul edilmez. Merge öncesi güvenli rollback W001 PR'ını merge etmemektir. Merge sonrasında repository public iken eski workflow tree'sine ham revert yasaktır: progression durdurulur, owner onayıyla repository private yapılır, exact ID/full-name/visibility ve hosted capability yeniden doğrulanır, ancak bundan sonra reviewed revert PR değerlendirilebilir; source boundary mümkünse korunur. Hosted CodeQL/Dependency Review kullanılabildiği sürece gerçek gate'tir; branch/ruleset enforcement doğrulanana kadar `BLOCKED_EXTERNAL` kalır. VPS/DNS rollback bu task için `NOT_APPLICABLE`, çünkü dış sistem mutation'ı yoktur.
 
+## Phase B continuation — PR #7 trusted control integration
+
+Owner-approved7459265 → aba3d13 ordered-parent/content-identical merge ve
+post-merge full-tree/R-016/hosted/cold PASS sonrasında yeni immutable task
+base aba3d13/treeed51da4'tür. Runtime02ef7cf first-parent zinciri yeniden
+yazılmaz. Root tek source writer olarak kontrol merge'ini ve shared
+governance'ı birleştirir; diğer ajanlar TEMP proposal-only/read-only.
+Protected kontrol dosyaları aba3d13 ile exact parity taşır. Controller'ın
+ayrı continuous ownership'i7459265 immutable commit'inde korunur; yaşayan
+manifest runtime chain + yeni merge'in actual first-parent path union'ını
+mühürler, iki divergent chain'i lineer task listesi gibi birleştirmez.
+
 ## Secret ve artifact sınırı
+
+### W001-T04FB-CONTROL — selected Go graph remediation
+
+Task-phase base `7a1e124e432b51694e7d60c0d3d1589867a8835f` / tree `ec6d12847c657adedbd84e44565598d234c7b928`; historical wave start değişmez. Tek writer orchestrator, branch `codex/w001-r016-go-graph`, worktree `T04FB-CONTROL`. Architecture/infra implementation proposal-only, security/cold read-only. Kod/sözleşme yolları: `scripts/supply-chain/{run,run.test,contracts,contracts.test}.mjs`, `security/r016-evidence.schema.json`, `scripts/fixtures/supply-chain/{transitive-go.mod,transitive-go.sum}.txt` ve doğrulanmış Go identity regresyonu için `.github/workflows/ci.yml`; shared governance/evidence yalnız orchestrator tarafından birleştirilir. Root Go manifestleri, runtime/compiler, image, policy thresholds ve scanner sürümleri kapsam dışıdır. Acceptance ve rollback: `state/W001-R016-GO-GRAPH.md`. Continuous first-parent path union ve manifest-only seal her yeni exact head'de doğrulanır; eski base protected-parity reddi bootstrap istisnası olarak açık kalır, trusted runtime PASS sayılamaz.
 
 - Password, token, private key, cookie, MFA/recovery code, gerçek `.env` ve production verisi okunmaz veya commitlenmez.
 - Scanner DB/cache, redacted raw output ve evidence çalışma artifact'ları `artifacts/**` altında kalır ve commitlenmez. Cloned rule byte'ları yalnız run-specific OS temp kökünde tutulur, artifact'e taşınmaz ve cleanup ile silinir.

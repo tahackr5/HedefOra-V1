@@ -1,7 +1,8 @@
 # W001-T04F Phase B — plan, ownership ve kanıt
 
 - Status: IN_PROGRESS; tarih: 2026-09-06.
-- Immutable base: `7a1e124e432b51694e7d60c0d3d1589867a8835f`; tree `ec6d12847c657adedbd84e44565598d234c7b928`.
+- Initial Phase B immutable base: `7a1e124e432b51694e7d60c0d3d1589867a8835f`; tree `ec6d12847c657adedbd84e44565598d234c7b928`.
+- Current continuation checkpoint: `aba3d13ed057bbe80a2e67486058180479c3c50e`; tree `ed51da48638d362ff52169658321604dedba442a`. PR #7 owner merge ve aşağıdaki post-merge admission sonrasında ilerletildi; mevcut runtime lineage yeniden yazılmadı.
 - Historical W001 base değişmez: `bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b`.
 - Orchestrator branch/worktree: `codex/w001-t04f-phase-b`, `C:\Users\ihsan\.codex\worktrees\HedefOra\W001\T04FB`.
 - Etkin model/effort tool kanıtında doğrulanmadı: UNKNOWN/UNKNOWN; repository config değiştirilmedi, alt ajanlara override gönderilmedi.
@@ -169,3 +170,69 @@ gerçek PG17 auth/roles/migrations/TLS gate'i pending kalır. CPE-policy
 hardening canlı image/engine completion olarak sunulmaz. Merge öncesi
 rollback coherent runtime/dependency/compiler slice'ını birlikte terk
 etmektir; immutable SQL, veri, production veya remote main değiştirilmedi.
+
+## PR #7 owner merge ve yeni trusted checkpoint — 2026-09-06 UTC
+
+Owner exact `7459265b2f5744d7aa40feddfc85cb8fcabb8567` head'ini onayladı.
+GitHub merge API exact SHA ve merge method ile PR #7'yi
+`2026-09-06T20:43:41Z` tarihinde `aba3d13ed057bbe80a2e67486058180479c3c50e`
+olarak birleştirdi. Ordered parents `7a1e124e432b51694e7d60c0d3d1589867a8835f`
+ve approved head; tree `ed51da48638d362ff52169658321604dedba442a` approved
+head ile birebir eşleşti. `git diff --exit-code <head> <merge>` exit0;
+authenticated API repository ID1349011765/full-name/public/main ve remote
+main exact SHA doğrulandı. Squash/rebase kullanılmadı.
+
+- Clean detached local quality proof SHA-256
+  `cdbfbc3b1222e61a498f1f26ce08ca903b475926f232dd02a3ea426e5ab5c75f`:
+  Node24.20.0/pnpm11.24.0 frozen install + ci:check0; repository183PASS,
+  iki mevcut Windows skip; web3/3/scaffold coverage100. Linux gerçek
+  Go1.26.7 fmt/verify/tidy/list/build/vet/uncached-shuffle/race0;
+  historical W000 ve W001 actual merge-wrapper0. Python3.12.13 TOML4,
+  actionlint1.7.12, Gitleaks8.30.1 history0 + typed-UUID canary raw1,
+  inert Compose services0 ve Git integrity0. 32 artifact rehash mismatch0.
+- Hosted CI34058883228: boundary101555710561, quality101555721224,
+  R016101555721226 SUCCESS. Go1.26.7 early identity assertion gerçekten
+  fmt/build/test öncesinde çalıştı; Linux repository185/185/skip0,
+  web3/3, Go build/vet/shuffle/race ve W001 merge-wrapper PASS.
+  R-027 historical Go1.26.0 sapması bu yeni exact checkpoint'te giderildi;
+  eski PR #6 hosted execution SUCCESS geriye dönük toolchain PASS olmaz.
+- CodeQL34058882911 exact main: Actions1732710335, Go1732710945,
+  JavaScript1732711501, Python1732710770; success, result/open-alert0,
+  error/warning boş.
+- Local R016 `20260906T204513572Z-15156-0e1aa4b5` PASS0;
+  evidence `dffe8f46649e4abe092f0daffcc27373a640e2e4e9546ac97116abef845a5839`,
+  DB seal `cd59119d982537ffe5e522d64974756f477ed681cbedba26b968f66b0be32466`.
+- Hosted artifact9996847268, ZIP209970byte SHA-256
+  `f21fa3135c5b45bc32465e0e3e6dd1aff91bcf2c8f2aaf13dcfa01bf69472716`;
+  evidence `1f196f05e591bb1e5bd880afd88536c2d71ab4df41ed11f4a5e4d0c7b1b36652`,
+  DB seal `95e4e8e6e74752b08675537498d11877db81e6e2b7ad2ac02b3beec1c2b8834c`.
+  API binding/ZIP CRC/410 regular files; iki koşumda408raw/204process/
+  19terminal/90blob/206index/31protected entry independently replayed,
+  mismatch0/schema0. Transitive canary12/12, raw1; production rejection20
+  korunur. Artifact visibilityProof=false; authority authenticated API
+  zinciridir, artifact claim'i değildir.
+- Hosted verification report SHA-256
+  `4af0b0bc9fe2de4afd26ed16775a9b4ed452eba4cfa29c51ec17b1247f02f87e`.
+  İlk iki proof-adapter failure kaydı korunur; final pinned-Node replay0.
+- Fresh independent cold reviewer exact merge için PASS verdi; parent/tree,
+  local/hosted raw evidence ve gerçek hosted Go kimliğini yeniden doğruladı.
+  Reviewed control code approved head ile content-identical; yeni source
+  diff yoktur. Model/effort UNKNOWN/UNKNOWN; source mutation0.
+
+DEC-026 ile continuation task-phase/trusted controller base artık aba3d13.
+Mevcut02ef7cf runtime first-parent zinciri korunarak merge edilir. Dört
+governance conflict semantik çözülür: release ledger iki dalın tarihsel
+satırlarını korur, risk kayıtları birleşir, current base ilerler; ownership
+JSON runtime continuous first-parent zincirini tutar. Kontrolün kendi
+immutable ownership'i approved head/ikinci parent'ta korunur; yeni merge'in
+gerçek first-parent path union'ı sonraki manifest-only seal'de kaydedilir.
+Eski writer worktree'leri yeniden açılmış sayılmaz; continuation'da root
+tek source writer, diğer ajanlar immutable-source TEMP proposal/read-only.
+
+Bu admission yalnız control checkpoint içindir. Image/live SQL/TLS/Phase B
+completion değildir. R-014 server-side enforcement BLOCKED_EXTERNAL kalır;
+Semgrep/deps.dev/publisher provenance residual'ları değişmez. Production,
+VPS/SSH/DNS/secret/data mutation yoktur. Public repository'de eski unsafe
+control'a ham revert yasaktır; hata halinde runtime ilerlemesi durdurulur ve
+trusted main korunur, gerekiyorsa reviewed forward-fix/control owner gate'i
+açılır. Sonraki PR hazırlanabilir; yeni exact-head main merge ayrı owner gate.

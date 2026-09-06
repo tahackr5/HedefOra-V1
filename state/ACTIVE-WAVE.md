@@ -6,16 +6,20 @@
 - Status: IN_PROGRESS
 - Historical wave start commit: `bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b`
 - Historical wave start tree: `7a2ae76ee31b6c85ec5b3839c78306cde2bd3f23`
-- Current task-phase base (W001-T04F Phase B): `7a1e124e432b51694e7d60c0d3d1589867a8835f`
-- Current task-phase base tree (W001-T04F Phase B): `ec6d12847c657adedbd84e44565598d234c7b928`
-- Trusted control base: `ecf71c0eb8139c0d7ff911ebb9f33afa6a1164ee`
-- Trusted control base tree: `d72efaddd2f0aa7b819d68b740717491d92d54f8`
-- Trusted control reviewed head: `2577e2649402f753c8216ca7e2ab6b27d6e60c0c`
+- Current task-phase base (W001-T04F Phase B continuation): `aba3d13ed057bbe80a2e67486058180479c3c50e`
+- Current task-phase base tree: `ed51da48638d362ff52169658321604dedba442a`
+- Trusted control base: `aba3d13ed057bbe80a2e67486058180479c3c50e`
+- Trusted control base tree: `ed51da48638d362ff52169658321604dedba442a`
+- Trusted control reviewed head: `7459265b2f5744d7aa40feddfc85cb8fcabb8567` (PR #7)
 - Integration branch: `codex/w001-t04f-phase-b`
 - Worktree: `C:\Users\ihsan\.codex\worktrees\HedefOra\W001\T04FB`
 - Started at: `2026-08-28T21:50:57+03:00` (`2026-08-28T18:50:57Z`)
-- Last checkpoint: Owner-approved PR #6 exact `01017a25` two-parent/content-identical merge `7a1e124` / tree `ec6d128`; post-merge full-tree, CI/CodeQL, local/hosted R-016 PASS. Current Phase B component kanıtları `state/W001-PHASE-B.md` içindedir; Phase B completion değildir.
-- Current objective: Phase B bounded TLS/pool ve iki-health runtime kaynak checkpoint'i exact43d419d local full-tree/Go race/ownership ve scoped security PASS. F-01/F-02/F-03 component regresyonları giderildi; image builder canonical Critical/High nedeniyle BLOCKED_EXTERNAL ve gerçek PG17 engine admission NOT_RUN. Ayrı control-only PR #7 exact7459265 yeni hosted Go kimliği/R-016/cold kapılarıyla owner paketine hazırlanıyor; henüz trusted base değildir. Runtime source+aday controller disposable d3938bb deneyinde local R-016 PASS; bu trusted runtime gate veya full Phase B completion değildir. Normal güvenli hazırlıklar için ara onay beklenmez; eşikler düşürülmez.
+- Last checkpoint: Owner-approved PR #7 exact7459265 → two-parent/content-identical aba3d13; local full-tree, hosted CI34058883228, CodeQL34058882911, local/hosted R-016 ve independent cold review PASS. Gerçek hosted Go1.26.7 doğrulandı; PR #6 tarihsel hosted Go1.26.0 sapması R-027 kaydında korunur.
+- Current objective: Yeni trusted control base'i mevcut Phase B pool/TLS/readiness runtime lineage'ına entegre etmek; PG17 güvenli alternatif/runtime closure ve gerçek SQL/TLS/pool/readiness engine kapılarını tamamlayıp yeni exact PR owner gate'ine ilerlemek. Sourcebuilder2Critical+7High ve taranan alternatiflerin FAIL sonuçları korunur; eşik/ignore/VEX gevşetilmez. Image execution ve Phase B completion henüz NOT_RUN.
+
+## Historical task/gate record
+
+Aşağıdaki geçmiş tablolar yalnız kendi exact SHA kapsamındadır. Güncel Phase B kaydı `state/W001-PHASE-B.md`, tarihsel controller kanıtı `state/W001-R016-GO-GRAPH.md` içindedir. Eski hosted execution SUCCESS, canonical Go1.26.7 admission değildir.
 
 ## Active tasks
 
