@@ -134,7 +134,7 @@ rules:
         functionOptions:
           match: ^#/components/schemas/ErrorEnvelope$
   w001-health-operation:
-    description: The canonical liveness GET operation must exist.
+    description: Both canonical health GET operations must exist.
     severity: error
     given: $.paths
     then:
@@ -146,8 +146,9 @@ rules:
           type: object
           required:
             - /health/live
+            - /health/ready
   w001-only-health-path:
-    description: No route outside the canonical liveness path is admitted in W001.
+    description: Only the two canonical health paths are admitted in W001.
     severity: error
     given: $.paths
     then:
@@ -160,11 +161,15 @@ rules:
           properties:
             /health/live:
               type: object
+            /health/ready:
+              type: object
           additionalProperties: false
   w001-health-get-only:
-    description: The liveness path may expose only its canonical GET operation.
+    description: Each health path may expose only its canonical GET operation.
     severity: error
-    given: $.paths['/health/live']
+    given:
+      - $.paths['/health/live']
+      - $.paths['/health/ready']
     then:
       function: schema
       functionOptions:
@@ -179,9 +184,11 @@ rules:
               type: object
           additionalProperties: false
   w001-health-operation-shape:
-    description: The liveness operation surface must remain exact and callback-free.
+    description: Each health operation surface must remain exact and callback-free.
     severity: error
-    given: $.paths['/health/live'].get
+    given:
+      - $.paths['/health/live'].get
+      - $.paths['/health/ready'].get
     then:
       function: schema
       functionOptions:
@@ -212,9 +219,11 @@ rules:
             responses:
               type: object
   w001-health-public:
-    description: The liveness operation must remain explicitly public.
+    description: Both health operations must remain explicitly public.
     severity: error
-    given: $.paths['/health/live'].get
+    given:
+      - $.paths['/health/live'].get
+      - $.paths['/health/ready'].get
     then:
       - field: security
         function: defined
@@ -228,9 +237,11 @@ rules:
           values:
             - public
   w001-health-semantics:
-    description: The liveness operation must keep its exact safety metadata.
+    description: Both health operations must keep their exact safety metadata.
     severity: error
-    given: $.paths['/health/live'].get
+    given:
+      - $.paths['/health/live'].get
+      - $.paths['/health/ready'].get
     then:
       - field: x-hedefora-idempotency
         function: enumeration
@@ -264,7 +275,9 @@ rules:
   w001-health-response-surface:
     description: Health responses may expose only the canonical status and fields.
     severity: error
-    given: $.paths['/health/live'].get.responses
+    given:
+      - $.paths['/health/live'].get.responses
+      - $.paths['/health/ready'].get.responses
     then:
       - function: schema
         functionOptions:
@@ -352,6 +365,9 @@ rules:
       - $.paths['/health/live'].get.responses['200'].content
       - $.paths['/health/live'].get.responses['503'].content
       - $.paths['/health/live'].get.responses.default.content
+      - $.paths['/health/ready'].get.responses['200'].content
+      - $.paths['/health/ready'].get.responses['503'].content
+      - $.paths['/health/ready'].get.responses.default.content
     then:
       function: schema
       functionOptions:
@@ -384,6 +400,8 @@ rules:
     given:
       - $.paths['/health/live'].get.responses['200'].headers
       - $.paths['/health/live'].get.responses.default.headers
+      - $.paths['/health/ready'].get.responses['200'].headers
+      - $.paths['/health/ready'].get.responses.default.headers
     then:
       function: schema
       functionOptions:
@@ -411,10 +429,12 @@ rules:
               const:
                 $ref: "#/components/headers/VaryAccept"
   w001-health-draining-headers:
-    description: Draining health responses must also expose bounded Retry-After.
+    description: Unavailable health responses must expose bounded Retry-After.
     severity: error
     resolved: false
-    given: $.paths['/health/live'].get.responses['503'].headers
+    given:
+      - $.paths['/health/live'].get.responses['503'].headers
+      - $.paths['/health/ready'].get.responses['503'].headers
     then:
       function: schema
       functionOptions:
@@ -589,7 +609,7 @@ rules:
                       const:
                         - live
   w001-service-unavailable-shape:
-    description: The draining response must remain retryable and service-specific.
+    description: The unavailable response must remain retryable and service-specific.
     severity: error
     resolved: false
     given: $.components.schemas.ServiceUnavailableError
@@ -710,7 +730,7 @@ rules:
             VaryAccept:
               type: object
   w001-schema-component-surface:
-    description: W001 may expose only its five canonical response schemas.
+    description: W001 may expose only its six canonical response schemas.
     severity: error
     given: $.components.schemas
     then:
@@ -724,6 +744,7 @@ rules:
           required:
             - RequestId
             - HealthLiveResponse
+            - HealthReadyResponse
             - ErrorEnvelope
             - ServiceUnavailableError
             - ErrorCode
@@ -731,6 +752,8 @@ rules:
             RequestId:
               type: object
             HealthLiveResponse:
+              type: object
+            HealthReadyResponse:
               type: object
             ErrorEnvelope:
               type: object
@@ -922,6 +945,88 @@ rules:
       function: pattern
       functionOptions:
         match: ^#/
+  w001-health-live-operation-id:
+    description: The liveness operation must retain its exact generated identifier.
+    severity: error
+    given: $.paths['/health/live'].get
+    then:
+      - field: operationId
+        function: defined
+      - field: operationId
+        function: schema
+        functionOptions:
+          schema:
+            const: getHealthLive
+  w001-health-ready-operation-id:
+    description: The readiness operation must retain its exact generated identifier.
+    severity: error
+    given: $.paths['/health/ready'].get
+    then:
+      - field: operationId
+        function: defined
+      - field: operationId
+        function: schema
+        functionOptions:
+          schema:
+            const: getHealthReady
+  w001-readiness-responses:
+    description: The readiness operation must retain its exact typed response references.
+    severity: error
+    resolved: false
+    given: $.paths['/health/ready'].get.responses
+    then:
+      - field: 200.content.application/json.schema.$ref
+        function: pattern
+        functionOptions:
+          match: ^#/components/schemas/HealthReadyResponse$
+      - field: 503.content.application/json.schema.$ref
+        function: pattern
+        functionOptions:
+          match: ^#/components/schemas/ServiceUnavailableError$
+  w001-readiness-response-shape:
+    description: The readiness response must preserve its exact closed shape.
+    severity: error
+    resolved: false
+    given: $.components.schemas.HealthReadyResponse
+    then:
+      function: schema
+      functionOptions:
+        dialect: draft2020-12
+        allErrors: true
+        schema:
+          type: object
+          additionalProperties: false
+          required:
+            - type
+            - additionalProperties
+            - required
+            - properties
+          properties:
+            type:
+              const: object
+            additionalProperties:
+              const: false
+            required:
+              const:
+                - status
+            properties:
+              type: object
+              additionalProperties: false
+              required:
+                - status
+              properties:
+                status:
+                  type: object
+                  additionalProperties: false
+                  required:
+                    - type
+                    - enum
+                  properties:
+                    type:
+                      const: string
+                    enum:
+                      const:
+                        - ready
   w001-no-go-type-import:
     description: >-
       x-go-type-import is forbidden because the pinned generator has an

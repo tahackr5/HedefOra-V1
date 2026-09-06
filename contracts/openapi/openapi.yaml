@@ -3,8 +3,8 @@ info:
   title: HedefOra API
   version: 0.1.0
   description: >-
-    HedefOra'nın contract-first HTTP API sözleşmesi. Bu ilk additive runtime
-    dilimi yalnız process liveness davranışını yayımlar.
+    HedefOra'nın contract-first HTTP API sözleşmesi. Bu additive runtime
+    dilimi process liveness ve PostgreSQL bağlantı readiness davranışını yayımlar.
   contact:
     name: HedefOra
     url: https://hedefora.com
@@ -81,6 +81,71 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+  /health/ready:
+    get:
+      operationId: getHealthReady
+      summary: Check whether the API can use its PostgreSQL connection pool
+      description: >-
+        Returns a ready status only after a bounded PostgreSQL connection probe
+        succeeds while the API process is not draining. Unavailable, closed,
+        timed-out or cancelled probes and graceful drain return the same
+        generic 503 error without database, connection or query details.
+        This foundation signal does not assert migration or domain readiness.
+      tags:
+        - Health
+      security: []
+      x-hedefora-auth: public
+      x-hedefora-idempotency: inherent
+      x-hedefora-concurrency: none
+      x-hedefora-rate-limit: health
+      responses:
+        "200":
+          description: The bounded PostgreSQL probe succeeded before drain.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            X-Content-Type-Options:
+              $ref: "#/components/headers/ContentTypeOptions"
+            Vary:
+              $ref: "#/components/headers/VaryAccept"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthReadyResponse"
+        "503":
+          description: The PostgreSQL probe is unavailable or the API is draining.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Retry-After:
+              $ref: "#/components/headers/RetryAfter"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            X-Content-Type-Options:
+              $ref: "#/components/headers/ContentTypeOptions"
+            Vary:
+              $ref: "#/components/headers/VaryAccept"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceUnavailableError"
+        default:
+          description: A typed, user-safe readiness HTTP error.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            X-Content-Type-Options:
+              $ref: "#/components/headers/ContentTypeOptions"
+            Vary:
+              $ref: "#/components/headers/VaryAccept"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
 components:
   headers:
     CacheControl:
@@ -134,6 +199,16 @@ components:
           type: string
           enum:
             - live
+    HealthReadyResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - ready
     ErrorEnvelope:
       type: object
       additionalProperties: false
