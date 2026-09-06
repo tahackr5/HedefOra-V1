@@ -107,7 +107,7 @@
 - Blocking wave/gate: T04F backend pool/readiness primitive'i ve T04F completion. Production/staging deploy ayrı owner gate'tir.
 - Owner decision: 2026-09-06 tarihinde owner A seçeneğini güvenlik eşikleri korunarak açıkça onayladı.
 - Resolution: DEC-028 / ADR-0018; güncel uygulama ve NOT_RUN admission kapıları `state/W001-PHASE-B.md` içindedir. Onay scanner/engine/review PASS yerine geçmez.
-- Closed commit: Phase B task-open ownership aralığında mühürlenecektir.
+- Closed commit: `7cbf26e6605b8129cbeb498cd60984550fd8afad`; continuous ownership seal `bb57a51bfe3cd0c3cae6d3197ef2b69462d38b17`.
 
 ### DQ-009 — `/health/ready` için ikinci-operation compiler admission
 
@@ -120,7 +120,7 @@
 - Blocking wave/gate: T04F public `/health/ready` acceptance ve T04F completion.
 - Owner decision: 2026-09-06 tarihinde owner A seçeneğini güvenlik eşikleri korunarak açıkça onayladı.
 - Resolution: DEC-029 / ADR-0019; güncel uygulama ve NOT_RUN admission kapıları `state/W001-PHASE-B.md` içindedir. Onay scanner/engine/review PASS yerine geçmez.
-- Closed commit: Phase B task-open ownership aralığında mühürlenecektir.
+- Closed commit: `7cbf26e6605b8129cbeb498cd60984550fd8afad`; continuous ownership seal `bb57a51bfe3cd0c3cae6d3197ef2b69462d38b17`.
 
 ### DQ-010 — W001-T04F PostgreSQL image execution admission
 
@@ -133,7 +133,7 @@
 - Blocking wave/gate: T04F canlı empty/up/down/upgrade/privilege testi, PostgreSQL adapter/pool doğrulaması ve T04F completion. Production/staging deploy ayrıca owner gate'idir.
 - Owner decision: 2026-09-06 tarihinde owner B seçeneğini güvenlik eşikleri korunarak açıkça onayladı.
 - Resolution: DEC-030 / ADR-0020; güncel uygulama ve NOT_RUN admission kapıları `state/W001-PHASE-B.md` içindedir. Onay scanner/engine/review PASS yerine geçmez.
-- Closed commit: Phase B task-open ownership aralığında mühürlenecektir.
+- Closed commit: `7cbf26e6605b8129cbeb498cd60984550fd8afad`; continuous ownership seal `bb57a51bfe3cd0c3cae6d3197ef2b69462d38b17`.
 
 ## Item template
 
