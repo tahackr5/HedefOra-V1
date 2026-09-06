@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "3a16a3452e3be8bef3df7c47bb6af9cbbc4060ce",
+  "verifiedThrough": "35596914d829863ae52fef3ccd75d08ca86efb9c",
   "trailingAllowedPaths": [
     "state/W001-OWNERSHIP.json"
   ],
@@ -747,6 +747,27 @@
         "state/W001-EVIDENCE.md",
         "state/W001-R016-GO-GRAPH.md"
       ]
+    },
+    "W001-T04FB-control-local-evidence-seal": {
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ],
+      "head": "20e91e0e6d367015058eaae4b82db25b56693e1a",
+      "base": "3a16a3452e3be8bef3df7c47bb6af9cbbc4060ce"
+    },
+    "W001-T04FB-control-exact-go-identity-fix": {
+      "allowedPaths": [
+        ".github/workflows/ci.yml",
+        "scripts/supply-chain/run.test.mjs",
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md",
+        "state/W001-R016-GO-GRAPH.md"
+      ],
+      "head": "35596914d829863ae52fef3ccd75d08ca86efb9c",
+      "base": "20e91e0e6d367015058eaae4b82db25b56693e1a"
     }
   }
 }
