@@ -66,8 +66,44 @@ En az wrong CA/hostname/plaintext fallback; ambient PG/service/passfile; secret-
 - F-02 (`R-026`): henüz entegre edilmemiş image-policy önerisi, APK CPE/origin yokluğu veya yanlış PURL ile coverage PASS verebildi; independent scoped FAIL Medium/High-confidence. 59/59 unit PASS bu semantic gap'i kapatmaz. Düzeltme bağımsız expected metadata, exact PURL/CPE/origin ve APK-specific gerçek canary ister; mevcut PG17.2 source canary APK matcher'ını kanıtlamaz. Remediation sürerken image execution/license admission NOT_EVALUATED, engine kabulü NOT_RUN.
 - Ayrı controller exact `5b9dd0b514d5165bb91202ad6113421c0c9d2cd6` / tree `7d4e60e55584499ff1d3840ed968ae89dbb1eb8b`: local full-tree kalite ve independent scoped security PASS; R-016 çalışıyor. Yeni protected controller kodu runtime branch'ine veya trusted main'e katılmadı. Disposable manifest-only candidate `cf58f6601a87d11e2c13a8ece3ca06d1f0c5baec` / tree `a152450eea44ca9fd4721c635c01330c09068fe9`, controller + actual exact pgx graph'ın local R-016 deneyidir; trusted/hosted checkpoint değildir, remote push yapılmaz. İlk candidate apply denemesi base'te go.sum olmadığı için durdu; Add File ile düzeltildi. İlk controller CLI forward-slash executable spelling canonical Windows path denetiminde acquisition öncesi exit 20 aldı; doğru canonical backslash ile yeni run başlatıldı. Bunlar başarılı gate diye sunulmaz.
 
-Runtime pool implementation, gerçek PG17 TLS/engine ve bütün Phase B exit kapıları tamamlanmadı. Composer/fixture/mocks üzerinden sahte live PASS üretilmez. Etkin model/effort bütün reviewer/handoff kanıtlarında UNKNOWN/UNKNOWN.
+Bu tarihsel component kaydındaki pool implementation sonradan aşağıdaki checkpoint'te birleştirildi; gerçek PG17 TLS/engine ve bütün Phase B exit kapıları tamamlanmadı. Composer/fixture/mocks üzerinden sahte live PASS üretilmez. Etkin model/effort bütün reviewer/handoff kanıtlarında UNKNOWN/UNKNOWN.
 
 Owner DQ-008 A, DQ-009 A, DQ-010 B ve kesintisiz geliştirme/test/refactor/PR hazırlığını onayladı. Yeni ara implementasyon onayı istenmez. PR #6 için exact merge yetkisi kullanıldı; future main merge için exact-head protokolü korunur, genel geliştirme talimatı sessizce arbitrary-head merge yetkisi sayılmaz. Güvenli paralel hazırlık sürdürülür; başka merge/production yetkisi gerekirse somut exact gate'te gösterilir.
 
 VPS/SSH/DNS/Cloudflare/production mutation yoktur. Yeni image execution ve graph admission sonuçları henüz NOT_RUN; onay bunları PASS yapmaz. Rollback: merge öncesi Phase B branch'lerini terk edip trusted main'i korumak; mevcut immutable SQL/public control plane'e ham revert yapmamak.
+
+## Birleşik runtime checkpoint — 2026-09-06
+
+- Image-policy `a20d3feaa9f32f7040c6ea6043871251a66597e0`: 82/82 unit PASS.
+  F-02 bağımsız re-review scoped PASS/CLOSED; origin/canonical PURL/CPE set'i
+  independent trusted mapping olmadan coverage kabul edilmez. Gerçek 53 APK
+  için trusted CPE mapping NOT_RUN ve coverage FAIL; builder raw2 (2 Critical,
+  7 High), license/execution NOT_EVALUATED. Saf policy runner/build admission
+  değildir; Compose hâlâ sıfır service.
+- Runtime `b4d9d87809b5a0dec6a724d405cc76b6e0adff4f`: 16 pool/config/
+  app/cmd/health/http Go dosyası, exact boundary iki script'i ve açıklayıcı
+  PostgreSQL README birleşti. Generated iki-health compiler daha önce
+  `8a110b7` ile yalnız generator üzerinden üretildi. Root graph güvenlik pinleri
+  değişmedi; protected controller eski trusted base byte'larında kaldı.
+- Pool handoff patch SHA-256
+  `6b5def6a2d3963e125773d7c9c21108d128b6a563f579c36bda6145c1bfec176`;
+  pinned Windows/Linux component unit/vet/race exit0. Readiness patch
+  `6f8190c374d6d575b271ba455ceac8924511e80067d9a40bce18bf0de9f1208d`;
+  root F-03 typed-nil constructor guard + nil/typed-nil regression ekledi.
+- İlk integrated Windows Go1.26.7 uncached shuffle bütün-paket koşusu exit1:
+  OS Application Control `http.test.exe` ve `repolint.test.exe` yürütmesini
+  engelledi. App/cmd/config/health/pool/telemetry ve diğer çalışabilen paketler
+  geçti; bu full-tree PASS değildir. Sistem politikası değiştirilmez.
+  Exact Linux full-tree/race ve yeni seal kanıtları sonraki kayıtla bağlanır.
+- Tracked source/index boundary: pinned Node14 test,12PASS/2 mevcut Windows
+  literal-backslash skip; actual generated boundary PASS0, git diff-check0.
+  Yeni dosyalar yalnız exact dört Go path'iyle allowlist'e eklendi.
+- Config API, bütçeler, DNS tek-IP seçimi, actual close completion ve logging
+  sınırlamaları `infra/postgres/README.md` içinde belgelenmiştir. Synthetic
+  wire tests gerçek PG authentication/ACL/migration kanıtı sayılmaz.
+- Ayrı PR #7 exact20e91 controller hosted R-016/CodeQL SUCCESS; ancak actual
+  hosted quality Go1.26.0, canonical1.26.7 değil. Fresh cold verdict FAIL;
+  fix ayrı control branch'inde yapılır. Eski hosted success kayıtlarından
+  kanonik Go1.26.7 admission sonucu türetilmez; pinned local kanıtı ayrıdır.
+  Yeni source R-016, trusted runtime PR, full Phase B exit ve deployment
+  bu checkpoint'te NOT_RUN/BLOCKED_EVIDENCE kalır.
