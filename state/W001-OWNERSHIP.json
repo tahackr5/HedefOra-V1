@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "8f349e03e5dee82404a2cd90be1c5d3f119fb6a1",
+  "verifiedThrough": "73ce81a3b6e2db766cc415693d7edea8874d772f",
   "trailingAllowedPaths": [
     "state/W001-OWNERSHIP.json"
   ],
@@ -869,6 +869,31 @@
         "tests/integration/postgres/live/psql.mjs",
         "tests/integration/postgres/live/run-live.mjs",
         "tests/integration/postgres/live/runner.test.mjs"
+      ]
+    },
+    "W001-T04FB-closed-runner-seal": {
+      "base": "8f349e03e5dee82404a2cd90be1c5d3f119fb6a1",
+      "head": "410a17e12cafbfe67897e1e717c3ca77bf4f4bfd",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-direct-hardlink-target": {
+      "base": "410a17e12cafbfe67897e1e717c3ca77bf4f4bfd",
+      "head": "af918cca39ace82967d718f72318d5c47400a523",
+      "allowedPaths": [
+        "scripts/postgres-image/apk-runtime/archive-data.mjs",
+        "scripts/postgres-image/apk-runtime/strict-replay.test.mjs",
+        "state/W001-PHASE-B.md"
+      ]
+    },
+    "W001-T04FB-checkpoint-evidence-promotion": {
+      "base": "af918cca39ace82967d718f72318d5c47400a523",
+      "head": "73ce81a3b6e2db766cc415693d7edea8874d772f",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-PHASE-B.md"
       ]
     }
   }
