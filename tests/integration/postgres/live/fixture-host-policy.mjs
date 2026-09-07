@@ -274,7 +274,7 @@ export function verifyFixtureInspect(
       config.StopSignal === "SIGTERM" &&
       config.StopTimeout === 5 &&
       emptyMap(config.Volumes) &&
-      emptyMap(config.ExposedPorts) &&
+      emptyMap(config.ExposedPorts ?? null) &&
       config.Healthcheck === undefined &&
       emptyList(config.OnBuild ?? null),
     "FIXTURE_INSPECT_CONFIG",

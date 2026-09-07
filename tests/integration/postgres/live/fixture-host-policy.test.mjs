@@ -375,6 +375,23 @@ test("fixture create rejects expired lease, foreign name, mount overlap and deli
     ),
   );
 });
+test("Docker omitted ExposedPorts means none; declarations and malformed types remain rejected", () => {
+  for (const ports of [undefined, null, {}]) {
+    const { inspect, options } = sample();
+    if (ports === undefined) delete inspect[0].Config.ExposedPorts;
+    else inspect[0].Config.ExposedPorts = ports;
+    assert.doesNotThrow(() => verifyFixtureInspect(inspect, options));
+  }
+  for (const ports of [{ "5432/tcp": {} }, [], "", false, 1]) {
+    const { inspect, options } = sample();
+    inspect[0].Config.ExposedPorts = ports;
+    assert.throws(
+      () => verifyFixtureInspect(inspect, options),
+      /FIXTURE_INSPECT_CONFIG/,
+    );
+  }
+});
+
 test("actual inspect must match all three real lifecycle phases", () => {
   for (const phase of ["created", "running", "exited"]) {
     const { inspect, options } = sample(phase);

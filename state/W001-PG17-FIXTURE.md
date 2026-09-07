@@ -70,3 +70,22 @@ Production, VPS/SSH/DNS/secret/kalıcı veri işlemi yok. Rollback yeni profili
 kapatma/dar reviewed revert; yalnız owned ephemeral kaynakların temizliği.
 R-014 server-side enforcement, CodeRabbit/Sonar dış bağlantı ve production
 image güvenliği ayrı, çözülmüş gösterilmeyen sınırlardır.
+
+## İlk koşum hazırlığı — 43e26cb
+
+Canonical Windows CI raw0:565test/563PASS/iki tarihsel Windows skip,
+web3/3/coverage100. Windows Go format29/modverify/build/vet0;
+uygulama denetimi dört generated executable'ı engellediği için fulltestFAIL,
+CGO yokluğu nedeniyle WindowsraceNOT_RUN; Linux gate'e aktarılır.
+
+a1 preflight Git cmd/git.exe nlink2 nedeniyle INPUT_FILE ile durdu;
+aynı hash'li installed bin/git.exe nlink1 seçildi, kural gevşetilmedi.
+a2 gerçek pinnedLinuxGo1.26.7 build/moduleverifybeforeafter/CGOrace binary
+metadata PASS; build evidence567d9d8207f2dbdce833a17ca71530c55cb41d3b926f2f448bfb34137045ec81.
+PG start öncesi inspect Config.ExposedPorts alanının Docker tarafından
+atlanması nedeniyle FAIL; owned cleanup/absence PASS, engine NOT_RUN.
+Final attempt evidencea2a0944ed38afe2782f81759c0af428e7c1496e42c42c57dee403680ceda4c9f.
+Bağımsız never-started metadata probe aynı davranışı doğruladı; yalnız
+bu isteğe bağlı boş alanın undefined/null/empty-map eşdeğerliği kabul edilir,
+dolu port haritası ve geçersiz tipler reddedilir. Diğer created kontrolleri
+değişmeden actual replay PASS; diagnosis evidence9c2dd243df30a0e6f060ddc58247bb6642e87105f6a6da6813f29d44a6491384.
