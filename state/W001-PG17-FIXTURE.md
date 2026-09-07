@@ -215,3 +215,40 @@ skip, web3/3/kapsam100. Clean detached clone/fsck ve25rawhash replay PASS.
 Proof85b0f99af94e4517a863188af9da3fafb75ac8a74b77530bbb0e3b24a09b460c;
 CI log728cd2570ce11ac9051c2681fdfd5aac86435c8041889ad0576452ea7d4af15b.
 Bu sonuç A7 engine FAIL veya yeni exact full-tree/hosted kapıları değildir.
+
+## A8 — SQL aşaması sonrası Go process FAIL
+
+Exact0e9046948c770c7574cb5a563fc046cc05607530/tree1471eab3de5d32fba0b8c4dc4d91b167bd5c06d8
+Node295/295/skip0/raw0 odaklı kanıt
+f9a1db7afba8b6b704a6a5ea11cde64bd23c7759bd9682278e554174a75aff98:
+Node24.20/full command/stdout/stderr ve12before/after/current hash eşleşir.
+W001repolint exit0; exact security pre-execution source PASS. Cold önceki
+CONNECT P1'inin kaynak eksikliğini kapattı fakat engine sonucu yokken
+BLOCKED_EVIDENCE tuttu. Bu scoped sonuçlar release PASS değildir.
+
+A8 gerçek fixture FIXTURE_GO_PROCESS / failedCase null ile FAIL oldu;
+owned removal/absence PASS. Artifact
+5d2117552aafa266899bb4d9f6fd4d6bd4d07dd2aced3057d46451aea27e57f6.
+Kontrol akışı runLiveSqlAcceptance ve SQL PASS kontrolünden sonra Go
+aşamasına ulaşıldığını gösterir; host başarısız receipt'te tam SQL raporunu
+saklamadığından bu çıkarım bağımsız SQL170 PASS artifact'i değildir.
+Hangi Go assertion/process'in başarısız olduğu mevcut tanıda bilinmez.
+
+Sonraki dar tanı yalnız mevcut FAIL'e fixed package/test, bounded raw process
+exit ve kaynakta tanımlı literal assertion'ın satır kimliğini ekler. Ham
+binary stdout/stderr bounded private memory'de kalır; mesaj, path, SQL,
+credential veya raw log dışarı çıkmaz. Bilinmeyen/dinamik mesaj UNKNOWN'dır.
+Go validator, cancel/reap, zero-exit/observed-close ve altı test zorunlulukları
+değişmez; eski FAIL ve host cleanup kanıtı korunur.
+
+Tanı regresyonu Node24.20 ile186/186 PASS, raw exit0, skip/cancel/todo0;
+proof SHA256 cc5afec964e4991e1ace74a197b26c76c429190733be4c916a8cb7959049373e.
+Kanıt11girdi before/after hash ve format/diff exit0 içerir; source henüz
+commit edilmeden üretilmiştir, yeni exact full-tree gate yerine geçmez.
+PG çalıştırmayan ayrı Go1.26.7/race framing deneyi gerçek 0x16 FAIL çıktısını
+ve kaynak literal satır eşlemesini doğruladı; değiştirilmiş reported line
+otorite olmadı, yabancı path UNKNOWN kaldı. Proof SHA256
+dd2c3c0d9f1e15631e6d7080df7d0f6c5d9b74f831c7a92c1d5afba90ff0cb8d;
+import edilen helper8df048ed7c3cc34151cb81488bf75796ff7004e9ba3374a53354fe46a1a21f40
+sınıflandırma boyunca sabit, owned cleanup/absence PASS. Bu iki kanıt
+yalnız tanı güvenilirliğidir; SQL/Go engine PASS değildir.

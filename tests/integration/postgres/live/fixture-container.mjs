@@ -685,6 +685,188 @@ export function validateGoEvents(text, packageName, binary, converter) {
   };
 }
 
+const GO_DIAGNOSTIC_PROFILES = Object.freeze({
+  [Object.keys(GO_PACKAGES)[0]]: Object.freeze({
+    token: "P",
+    name: "postgres",
+    file: "pool_integration_test.go",
+    source: "/source/internal/platform/postgres/pool_integration_test.go",
+    tests: Object.freeze({
+      TestPG17TLSAndSCRAM: "tls-scram",
+      TestPG17TLSAndAuthenticationFailuresDoNotFallback: "tls-auth-failures",
+      TestPG17AmbientDiscoveryCannotChangeTheEndpoint: "ambient-discovery",
+      TestPG17PoolCapacityDeadlineReuseAndClose: "pool-capacity",
+      TestPG17InflightQueryCancellationAndClose: "query-cancel",
+    }),
+  }),
+  [Object.keys(GO_PACKAGES)[1]]: Object.freeze({
+    token: "A",
+    name: "app",
+    file: "api_integration_test.go",
+    source: "/source/internal/platform/app/api_integration_test.go",
+    tests: Object.freeze({
+      TestPG17APIStartupOutageRecoveryAndDrain: "startup-recovery",
+    }),
+  }),
+});
+
+// Public source literals are diagnostic labels, never executable expressions or
+// PASS authority. Duplicate literal sites deliberately remain ambiguous.
+export function collectGoAssertionSites(packageName, source) {
+  const profile = Object.hasOwn(GO_DIAGNOSTIC_PROFILES, packageName)
+    ? GO_DIAGNOSTIC_PROFILES[packageName]
+    : undefined;
+  if (
+    !profile ||
+    typeof source !== "string" ||
+    source.length > 131072 ||
+    Buffer.byteLength(source) > 131072 ||
+    source.split("\n").length > 2000 ||
+    source.includes("/*") ||
+    source.includes("*/") ||
+    source
+      .split("\n")
+      .filter((line) => line.replace(/\r$/, "") === `package ${profile.name}`)
+      .length !== 1
+  )
+    return [];
+  const sites = [];
+  let inRawString = false;
+  for (const [index, line] of source.split("\n").entries()) {
+    const beganInRawString = inRawString;
+    // Ignore apparent statements inside raw strings. This is a deliberately
+    // narrow lexical filter, not a Go parser or an expression evaluator.
+    for (let cursor = 0; cursor < line.length; cursor++) {
+      const character = line[cursor];
+      if (inRawString) {
+        if (character === "`") inRawString = false;
+      } else if (character === "/" && line[cursor + 1] === "/") break;
+      else if (character === "`") inRawString = true;
+      else if (character === '"' || character === "'") {
+        const quote = character;
+        while (++cursor < line.length) {
+          if (line[cursor] === "\\") cursor++;
+          else if (line[cursor] === quote) break;
+        }
+      }
+    }
+    if (beganInRawString || inRawString || line.trimStart().startsWith("//"))
+      continue;
+    const match = /^[\t ]*t\.(?:Fatal|Error)\("([^"\\\r\n]*)"\)[\t ]*\r?$/.exec(
+      line,
+    );
+    if (!match) {
+      if (/\bt\.(?:Fatal|Error|Fatalf|Errorf)\s*\(/.test(line)) return [];
+      continue;
+    }
+    const message = match[1];
+    if (!message || Buffer.byteLength(message) > 4096 || message.includes("\0"))
+      return [];
+    sites.push(Object.freeze({ message, line: index + 1 }));
+  }
+  return inRawString ? [] : Object.freeze(sites);
+}
+
+export function classifyGoFailure(packageName, stdout, stderr, sites = []) {
+  const profile = Object.hasOwn(GO_DIAGNOSTIC_PROFILES, packageName)
+    ? GO_DIAGNOSTIC_PROFILES[packageName]
+    : undefined;
+  const unknown = {
+    assertionLine: "UNKNOWN",
+    caseId: `go.${profile?.name ?? "unknown"}.unknown`,
+  };
+  try {
+    if (
+      !profile ||
+      typeof stdout !== "string" ||
+      typeof stderr !== "string" ||
+      stdout.length + stderr.length > 1048576 ||
+      Buffer.byteLength(stdout) + Buffer.byteLength(stderr) > 1048576 ||
+      (stdout && !stdout.endsWith("\n")) ||
+      (stderr && !stderr.endsWith("\n")) ||
+      !Array.isArray(sites)
+    )
+      return unknown;
+    const failed = [],
+      assertions = [];
+    let malformed = false;
+    for (const [streamIndex, stream] of [stdout, stderr].entries())
+      for (const raw of stream.split("\n")) {
+        const line = raw.replace(/\r$/, "");
+        if (line.includes("--- FAIL:")) {
+          const match =
+            /^\x16(?:    )*--- FAIL: ([A-Za-z0-9_/-]{1,256}) \([0-9]+(?:\.[0-9]+)?s\)$/.exec(
+              line,
+            );
+          if (
+            !match ||
+            streamIndex !== 0 ||
+            !Object.hasOwn(profile.tests, match[1].split("/")[0])
+          )
+            malformed = true;
+          else if (!match[1].includes("/")) failed.push(match[1]);
+        }
+        if (
+          /\b(?:pool_integration_test|api_integration_test)\.go:/.test(line) ||
+          /^(?:\x16)?[\t ]+[^\r\n]*\.go:/.test(line)
+        ) {
+          const match =
+            /^(?:\x16)?[\t ]+(pool_integration_test\.go|api_integration_test\.go):([1-9][0-9]{0,3}): (.*)$/.exec(
+              line,
+            );
+          if (!match || match[1] !== profile.file || Number(match[2]) > 2000)
+            malformed = true;
+          else assertions.push(match[3]);
+        }
+      }
+    if (malformed || failed.length !== 1) return unknown;
+    const result = {
+      ...unknown,
+      caseId: `go.${profile.name}.${profile.tests[failed[0]]}`,
+    };
+    if (assertions.length !== 1) return result;
+    const matches = sites.filter((site) => site?.message === assertions[0]);
+    if (
+      matches.length === 1 &&
+      Number.isInteger(matches[0].line) &&
+      matches[0].line >= 1 &&
+      matches[0].line <= 2000
+    )
+      result.assertionLine = String(matches[0].line);
+    return result;
+  } catch {
+    return unknown;
+  }
+}
+
+function goFailureError(
+  error,
+  packageName,
+  binary,
+  converter,
+  stdout,
+  stderr,
+  sites,
+) {
+  const original =
+    error instanceof LiveError ? error : new LiveError("FIXTURE_GO_SPAWN");
+  const raw = (value) =>
+    value?.origin === "exit" &&
+    value.connectionClosed === true &&
+    Number.isInteger(value.rawExit) &&
+    value.rawExit >= 0 &&
+    value.rawExit <= 255
+      ? String(value.rawExit)
+      : "UNKNOWN";
+  const closed = (value) => (value?.connectionClosed === true ? "C" : "M");
+  const diagnostic = classifyGoFailure(packageName, stdout, stderr, sites);
+  const result = new LiveError(
+    `${original.code}_${GO_DIAGNOSTIC_PROFILES[packageName].token}_B${raw(binary)}_C${raw(converter)}_B${closed(binary)}_C${closed(converter)}_L${diagnostic.assertionLine}`,
+  );
+  result.caseId = diagnostic.caseId;
+  return result;
+}
+
 // Both binaries are direct children. The binary stdout is explicitly piped to
 // the separately supervised converter. A close timeout on either kills both.
 export async function runGoPackage({
@@ -701,6 +883,28 @@ export async function runGoPackage({
     "FIXTURE_GO_REQUEST",
   );
   const children = [];
+  let assertionSites = [];
+  // Unit-level process tests have no verified /source mount. Only the admitted
+  // PID1 path can read these two fixed public files; failure merely loses hints.
+  if (readOnlyInputsVerified) {
+    try {
+      assertionSites = collectGoAssertionSites(
+        packageName,
+        (
+          await readRegular(
+            GO_DIAGNOSTIC_PROFILES[packageName].source,
+            131072,
+            true,
+          )
+        ).toString("utf8"),
+      );
+    } catch {
+      /* the original execution result remains the only gate */
+    }
+  }
+  let privateBytes = 0,
+    privateOverflow = false;
+  const privateOutput = { stdout: [], stderr: [] };
   let output = "",
     total = 0,
     invalid = false,
@@ -728,7 +932,10 @@ export async function runGoPackage({
     const entry = { child, done: false };
     children.push(entry);
     entry.closed = new Promise((resolve) => {
-      entry.resolve = resolve;
+      entry.resolve = (result) => {
+        entry.result ??= result;
+        resolve(result);
+      };
       child.once("error", () => {
         invalid = true;
         cancel();
@@ -736,7 +943,7 @@ export async function runGoPackage({
       child.once("close", (code) => {
         entry.done = true;
         if (code !== 0) cancel();
-        resolve({
+        entry.resolve({
           rawExit: Number.isInteger(code) ? code : -1,
           origin: timedOut ? "timeout" : invalid ? "channel" : "exit",
           connectionClosed: true,
@@ -758,6 +965,20 @@ export async function runGoPackage({
           invalid = true;
           cancel();
           return;
+        }
+        if (!converter) {
+          privateBytes += bytes.length;
+          if (privateBytes > 1048576) {
+            privateOverflow = true;
+            privateOutput.stdout.length = 0;
+            privateOutput.stderr.length = 0;
+            invalid = true;
+            cancel();
+            return;
+          }
+          privateOutput[stream === child.stdout ? "stdout" : "stderr"].push(
+            Buffer.from(bytes),
+          );
         }
         if (retain) {
           output += bytes.toString("utf8");
@@ -820,6 +1041,19 @@ export async function runGoPackage({
       clearTimeout(fallback);
     }
   } catch (error) {
+    // Snapshot integrity before the existing catch/reap path marks invalid.
+    // A converter-driven cancellation, timeout, overflow or channel failure
+    // cannot turn earlier apparently complete text into a diagnostic hint.
+    const captureComplete =
+      !invalid &&
+      !timedOut &&
+      !privateOverflow &&
+      binary?.cancelled !== true &&
+      binary?.result?.origin === "exit" &&
+      binary.result.connectionClosed === true &&
+      Number.isInteger(binary.result.rawExit) &&
+      binary.result.rawExit > 0 &&
+      binary.result.rawExit <= 255;
     invalid = true;
     cancel();
     // Even a synchronous second spawn failure must reap the first child before
@@ -834,11 +1068,31 @@ export async function runGoPackage({
         clearTimeout(end);
       }),
     );
-    throw error instanceof LiveError
-      ? error
-      : new LiveError("FIXTURE_GO_SPAWN");
+    let stdout = "",
+      stderr = "";
+    if (captureComplete && !privateOverflow && !timedOut) {
+      try {
+        const decoder = new TextDecoder("utf-8", { fatal: true });
+        stdout = decoder.decode(Buffer.concat(privateOutput.stdout));
+        stderr = decoder.decode(Buffer.concat(privateOutput.stderr));
+      } catch {
+        stdout = "";
+        stderr = ""; /* both streams must be well-formed */
+      }
+    }
+    throw goFailureError(
+      error,
+      packageName,
+      binary?.result,
+      converter?.result,
+      stdout,
+      stderr,
+      assertionSites,
+    );
   } finally {
     clearTimeout(timer);
+    privateOutput.stdout.length = 0;
+    privateOutput.stderr.length = 0;
   }
 }
 

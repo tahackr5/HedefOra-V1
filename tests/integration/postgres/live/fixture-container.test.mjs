@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 import { constants } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
@@ -30,6 +31,8 @@ import {
   verifyFiles,
   ensurePostmasterStarted,
   readinessFailureCode,
+  collectGoAssertionSites,
+  classifyGoFailure,
 } from "./fixture-container.mjs";
 
 const now = Date.parse("2026-09-07T12:00:00.000Z");
@@ -1387,3 +1390,512 @@ test("direct CLI outside the admitted PID1 container rejects without leaking syn
   assert.equal(receipt.code, "FIXTURE_ENTRYPOINT");
   assert.doesNotMatch(result.stdout, /synthetic-|PRIVATE KEY|PGPASSWORD|TOKEN/);
 });
+
+const diagnosticSource =
+  'package postgres\nfunc witness() {\n\tt.Fatal("static assertion")\n\tt.Error("static cleanup")\n}\n';
+const diagnosticSites = collectGoAssertionSites(packageName, diagnosticSource);
+const failedReport = (name = GO_PACKAGES[packageName][0]) =>
+  `\x16--- FAIL: ${name} (0.01s)\n`;
+const assertionReport = (
+  message = "static assertion",
+  file = "pool_integration_test.go",
+) => `    ${file}:999: ${message}\n`;
+const diagnosticOutput = assertionReport() + failedReport();
+const unknownDiagnostic = {
+  assertionLine: "UNKNOWN",
+  caseId: "go.postgres.unknown",
+};
+
+test("Go diagnostic dictionary uses exact public literal source lines, not reported helper call sites", () => {
+  assert.deepEqual(diagnosticSites, [
+    { message: "static assertion", line: 3 },
+    { message: "static cleanup", line: 4 },
+  ]);
+  assert.ok(Object.isFrozen(diagnosticSites));
+  assert.ok(diagnosticSites.every(Object.isFrozen));
+  for (const output of [
+    diagnosticOutput,
+    "\x16" + diagnosticOutput,
+    diagnosticOutput.replaceAll("\n", "\r\n"),
+  ])
+    assert.deepEqual(
+      classifyGoFailure(packageName, output, "", diagnosticSites),
+      {
+        assertionLine: "3",
+        caseId: "go.postgres.tls-scram",
+      },
+    );
+});
+test("Go diagnostic dictionary ignores comments and raw-string pseudo assertions", () => {
+  const source = [
+    "package postgres",
+    '// t.Fatal("comment assertion")',
+    "var query = `SELECT",
+    't.Fatal("raw assertion")',
+    "`",
+    "func witness() {",
+    '\tt.Fatal("actual assertion")',
+    "}",
+    "",
+  ].join("\n");
+  assert.deepEqual(collectGoAssertionSites(packageName, source), [
+    { message: "actual assertion", line: 7 },
+  ]);
+});
+for (const [name, source] of [
+  [
+    "unknown package",
+    diagnosticSource.replace("package postgres", "package app"),
+  ],
+  ["missing package", diagnosticSource.replace("package postgres", "")],
+  ["duplicate package", "package postgres\n" + diagnosticSource],
+  [
+    "block comment",
+    diagnosticSource + '/*\nt.Fatal("comment assertion")\n*/\n',
+  ],
+  ["dynamic call", diagnosticSource + "t.Fatal(value)\n"],
+  ["spaced call", diagnosticSource + 't.Fatal ("static assertion")\n'],
+  [
+    "inline call",
+    diagnosticSource + 'if condition { t.Fatal("static assertion") }\n',
+  ],
+  ["formatted call", diagnosticSource + 't.Fatalf("static %s", value)\n'],
+  ["partial call", diagnosticSource + 't.Error("partial"\n'],
+  ["extra argument", diagnosticSource + 't.Error("static assertion", value)\n'],
+  ["Go escape", diagnosticSource + 't.Fatal("escaped\\nvalue")\n'],
+  ["JSON-only escape", diagnosticSource + 't.Fatal("invalid\\/value")\n'],
+  ["trailing expression", diagnosticSource + 't.Fatal("value"); dangerous()\n'],
+  ["unclosed raw string", diagnosticSource + "var value = `unfinished\n"],
+  ["oversized source", diagnosticSource + " ".repeat(131073)],
+  ["too many source lines", diagnosticSource + "\n".repeat(2000)],
+])
+  test(`Go diagnostic dictionary fails closed for ${name}`, () => {
+    assert.deepEqual(collectGoAssertionSites(packageName, source), []);
+  });
+test("Go diagnostic literal duplicates and malformed dictionaries cannot produce an assertion line", () => {
+  const duplicate = collectGoAssertionSites(
+    packageName,
+    diagnosticSource + 't.Fatal("static assertion")\n',
+  );
+  for (const sites of [
+    duplicate,
+    [],
+    null,
+    [{ message: "static assertion", line: 0 }],
+    [{ message: "static assertion", line: 2001 }],
+  ])
+    assert.equal(
+      classifyGoFailure(packageName, diagnosticOutput, "", sites).assertionLine,
+      "UNKNOWN",
+    );
+});
+for (const message of [
+  "static assertion suffix",
+  "prefix static assertion",
+  " static assertion",
+  "static assertion ",
+  "dynamic private token",
+  "static assertio",
+])
+  test(`Go assertion matching is literal equality: ${JSON.stringify(message)}`, () => {
+    assert.equal(
+      classifyGoFailure(
+        packageName,
+        assertionReport(message) + failedReport(),
+        "",
+        diagnosticSites,
+      ).assertionLine,
+      "UNKNOWN",
+    );
+  });
+test("Go diagnostic cases are restricted to the six package-qualified top-level tests", () => {
+  const expected = [
+    "tls-scram",
+    "tls-auth-failures",
+    "ambient-discovery",
+    "pool-capacity",
+    "query-cancel",
+  ];
+  GO_PACKAGES[packageName].forEach((name, index) => {
+    assert.equal(
+      classifyGoFailure(packageName, failedReport(name), "").caseId,
+      `go.postgres.${expected[index]}`,
+    );
+  });
+  const appPackage = packages[1],
+    name = GO_PACKAGES[appPackage][0];
+  const source = 'package app\nt.Fatal("app assertion")\n';
+  assert.deepEqual(
+    classifyGoFailure(
+      appPackage,
+      assertionReport("app assertion", "api_integration_test.go") +
+        failedReport(name),
+      "",
+      collectGoAssertionSites(appPackage, source),
+    ),
+    {
+      assertionLine: "2",
+      caseId: "go.app.startup-recovery",
+    },
+  );
+  assert.deepEqual(
+    classifyGoFailure(
+      "untrusted-package",
+      diagnosticOutput,
+      "",
+      diagnosticSites,
+    ),
+    { assertionLine: "UNKNOWN", caseId: "go.unknown.unknown" },
+  );
+});
+for (const [name, stdout, stderr] of [
+  ["unmarked FAIL", diagnosticOutput.replace("\x16", ""), ""],
+  ["duplicate top FAIL", diagnosticOutput + failedReport(), ""],
+  [
+    "multiple top FAIL",
+    diagnosticOutput + failedReport(GO_PACKAGES[packageName][1]),
+    "",
+  ],
+  [
+    "unknown top FAIL",
+    assertionReport() + failedReport("TestPG17Untrusted"),
+    "",
+  ],
+  [
+    "wrong package test",
+    assertionReport() + failedReport(GO_PACKAGES[packages[1]][0]),
+    "",
+  ],
+  [
+    "subtest alone",
+    assertionReport() + failedReport(GO_PACKAGES[packageName][0] + "/child"),
+    "",
+  ],
+  ["partial stdout", diagnosticOutput.slice(0, -1), ""],
+  ["partial stderr", diagnosticOutput, "partial private token"],
+  ["split streams", diagnosticOutput.slice(0, -1), "\n"],
+  ["stderr FAIL", assertionReport(), failedReport()],
+  [
+    "wrong assertion file",
+    assertionReport("static assertion", "api_integration_test.go") +
+      failedReport(),
+    "",
+  ],
+  [
+    "unapproved path",
+    assertionReport().replace("pool_integration", "/private/pool_integration") +
+      failedReport(),
+    "",
+  ],
+  [
+    "additional foreign assertion",
+    diagnosticOutput + "    another_test.go:100: private assertion\n",
+    "",
+  ],
+  ["reported line bound", diagnosticOutput.replace(":999:", ":2001:"), ""],
+  ["malformed frame", diagnosticOutput.replace("    pool", "pool"), ""],
+  ["unknown duration", diagnosticOutput.replace("0.01s", "NaNs"), ""],
+  ["oversized output", diagnosticOutput + " ".repeat(1048576) + "\n", ""],
+])
+  test(`Go failure diagnostic rejects ${name}`, () => {
+    assert.deepEqual(
+      classifyGoFailure(packageName, stdout, stderr, diagnosticSites),
+      unknownDiagnostic,
+    );
+  });
+test("Go diagnostic does not expose subtests or choose among multiple assertion candidates", () => {
+  const subtest = failedReport(
+    GO_PACKAGES[packageName][0] + "/private-subtest",
+  );
+  assert.deepEqual(
+    classifyGoFailure(
+      packageName,
+      assertionReport() + subtest + failedReport(),
+      "",
+      diagnosticSites,
+    ),
+    {
+      assertionLine: "3",
+      caseId: "go.postgres.tls-scram",
+    },
+  );
+  for (const [stdout, stderr] of [
+    [diagnosticOutput + assertionReport("static cleanup"), ""],
+    [diagnosticOutput, assertionReport("static cleanup")],
+  ])
+    assert.deepEqual(
+      classifyGoFailure(packageName, stdout, stderr, diagnosticSites),
+      {
+        assertionLine: "UNKNOWN",
+        caseId: "go.postgres.tls-scram",
+      },
+    );
+  assert.doesNotMatch(
+    JSON.stringify(
+      classifyGoFailure(
+        packageName,
+        assertionReport("synthetic-private-token") + subtest + failedReport(),
+        "",
+        diagnosticSites,
+      ),
+    ),
+    /private|token|static assertion|\.go|999|message|stdout|stderr/,
+  );
+});
+test("Go diagnostic dictionaries recognize both current fixed public source files", async () => {
+  for (const [pkg, relative, expectedLine] of [
+    [
+      packages[0],
+      "../../../../internal/platform/postgres/pool_integration_test.go",
+      52,
+    ],
+    [
+      packages[1],
+      "../../../../internal/platform/app/api_integration_test.go",
+      53,
+    ],
+  ]) {
+    const source = await readFile(new URL(relative, import.meta.url), "utf8");
+    const sites = collectGoAssertionSites(pkg, source);
+    assert.ok(sites.length > 20);
+    assert.equal(
+      sites.find(
+        (site) => site.message === "PG17_INTEGRATION_ADMISSION_REQUIRED",
+      )?.line,
+      expectedLine,
+    );
+  }
+});
+test("Go diagnostic package allowlist excludes inherited object properties", () => {
+  for (const name of ["constructor", "toString", "__proto__"]) {
+    assert.deepEqual(collectGoAssertionSites(name, diagnosticSource), []);
+    assert.deepEqual(
+      classifyGoFailure(name, diagnosticOutput, "", diagnosticSites),
+      {
+        assertionLine: "UNKNOWN",
+        caseId: "go.unknown.unknown",
+      },
+    );
+  }
+});
+
+async function diagnosticProcessFailure(scenario, timeoutMs = 1000) {
+  const children = [];
+  let failure;
+  try {
+    await runGoPackage({
+      packageName,
+      env: {},
+      timeoutMs,
+      spawnImpl() {
+        const child = fakeChild();
+        children.push(child);
+        if (children.length === 2)
+          queueMicrotask(() => scenario(children[0], children[1]));
+        return child;
+      },
+    });
+    assert.fail("failed Go execution must not PASS");
+  } catch (error) {
+    failure = error;
+  }
+  assert.match(failure.code, /^FIXTURE_GO_/);
+  assert.doesNotMatch(
+    JSON.stringify(failure),
+    /static assertion|synthetic-private|pool_integration|PRIVATE KEY|Output|stdout|stderr/,
+  );
+  return { failure, children };
+}
+function primeDiagnosticOutput(converter, binary) {
+  converter.stdout.write(json([{ Action: "start", Package: packageName }]));
+  binary.stdout.write(diagnosticOutput);
+}
+test("failed binary raw text survives converter cancellation without changing its immediate reap", async () => {
+  const { failure, children } = await diagnosticProcessFailure(
+    (converter, binary) => {
+      primeDiagnosticOutput(converter, binary);
+      binary.stdout.end();
+      binary.stderr.end();
+      binary.emit("close", 1);
+    },
+  );
+  assert.match(
+    failure.code,
+    /^FIXTURE_GO_PROCESS_P_B1_CUNKNOWN_BC_CC_LUNKNOWN$/,
+  );
+  assert.equal(failure.caseId, "go.postgres.tls-scram");
+  assert.deepEqual(
+    children.map((child) => child.kills),
+    [["SIGKILL"], []],
+  );
+});
+for (const [name, malformedStream] of [
+  ["stderr", "stderr"],
+  ["stdout", "stdout"],
+])
+  test(`malformed UTF-8 in private ${name} invalidates both diagnostic streams`, async () => {
+    const { failure } = await diagnosticProcessFailure((converter, binary) => {
+      if (malformedStream === "stdout") {
+        converter.stdout.write(
+          json([{ Action: "start", Package: packageName }]),
+        );
+        binary.stdout.write(failedReport());
+        binary.stderr.write(assertionReport());
+      } else primeDiagnosticOutput(converter, binary);
+      binary[malformedStream].write(Buffer.from([0xff]));
+      binary[malformedStream].write("\n");
+      binary.stdout.end();
+      binary.stderr.end();
+      binary.emit("close", 1);
+    });
+    assert.match(failure.code, /^FIXTURE_GO_PROCESS_.*_LUNKNOWN$/);
+    assert.equal(failure.caseId, "go.postgres.unknown");
+  });
+for (const [name, scenario] of [
+  [
+    "private aggregate overflow",
+    (converter, binary) => {
+      primeDiagnosticOutput(converter, binary);
+      binary.stdout.write(Buffer.alloc(600000, 0x61));
+      binary.stderr.write(Buffer.alloc(600000, 0x62));
+    },
+  ],
+  [
+    "all-stream output overflow",
+    (converter, binary) => {
+      primeDiagnosticOutput(converter, binary);
+      converter.stdout.write(Buffer.alloc(2097153, 0x61));
+    },
+  ],
+  [
+    "converter output overflow",
+    (converter, binary) => {
+      primeDiagnosticOutput(converter, binary);
+      converter.stdout.write(Buffer.alloc(1048577, 0x61));
+    },
+  ],
+  [
+    "converter stderr",
+    (converter, binary) => {
+      primeDiagnosticOutput(converter, binary);
+      converter.stderr.write("synthetic-private-converter-failure\n");
+    },
+  ],
+  [
+    "converter channel error",
+    (converter, binary) => {
+      primeDiagnosticOutput(converter, binary);
+      converter.stdin.emit("error", new Error("synthetic-private-channel"));
+    },
+  ],
+  [
+    "binary channel error",
+    (converter, binary) => {
+      primeDiagnosticOutput(converter, binary);
+      binary.stderr.emit("error", new Error("synthetic-private-channel"));
+    },
+  ],
+])
+  test(`earlier apparent failure yields no hint after ${name}`, async () => {
+    const { failure, children } = await diagnosticProcessFailure(scenario);
+    assert.match(
+      failure.code,
+      /^FIXTURE_GO_CHANNEL_P_BUNKNOWN_CUNKNOWN_.*_LUNKNOWN$/,
+    );
+    assert.equal(failure.caseId, "go.postgres.unknown");
+    assert.deepEqual(
+      children.map((child) => child.kills),
+      [["SIGKILL"], ["SIGKILL"]],
+    );
+  });
+test("converter-driven binary cancellation cannot authorize an earlier diagnostic assertion", async () => {
+  const { failure, children } = await diagnosticProcessFailure(
+    (converter, binary) => {
+      primeDiagnosticOutput(converter, binary);
+      binary.kill = (signal) => {
+        binary.kills.push(signal);
+        queueMicrotask(() => {
+          binary.stdout.end();
+          binary.stderr.end();
+          binary.emit("close", 1);
+        });
+        return true;
+      };
+      converter.stdout.end();
+      converter.stderr.end();
+      converter.emit("close", 1);
+    },
+  );
+  assert.match(failure.code, /^FIXTURE_GO_PROCESS_P_B1_C1_BC_CC_LUNKNOWN$/);
+  assert.equal(failure.caseId, "go.postgres.unknown");
+  assert.deepEqual(
+    children.map((child) => child.kills),
+    [[], ["SIGKILL"]],
+  );
+});
+test("timeout with synthetic close0 never becomes raw exit0 or a diagnostic hint", async () => {
+  const { failure } = await diagnosticProcessFailure((converter, binary) => {
+    primeDiagnosticOutput(converter, binary);
+    for (const child of [converter, binary])
+      child.kill = (signal) => {
+        child.kills.push(signal);
+        queueMicrotask(() => {
+          child.stdout.end();
+          child.stderr.end();
+          child.emit("close", 0);
+        });
+        return true;
+      };
+  }, 20);
+  assert.equal(
+    failure.code,
+    "FIXTURE_GO_CHANNEL_P_BUNKNOWN_CUNKNOWN_BC_CC_LUNKNOWN",
+  );
+  assert.equal(failure.caseId, "go.postgres.unknown");
+});
+test("unobserved binary close cannot use apparently complete diagnostic text", async () => {
+  const { failure } = await diagnosticProcessFailure((converter, binary) => {
+    primeDiagnosticOutput(converter, binary);
+    converter.stdout.end();
+    converter.stderr.end();
+    converter.emit("close", 0);
+    binary.kill = (signal) => {
+      binary.kills.push(signal);
+      return false;
+    };
+  }, 10);
+  assert.equal(failure.code, "FIXTURE_GO_CHANNEL_P_BUNKNOWN_C0_BM_CC_LUNKNOWN");
+  assert.equal(failure.caseId, "go.postgres.unknown");
+});
+test("binary raw exit0 cannot authorize failure-like diagnostic text", async () => {
+  const { failure } = await diagnosticProcessFailure((converter, binary) => {
+    primeDiagnosticOutput(converter, binary);
+    binary.stdout.end();
+    binary.stderr.end();
+    binary.emit("close", 0);
+    converter.stdout.end();
+    converter.stderr.end();
+    converter.emit("close", 1);
+  });
+  assert.match(failure.code, /^FIXTURE_GO_PROCESS_P_B0_C1_BC_CC_LUNKNOWN$/);
+  assert.equal(failure.caseId, "go.postgres.unknown");
+});
+for (const [rawExit, rawToken, caseId] of [
+  [255, "255", "go.postgres.tls-scram"],
+  [256, "UNKNOWN", "go.postgres.unknown"],
+  [-1, "UNKNOWN", "go.postgres.unknown"],
+  ["1", "UNKNOWN", "go.postgres.unknown"],
+])
+  test(`Go diagnostic exit tokens enforce numeric bounds for ${JSON.stringify(rawExit)}`, async () => {
+    const { failure } = await diagnosticProcessFailure((converter, binary) => {
+      primeDiagnosticOutput(converter, binary);
+      binary.stdout.end();
+      binary.stderr.end();
+      binary.emit("close", rawExit);
+    });
+    assert.equal(
+      failure.code,
+      `FIXTURE_GO_PROCESS_P_B${rawToken}_CUNKNOWN_BC_CC_LUNKNOWN`,
+    );
+    assert.equal(failure.caseId, caseId);
+  });

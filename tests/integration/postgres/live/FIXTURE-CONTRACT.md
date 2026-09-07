@@ -128,6 +128,13 @@ stopped postmaster observed clean close vermeden yeniden başlatılmaz.
 Readiness başarısızlığı primary/negative, initial/app aşaması, bounded exit,
 SQLSTATE ve kapalı native hata sınıfı içerir; raw stderr tanı çıktısı değildir.
 
+Go başarısızlık tanısı yalnız mevcut FAIL sonucuna eklenir: fixed package,
+GO_PACKAGES içindeki bilinen üst test adı, bounded binary/converter exit
+ve exact RO test kaynağındaki literal assertion'ın satır kimliği. Bilinmeyen
+veya dinamik mesaj UNKNOWN kalır; raw stdout/stderr/message/path dışarı
+çıkarılmaz. Private tanı belleği de mevcut aggregate output sınırına tabidir.
+Bu bilgi test kanıtı yerine geçmez; validator/cancel/reap kuralları değişmez.
+
 ## Negatifler, tamamlama ve rollback
 
 Forged/expired/stale/future/same-count-different-finding admission; source,
