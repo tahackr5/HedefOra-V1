@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "ac2b9d9bcf073a77917f411ce23f6dbb208d85ec",
+  "verifiedThrough": "35e621d511443f2562c9e463b6b920d4abecbf7e",
   "trailingAllowedPaths": [
     "state/W001-OWNERSHIP.json"
   ],
@@ -949,6 +949,16 @@
         "tests/integration/postgres/live/fixture-run.test.mjs",
         "tests/integration/postgres/live/psql.mjs"
       ]
+    },
+    "W001-T04FB-isolated-fixture-seal": {
+      "base": "ac2b9d9bcf073a77917f411ce23f6dbb208d85ec",
+      "head": "57caff3f6405e6ef8bc3ff9dcb64109cb5954666",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-fixture-boundary-format": {
+      "base": "57caff3f6405e6ef8bc3ff9dcb64109cb5954666",
+      "head": "35e621d511443f2562c9e463b6b920d4abecbf7e",
+      "allowedPaths": ["scripts/check-generated.test.mjs"]
     }
   }
 }
