@@ -1,7 +1,8 @@
 # PG17 test-fixture — ayrı owner risk kabul profili
 
-DEC-031/ADR-0021; durum IMPLEMENTING / ENGINE NOT_RUN. Tek shared writer
-orchestrator; container/native psql kaynak sahibi ayrı assigned worker.
+DEC-031/ADR-0021. Bu sözleşme engine PASS kanıtı değildir; exact koşum
+sonuçları `state/W001-PG17-FIXTURE.md` ve bağlı artifact'larda tutulur.
+Tek shared writer orchestrator; kaynak sahipleri ayrı assigned worker'lardır.
 Task-phase base aba3d13 değişmez; başlangıç source checkpoint cf69d6a.
 
 ## Acceptance ve kesin izolasyon
@@ -43,6 +44,14 @@ IPC, bounded2CPU/1536MiB memory+swap/256PID/128MiB shm. Yalnız /source,
 rw,noexec,nosuid,nodev tmpfs. Başka volume/bind/device/socket/security option
 ve host namespace kabul edilmez. Dış ağ interface/route yokluğu içeriden de
 ölçülür; dış host inspect asıl authority'dir. Input/run metadata secret-free.
+
+Host graceful SIGINT/SIGTERM kapsamı builder dahil ilk async hazırlıktan
+önce başlar. İptal yeni normal işi durdurur, aktif bounded child kapanışını
+gözler ve exact owned builder/engine cleanup'ına ilerler. Tekrarlı graceful
+sinyal cleanup'ı atlayamaz; cleanup bağımsız bounded komutlarla tamamlanır.
+Create/start lost ACK durumunda yalnız kanıtlı run/name/label/image kimliği
+uzlaştırılır; foreign kaynak kaldırılmaz. Removal ve absence kanıtı eksikse
+FAIL kalır. SIGKILL, host/daemon kaybı için cleanup garantisi verilmez.
 
 Tek container'ın PID1'i `/tools/node /source/tests/integration/postgres/live/fixture-container.mjs`.
 Native programs yalnız `/usr/lib/postgresql/17/bin/` altında. İki PGDATA
@@ -114,6 +123,18 @@ kullanılır; wrapper child orphan kalamaz (binary ve converter ayrı doğrudan
 izlenir veya process group lifecycle kanıtlanır). Tam altı package/test
 PASS, her package PASS, fail/skip/duplicate/truncated/wrong-package0 ve
 binary+converter exit0 zorunludur. Timeout/cancel/cleanup error PASS olmaz.
+
+Gerçek in-flight cancellation testi uygulama lease'i ile provider'ın asenkron
+destructor muhasebesini ayrı kanıtlar. Check sonucu gözlendiğinde tam bir
+acquisition ve gerçek underlying Release sonrası tek ACK zaten hazır olmalıdır;
+Check'i çağıran producer bu nonblocking ACK/count snapshot'ını sonuçla birlikte
+yayınlar; geciken tüketici sonradan gelen ACK ile false snapshot'ı düzeltemez.
+ACK için ek bekleme yoktur. AcquiredConns0 aynı cancellation başlangıcı+2s
+mutlak sınır içinde ayrıca gözlenir; gözlem sonrası deadline kontrolü geç
+sıfırı reddeder. MaxConns1 recovery ve actual Close completion zorunludur.
+Bu ayrım kalıcı/nonzero acquired kayıt, eksik/çift Release veya timeout'u
+başarıya çeviremez. Kontrollü destructor bariyeri regression'ı iki olayı
+ayırır; production pool, kapasite veya timeout sözleşmesi değişmez.
 
 Container stdout yalnız bounded secret-free JSON receipt: schema
 `hedefora.pg17.fixture-result.v1`, status, runId, sourceCommit,sourceTree,

@@ -485,11 +485,13 @@ func TestPG17PoolCapacityDeadlineReuseAndClose(t *testing.T) {
 
 type pg17SleepingBackend struct {
 	*pgxBackend
-	started chan uint32
+	started     chan uint32
+	observation *pg17LeaseObservation
 }
 type pg17SleepingConnection struct {
 	*pgxpool.Conn
-	started chan uint32
+	started     chan uint32
+	observation *pg17LeaseObservation
 }
 
 func (b *pg17SleepingBackend) Acquire(ctx context.Context) (connection, error) {
@@ -497,12 +499,16 @@ func (b *pg17SleepingBackend) Acquire(ctx context.Context) (connection, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &pg17SleepingConnection{Conn: conn, started: b.started}, nil
+	b.observation.acquisitions.Add(1)
+	return &pg17SleepingConnection{Conn: conn, started: b.started, observation: b.observation}, nil
 }
 func (c *pg17SleepingConnection) Ping(ctx context.Context) error {
 	c.started <- c.Conn.Conn().PgConn().PID()
 	_, err := c.Exec(ctx, "SELECT pg_sleep(30)")
 	return err
+}
+func (c *pg17SleepingConnection) Release() {
+	c.observation.release(c.Conn.Release)
 }
 
 func TestPG17InflightQueryCancellationAndClose(t *testing.T) {
@@ -511,10 +517,12 @@ func TestPG17InflightQueryCancellationAndClose(t *testing.T) {
 		t.Run(action, func(t *testing.T) {
 			c := f.config()
 			c.ProbeTimeout = 5 * time.Second
+			c.MaxConnections = 1
 			p := pg17New(t, c)
 			raw := pg17Raw(t, p)
 			started := make(chan uint32, 1)
-			p.backend = &pg17SleepingBackend{pgxBackend: &pgxBackend{pool: raw}, started: started}
+			observation := newPG17LeaseObservation()
+			p.backend = &pg17SleepingBackend{pgxBackend: &pgxBackend{pool: raw}, started: started, observation: observation}
 			monitor := pg17New(t, f.config())
 			monitorConn, err := pg17Raw(t, monitor).Acquire(pg17Context(t, 3*time.Second))
 			if err != nil {
@@ -523,8 +531,11 @@ func TestPG17InflightQueryCancellationAndClose(t *testing.T) {
 			defer monitorConn.Release()
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			result := make(chan error, 1)
-			go func() { result <- p.Check(ctx) }()
+			result := make(chan pg17CheckResult, 1)
+			go func() {
+				err := p.Check(ctx)
+				result <- pg17CaptureCheckResult(err, observation)
+			}()
 			var pid uint32
 			select {
 			case pid = <-started:
@@ -571,26 +582,40 @@ func TestPG17InflightQueryCancellationAndClose(t *testing.T) {
 				time.Sleep(10 * time.Millisecond)
 			}
 			start := time.Now()
+			releasedBy, stopReleaseObservation := context.WithDeadline(context.Background(), start.Add(2*time.Second))
+			defer stopReleaseObservation()
 			want := context.Canceled
 			if action == "pool-close" {
 				want = ErrClosed
 				if p.Close(pg17Context(t, 3*time.Second)) != nil {
 					t.Fatal("Close did not cancel real server I/O")
 				}
+				select {
+				case <-p.closeDone:
+				default:
+					t.Fatal("Close returned before actual provider completion")
+				}
 			} else {
 				cancel()
 			}
 			select {
-			case err := <-result:
-				if !errors.Is(err, want) || time.Since(start) > 2*time.Second {
+			case observed := <-result:
+				if !errors.Is(observed.err, want) || time.Since(start) > 2*time.Second {
 					t.Fatal("canceled real operation returned late or succeeded")
 				}
-				pg17CleanError(t, f, err)
-			case <-time.After(2 * time.Second):
+				// Release must already have returned exactly once. Never wait for
+				// this acknowledgement after observing the Check result.
+				if !observed.releaseObservedAtReturn || !observation.releasedBeforeReturn() {
+					t.Fatal("canceled operation returned before exact lease release")
+				}
+				pg17CleanError(t, f, observed.err)
+			case <-releasedBy.Done():
 				t.Fatal("real in-flight query outlived cancellation")
 			}
-			if raw.Stat().AcquiredConns() != 0 {
-				t.Fatal("canceled operation retained provider ownership")
+			// Closed handles are destroyed asynchronously by pgxpool/puddle;
+			// capacity is a separate observation within the original deadline.
+			if pg17ObserveReleasedCapacity(releasedBy, observation, func() int32 { return raw.Stat().AcquiredConns() }) != nil {
+				t.Fatal("canceled operation retained provider capacity past its deadline")
 			}
 			if action == "caller-cancel" {
 				p.backend = &pgxBackend{pool: raw}

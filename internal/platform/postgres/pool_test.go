@@ -13,6 +13,7 @@ import (
 	"io"
 	"math/big"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -20,6 +21,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tahackr5/HedefOra-V1/internal/platform/config"
 )
 
@@ -878,5 +881,368 @@ func TestSyntheticQueryCleanupRequiresAcknowledgementAndCompletion(t *testing.T)
 	failed := func(context.Context) (bool, error) { return false, errors.New("synthetic query error") }
 	if pg17CancelAndObserve(context.Background(), failed, no) == nil || pg17CancelAndObserve(context.Background(), ok, failed) == nil {
 		t.Fatal("failed cleanup query was accepted")
+	}
+}
+
+// A pgxpool Release invalidates the acquired handle synchronously, but a closed
+// connection stays in AcquiredConns until puddle's asynchronous destructor and
+// bookkeeping finish. Observe the exact lease separately from that capacity.
+type pg17LeaseObservation struct {
+	acquisitions atomic.Int32
+	releases     atomic.Int32
+	acknowledged chan struct{}
+	once         sync.Once
+}
+
+func newPG17LeaseObservation() *pg17LeaseObservation {
+	return &pg17LeaseObservation{acknowledged: make(chan struct{})}
+}
+
+func (o *pg17LeaseObservation) release(release func()) {
+	release()
+	o.releases.Add(1)
+	o.once.Do(func() { close(o.acknowledged) })
+}
+
+func (o *pg17LeaseObservation) releasedBeforeReturn() bool {
+	if o == nil || o.acquisitions.Load() != 1 || o.releases.Load() != 1 {
+		return false
+	}
+	select {
+	case <-o.acknowledged:
+		return true
+	default:
+		return false
+	}
+}
+
+type pg17CheckResult struct {
+	err                     error
+	releaseObservedAtReturn bool
+}
+
+func pg17CaptureCheckResult(err error, observation *pg17LeaseObservation) pg17CheckResult {
+	return pg17CheckResult{err: err, releaseObservedAtReturn: observation.releasedBeforeReturn()}
+}
+
+func pg17ObserveReleasedCapacity(ctx context.Context, observation *pg17LeaseObservation, acquired func() int32) error {
+	if ctx == nil || acquired == nil || !observation.releasedBeforeReturn() {
+		return errors.New("exact lease release was not acknowledged before return")
+	}
+	deadline, bounded := ctx.Deadline()
+	if !bounded {
+		return errors.New("provider capacity observation requires an absolute deadline")
+	}
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if !time.Now().Before(deadline) {
+			return context.DeadlineExceeded
+		}
+		count := acquired()
+		// The observation itself may cross the deadline. A late zero is not PASS.
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if !time.Now().Before(deadline) {
+			return context.DeadlineExceeded
+		}
+		if count < 0 || !observation.releasedBeforeReturn() {
+			return errors.New("provider lease evidence changed during observation")
+		}
+		if count == 0 {
+			return nil
+		}
+		timer := time.NewTimer(min(10*time.Millisecond, time.Until(deadline)))
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return ctx.Err()
+		case <-timer.C:
+		}
+	}
+}
+
+type pg17ObservedBackend struct {
+	*pgxBackend
+	observation *pg17LeaseObservation
+}
+
+func (b *pg17ObservedBackend) Acquire(ctx context.Context) (connection, error) {
+	conn, err := b.pgxBackend.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	b.observation.acquisitions.Add(1)
+	return &pg17ObservedConnection{connection: conn, observation: b.observation}, nil
+}
+
+type pg17ObservedConnection struct {
+	connection
+	observation *pg17LeaseObservation
+}
+
+func (c *pg17ObservedConnection) Release() {
+	c.observation.release(c.connection.Release)
+}
+
+func TestPGXReleaseAcknowledgementPrecedesAsynchronousDestructorAccounting(t *testing.T) {
+	peer, c := newWirePeer(t, "query stall", false)
+	c.MaxConnections = 1
+	c.ConnectTimeout, c.AcquireTimeout, c.ProbeTimeout = time.Second, time.Second, 5*time.Second
+	p := newPool(nil, c)
+	pc, err := providerConfig(c, os.Environ(), p.lifetime)
+	if err != nil {
+		t.Fatal("synthetic provider configuration failed")
+	}
+	entered, finish := make(chan struct{}), make(chan struct{})
+	var unblock sync.Once
+	allowDestructor := func() { unblock.Do(func() { close(finish) }) }
+	defer allowDestructor()
+	pc.BeforeClose = func(*pgx.Conn) {
+		close(entered)
+		<-finish
+	}
+	raw, err := pgxpool.NewWithConfig(context.Background(), pc)
+	if err != nil {
+		t.Fatal("synthetic provider construction failed")
+	}
+	observation := newPG17LeaseObservation()
+	p.backend = &pg17ObservedBackend{pgxBackend: &pgxBackend{pool: raw}, observation: observation}
+	defer func() {
+		allowDestructor()
+		if p.Close(context.Background()) != nil {
+			t.Error("synthetic provider cleanup failed")
+		}
+	}()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	result := make(chan pg17CheckResult, 1)
+	go func() {
+		err := p.Check(ctx)
+		result <- pg17CaptureCheckResult(err, observation)
+	}()
+	deadline := time.Now().Add(time.Second)
+	for peer.queries.Load() != 1 {
+		if !time.Now().Before(deadline) {
+			t.Fatal("synthetic query was not observed")
+		}
+		time.Sleep(time.Millisecond)
+	}
+	cancel()
+	select {
+	case observed := <-result:
+		if !errors.Is(observed.err, context.Canceled) || !observed.releaseObservedAtReturn || !observation.releasedBeforeReturn() {
+			t.Fatal("probe returned without exact lease release acknowledgement")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("probe waited for the blocked asynchronous destructor")
+	}
+	select {
+	case <-entered:
+	case <-time.After(time.Second):
+		t.Fatal("asynchronous destructor did not enter its barrier")
+	}
+	if raw.Stat().AcquiredConns() != 1 {
+		t.Fatal("blocked destructor did not retain its capacity reservation")
+	}
+	waitCtx, stopWait := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	if err := pg17ObserveReleasedCapacity(waitCtx, observation, func() int32 { return raw.Stat().AcquiredConns() }); !errors.Is(err, context.DeadlineExceeded) {
+		stopWait()
+		t.Fatal("reserved provider capacity was accepted as complete")
+	}
+	stopWait()
+	closeCtx, stopClose := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	if err := p.Close(closeCtx); !errors.Is(err, context.DeadlineExceeded) {
+		stopClose()
+		t.Fatal("Close claimed completion while the destructor was blocked")
+	}
+	stopClose()
+	select {
+	case <-p.closeDone:
+		t.Fatal("provider close completed before its destructor")
+	default:
+	}
+	allowDestructor()
+	completed, stopCompleted := context.WithTimeout(context.Background(), 2*time.Second)
+	defer stopCompleted()
+	if p.Close(completed) != nil || pg17ObserveReleasedCapacity(completed, observation, func() int32 { return raw.Stat().AcquiredConns() }) != nil {
+		t.Fatal("actual provider completion was not observed after the barrier")
+	}
+	if raw.Stat().AcquiredConns() != 0 || observation.acquisitions.Load() != 1 || observation.releases.Load() != 1 {
+		t.Fatal("provider capacity or exact lease accounting changed")
+	}
+}
+
+func TestReleaseEvidenceRequiresSynchronousExactAcknowledgement(t *testing.T) {
+	for _, mode := range []string{"missing acquisition", "missing release", "unacknowledged release", "duplicate acquisition", "duplicate release"} {
+		t.Run(mode, func(t *testing.T) {
+			observation := newPG17LeaseObservation()
+			if mode != "missing acquisition" {
+				observation.acquisitions.Add(1)
+			}
+			if mode == "unacknowledged release" {
+				observation.releases.Add(1)
+			} else if mode != "missing release" {
+				observation.release(func() {})
+			}
+			if mode == "duplicate acquisition" {
+				observation.acquisitions.Add(1)
+			}
+			if mode == "duplicate release" {
+				observation.release(func() {})
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+			called := false
+			if pg17ObserveReleasedCapacity(ctx, observation, func() int32 { called = true; return 0 }) == nil || called {
+				t.Fatal("missing or ambiguous synchronous release was accepted")
+			}
+		})
+	}
+}
+
+func TestCapacityObservationKeepsItsOriginalAbsoluteDeadline(t *testing.T) {
+	for _, mode := range []string{"zero", "eventual zero", "persistent reservation", "expired zero", "late zero", "canceled zero", "duplicate release", "negative count", "unbounded"} {
+		t.Run(mode, func(t *testing.T) {
+			observation := newPG17LeaseObservation()
+			observation.acquisitions.Add(1)
+			observation.release(func() {})
+			deadline := time.Now().Add(25 * time.Millisecond)
+			if mode == "zero" || mode == "eventual zero" {
+				deadline = time.Now().Add(time.Second)
+			}
+			if mode == "expired zero" {
+				deadline = time.Now().Add(-time.Second)
+			}
+			ctx, cancel := context.WithDeadline(context.Background(), deadline)
+			defer cancel()
+			if mode == "canceled zero" {
+				cancel()
+			}
+			if mode == "unbounded" {
+				ctx = context.Background()
+			}
+			calls := 0
+			err := pg17ObserveReleasedCapacity(ctx, observation, func() int32 {
+				calls++
+				switch mode {
+				case "persistent reservation":
+					return 1
+				case "eventual zero":
+					if calls == 1 {
+						return 1
+					}
+				case "late zero":
+					<-ctx.Done()
+					return 0
+				case "duplicate release":
+					observation.release(func() {})
+				case "negative count":
+					return -1
+				}
+				return 0
+			})
+			wantSuccess := mode == "zero" || mode == "eventual zero"
+			if (err == nil) != wantSuccess {
+				t.Fatal("invalid provider capacity completion decision")
+			}
+			if (mode == "expired zero" || mode == "canceled zero" || mode == "unbounded") && calls != 0 {
+				t.Fatal("capacity was observed outside its admitted deadline")
+			}
+		})
+	}
+}
+
+func TestReleaseAcknowledgementWaitsForActualReleaseReturn(t *testing.T) {
+	observation := newPG17LeaseObservation()
+	observation.acquisitions.Add(1)
+	entered, finish, done := make(chan struct{}), make(chan struct{}), make(chan struct{})
+	var unblock sync.Once
+	allowRelease := func() { unblock.Do(func() { close(finish) }) }
+	defer allowRelease()
+	go func() {
+		defer close(done)
+		observation.release(func() { close(entered); <-finish })
+	}()
+	<-entered
+	if observation.releasedBeforeReturn() || observation.releases.Load() != 0 {
+		t.Fatal("blocked release was acknowledged before returning")
+	}
+	allowRelease()
+	<-done
+	if !observation.releasedBeforeReturn() {
+		t.Fatal("completed exact release was not acknowledged")
+	}
+}
+
+func TestCheckReturnSnapshotRejectsReleaseAcknowledgedOnlyBeforeConsumption(t *testing.T) {
+	observation := newPG17LeaseObservation()
+	observation.acquisitions.Add(1)
+	result := make(chan pg17CheckResult, 1)
+	result <- pg17CaptureCheckResult(context.Canceled, observation)
+	observation.release(func() {})
+	observed := <-result
+	if !observation.releasedBeforeReturn() || observed.releaseObservedAtReturn || !errors.Is(observed.err, context.Canceled) {
+		t.Fatal("late release changed the captured Check-return observation")
+	}
+}
+
+type pg17BlockedReleaseConnection struct {
+	connection
+	beforeRelease func()
+}
+
+func (c *pg17BlockedReleaseConnection) Release() {
+	c.beforeRelease()
+	c.connection.Release()
+}
+
+func TestCheckCannotReturnBeforeItsUnderlyingReleaseCompletes(t *testing.T) {
+	entered, finish := make(chan struct{}), make(chan struct{})
+	var unblock sync.Once
+	allowRelease := func() { unblock.Do(func() { close(finish) }) }
+	defer allowRelease()
+	observation := newPG17LeaseObservation()
+	underlying := &fakeConnection{}
+	blocked := &pg17BlockedReleaseConnection{connection: underlying, beforeRelease: func() { close(entered); <-finish }}
+	backend := &fakeBackend{acquire: func(context.Context) (connection, error) {
+		observation.acquisitions.Add(1)
+		return &pg17ObservedConnection{connection: blocked, observation: observation}, nil
+	}}
+	p := newPool(backend, testConfig(t))
+	defer func() {
+		allowRelease()
+		if p.Close(context.Background()) != nil {
+			t.Error("blocked-release pool cleanup failed")
+		}
+	}()
+	result := make(chan pg17CheckResult, 1)
+	go func() {
+		err := p.Check(context.Background())
+		result <- pg17CaptureCheckResult(err, observation)
+	}()
+	select {
+	case <-entered:
+	case <-time.After(time.Second):
+		t.Fatal("underlying release did not enter its barrier")
+	}
+	select {
+	case <-result:
+		t.Fatal("Check returned before its underlying Release completed")
+	default:
+	}
+	if observation.releasedBeforeReturn() || underlying.releases.Load() != 0 {
+		t.Fatal("blocked underlying release was acknowledged")
+	}
+	allowRelease()
+	select {
+	case observed := <-result:
+		if observed.err != nil || !observed.releaseObservedAtReturn || underlying.releases.Load() != 1 {
+			t.Fatal("Check result omitted its exact completed release")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("Check did not return after its underlying release completed")
 	}
 }

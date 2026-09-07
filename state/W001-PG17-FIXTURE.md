@@ -252,3 +252,78 @@ dd2c3c0d9f1e15631e6d7080df7d0f6c5d9b74f831c7a92c1d5afba90ff0cb8d;
 import edilen helper8df048ed7c3cc34151cb81488bf75796ff7004e9ba3374a53354fe46a1a21f40
 sınıflandırma boyunca sabit, owned cleanup/absence PASS. Bu iki kanıt
 yalnız tanı güvenilirliğidir; SQL/Go engine PASS değildir.
+
+## A9 — gerçek iptal testinde provider sahipliği
+
+Exact a4dde45f2c2a14438a16d9a257caaf922e9cfb33 /
+tree591658776799564e88511e8b770f0ed74217dc2f için source pre-execution
+security PASS, W001 continuous ownership exit0 ve generated boundary exit0.
+A9 engine FAIL: FIXTURE_GO_PROCESS_P_B1_C0_BC_CC_L593,
+go.postgres.query-cancel. Tanı kaynak literal593'e bağlıdır:
+iptal edilen operasyon döndüğünde AcquiredConns sıfır değildir. Bu sonuç
+tek başına kalıcı leak veya hangi alt testin neden olduğu iddiası değildir.
+Binary raw1/converter raw0 observed close; host exit1'i kabul etmeyerek
+FIXTURE_INSPECT_STATE ile FAIL verir. OOM yok; owned cleanup/absence ve
+source/tools post hash PASS. SQL ilerleme çıkarımı tam SQL receipt yerine
+geçmez; engine gate açık kalır. Pinned provider Release/destructor semantiği
+ve bounded cancellation sözleşmesi araştırılır; assertion gevşetilmez.
+Final-result SHA256cfca6c59ce6ce9a47fd24be23eaa37e0c802366539f8136cbc2a775a67906ac2;
+container-failure SHA256a3bb17f57f79230464986629fabfa43882f4c71cc275db3d6899d3a16b846144.
+
+Pinned pgx5.10.0 Conn.Release closed/busy/non-idle bağlantıda puddle2.2.2
+Resource.Destroy çağırır. Destruction asenkron; acquired kaydı gerçek
+destructor sonrasında kaldırılır. Pool.Close completion ile sayaç güncellemesi
+arasında da kısa scheduling aralığı olabilir. ADR-0018/DEC-028 ve Pool
+sözleşmesi synchronous metric0 değil, tek-goroutine lease/Release-before-return,
+bounded cancellation ve actual provider Close completion ister. Bağımsız
+security re-evaluation ilk olası MEDIUM'u doğrulanmış production zafiyeti
+değil test oracle uyumsuzluğu olarak sınıflandırdı; A9 FAIL korunur.
+
+Dar oracle düzeltmesinin kabulü: gerçek underlying Release sonrası ACK ve
+tam acquisition/release1, Check sonucu gözlendiğinde zaten hazır olmalıdır;
+ACK beklenmez. Provider AcquiredConns0 ayrı olarak aynı cancelStart+2s
+mutlak bütçede, gözlem sonrası da deadline kontrol edilerek kanıtlanır.
+Geç sıfır, hiç bırakılmayan lease ve tamamlanmayan destruction FAIL'dir.
+MaxConns1 gerçek recovery, actual Close ve kontrollü destructor bariyeri
+regresyonu gerekir. Production pool/Hijack/kapasite/timeout sınırı değişmez.
+Bu tasarım kabulüdür; yeni implementation review/test/engine sonucu değildir.
+
+A4dde45 exact fresh cold review A9 engine FAIL'i bağımsız hash/source ile
+yeniden doğruladı. Ayrıca Medium cleanup bulgusu: runFixtureHost SIGINT/SIGTERM
+handler'larını prepareFixtureTools sonrasında kuruyordu; derleme sırasında
+graceful host iptali builder finally/removal kanıtını atlayabilirdi. Ayrı dar
+fix handler kapsamını build öncesine taşır, tüm işi cancellation'a bağlar;
+cleanup iptalden bağımsız kalmalı ve exact owned reconciliation/removal/absence
+kanıtını tamamlamalıdır. Create/start/compile iptalleri ve tekrarlı sinyal
+regresyonları gerekir. SIGKILL/host veya daemon kaybına garanti iddiası yoktur.
+
+Dirty oracle security review ilk uygulamada tüketici-zamanı ACK ölçümünü
+Medium test evidence bulgusu olarak reddetti. Check çağıran producer dönüş
+anındaki nonblocking ACK/count snapshot'ını error ile birlikte yayınlamalı;
+sonradan gelen ACK ilk false snapshot'ı düzeltemez. Geciken tüketici negatif
+regresyonu ve controlled destructor yolu aynı kurala bağlanır. İlk dirty FAIL
+ve önceki exact FAIL yeni review/test olmadan kapanmış sayılmaz.
+
+Go oracle final dirty-source component kanıtı
+5896df894fc36926f0987028791af86df907458556c6b25dabb59408fda471e0:
+pinli offline Linux Go1.26.7 raw0, mod verify before/after, postgres/config
+race+shuffle, altı yeni üst regresyon x20, tagged compile-only/vet ve format
+exit0. Yedi Go/module girdi before/after aynı; concurrent Node/docs bu dar
+kanıtın dışında. pool_test SHA1328b13b8246852fba216398843f8a34a03c57016908c47bf105f37601394a22,
+integration SHA554b9dde2e97ded0b00867cbca86aec976c26fb63ed285944595a904f09e1ac7;
+production pool.go SHA5bbb2c19b181d3edcb7fb1d8ab4798a354b72f5ad9216be7b22d2ec9435fb9f4
+değişmedi. İlk eksik test-import derleme raw1'i ve pre-snapshot ara raw0
+ayrı artifact'larda korunur. Bağımsız dar Go source review producer/consumer
+bulgusunu CLOSED_STATIC yaptı; exact seal ve gerçek PG sonucu henüz yoktur.
+
+Host cancellation A kanıtı SHA256
+dd6f87298178ba02ddbd10aee874a2c7eddbe19f324b8512fe9e7f1e1564959d:
+pinli Linux Node24.20 gerçek OS SIGINT/SIGTERM x post-create/post-start/
+compile-wait/lost-create-ACK sekiz child vakası, cleanup sırasında tekrarlı
+sinyal; her interrupted child raw1. Stateful simulated daemon exact-owner
+remove/absence doğrulandı; gerçek Docker builder iptali iddiası değildir.
+Linux focused127/127/skip0, dış Go-only diagnostic container raw0 ve exact
+owned removal/absence PASS; 16public module closure değişmedi. Windows127/127
+aynı çocuk vakalarında IPC process-event kullanır, OS signal iddiası yoktur.
+Yeni clean exact seal sonrasında ayrı B gerçek prepareFixtureTools derleme
+iptali ve Docker owned absence kanıtı gerekir; ardından tam PG engine rerun.
