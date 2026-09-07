@@ -78,14 +78,24 @@ output semantiğini korur. Docker taşıması yeni native profile'a geçirilmez;
 eski `createPsqlExecutor` davranışı ve testleri korunur. Parent environment
 secret içermez; native child env explicit ve role-specific olur.
 
-PG17 startup authentication, application_name uygulanmadan önce çalışır.
-Yalnız `roles.readonly.login-denied` / readonly / hedefora_dev / `SELECT 1;`
-negatifi için native adapter ilk ve tek readonly girişimini sahiplenir.
+PG17 startup authentication ve database CONNECT kontrolü application_name
+uygulanmadan önce çalışır. Yalnız `roles.readonly.login-denied` / readonly /
+hedefora_dev ile migration/app/worker rollerinin postgres/template1
+`roles.<role>.<database>-connect-denied` negatifleri kabul edilen yedi tuple'dır.
+Exact case/role/database/`SELECT 1;`/boş variables gerekir; yanlış case veya
+persistent dahil her tuple girişimi hakkı ilk bağlantıdan önce tüketir.
 Primary verify-full/SCRAM, gerçek nonzero exit ve observed close zorunludur.
 Diğer psql/session işleriyle çakışma reddedilir; kilit log kararı bitene kadar
 korunur. Postmaster generation, sticky eviction ve LF-bütünlüğü bağlı önce/
 sonra cursor yalnız yeni suffix'i kapsar. Close sonrası tam500ms beklenir;
-yalnız bir exact readonly-role FATAL28000/28P01 kabul edilir. Stale, başka
+yalnız bir exact role/database FATAL kabul edilir: readonly28000/28P01 veya
+diğer altı tuple42501/aynı database permission-denied mesajı. Native prefix
+`%a %e [fixture:%u:%d] `; Port kimliği authenticated session_user iddiası
+değildir, ancak sabit fixture'da exact startup request'e bağlanır. Ham snapshot
+startup kanıtıdır. Normalizer yalnız native ordinary unique-app korelasyonuna
+tam anchored prefix kaldırımı yapar; bozuk/çelişen hedef-app satırları veya
+legacy prefix fail-closed'dur. Verbose prefix/body state eşitliği gerekir.
+Stale, başka
 role, duplicate/error ambiguity, restart/eviction/truncation, timeout veya
 stderr-only kanıt reddedilir. SQL170, NOLOGIN/password-null catalog assert ve
 before/after atomicity kontrolleri değişmez. Docker/core adapter'a fallback

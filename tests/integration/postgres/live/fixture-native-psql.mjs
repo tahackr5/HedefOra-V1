@@ -4,6 +4,77 @@ import { performance } from "node:perf_hooks";
 import { setTimeout as delay } from "node:timers/promises";
 
 export const PG_BIN = "/usr/lib/postgresql/17/bin";
+const ROLE_USERS = Object.freeze({
+  admin: "hedefora_dev",
+  migration: "hedefora_migration",
+  app: "hedefora_app",
+  worker: "hedefora_worker",
+  readonly: "hedefora_readonly",
+});
+const DATABASES = new Set(["hedefora_dev", "postgres", "template1"]);
+const startupCases = new Map([
+  [
+    "roles.readonly.login-denied",
+    {
+      role: "readonly",
+      database: "hedefora_dev",
+      messages: {
+        28000: 'role "hedefora_readonly" is not permitted to log in',
+        "28P01": 'password authentication failed for user "hedefora_readonly"',
+      },
+    },
+  ],
+  ...["migration", "app", "worker"].flatMap((role) =>
+    ["postgres", "template1"].map((database) => [
+      `roles.${role}.${database}-connect-denied`,
+      {
+        role,
+        database,
+        messages: { 42501: `permission denied for database "${database}"` },
+      },
+    ]),
+  ),
+]);
+const startupPairs = new Set(
+  [...startupCases.values()].map(({ role, database }) => `${role}:${database}`),
+);
+
+// Ordinary SQL errors still require their exact application name. The native
+// transport alone removes the fixed identity field after matching launch env;
+// legacy or malformed target-application lines cannot supply partial evidence.
+export function normalizeNativeLogs(logs, { application, user, database }) {
+  requireLive(
+    typeof logs === "string" &&
+      logs.length <= 131072 &&
+      Buffer.byteLength(logs) <= 131072 &&
+      typeof application === "string" &&
+      /^ho_[a-f0-9]{16}_[0-9]{1,7}$/.test(application) &&
+      Object.values(ROLE_USERS).includes(user) &&
+      DATABASES.has(database),
+    "SQL_NATIVE_LOG_IDENTITY",
+  );
+  const normalized = [];
+  const lines = logs.split("\n"),
+    tail = lines.pop();
+  for (const line of lines) {
+    if (!line.startsWith(`${application} `)) continue;
+    const match =
+      /^(ho_[a-f0-9]{16}_[0-9]{1,7}) ([0-9A-Z]{5}) \[fixture:(hedefora_(?:dev|migration|app|worker|readonly)):(hedefora_dev|postgres|template1)\] ((?:DEBUG[1-5]|INFO|NOTICE|WARNING|ERROR|LOG|FATAL|PANIC|DETAIL|HINT|QUERY|CONTEXT|LOCATION|STATEMENT):.*)$/.exec(
+        line,
+      );
+    requireLive(
+      match && match[3] === user && match[4] === database,
+      "SQL_NATIVE_LOG_IDENTITY",
+    );
+    normalized.push(`${match[1]} ${match[2]} ${match[5]}`);
+  }
+  // A later partial tail must not hide an already complete malformed line.
+  requireLive(
+    !tail || (!tail.startsWith(application) && !application.startsWith(tail)),
+    "SQL_NATIVE_LOG_PARTIAL",
+  );
+  return normalized.join("\n");
+}
 export const NATIVE_FAILURE_CATEGORIES = Object.freeze([
   "NOT_RUN",
   "SUCCESS",
@@ -102,8 +173,22 @@ export function createNativePsqlExecutor({
   let lastFailure = "NOT_RUN",
     active = 0,
     unsafeLifetime = false,
-    readonlyAttempted = false,
-    startupProof = null;
+    startupProof = null,
+    launchOwner = null;
+  const attempted = new Set(),
+    identities = new Map();
+  function invoke(method, request, owner) {
+    const previous = launchOwner;
+    launchOwner = owner;
+    try {
+      return core[method](request);
+    } finally {
+      launchOwner = previous;
+    }
+  }
+  function release(owner) {
+    for (const application of owner) identities.delete(application);
+  }
   function snapshot() {
     try {
       requireLive(
@@ -144,19 +229,45 @@ export function createNativePsqlExecutor({
       // the matching server record briefly instead of guessing from stderr or
       // depending on event-loop delivery order. The callback itself is bounded.
       const deadline = performance.now() + 500;
+      let invalid = null,
+        tainted = false;
       while (true) {
-        const logs = await readLogs(request);
+        let logs = null;
+        try {
+          logs = normalizeNativeLogs(await readLogs(request), {
+            application: request.application,
+            ...identities.get(request.application),
+          });
+        } catch (error) {
+          invalid = error;
+          if (error?.code !== "SQL_NATIVE_LOG_PARTIAL") tainted = true;
+        }
         if (
-          correlatedSqlState(logs, request.application) ||
-          performance.now() >= deadline
+          logs !== null &&
+          !tainted &&
+          correlatedSqlState(logs, request.application)
         )
           return logs;
+        if (performance.now() >= deadline) {
+          if (tainted || logs === null) throw invalid;
+          return logs;
+        }
         await delay(10);
       }
     },
     launchClient(args, processOptions) {
       const proof = startupProof;
+      const application = processOptions.env.PGAPPNAME;
       try {
+        requireLive(
+          launchOwner && identities.size < 256 && !identities.has(application),
+          "SQL_NATIVE_LOG_IDENTITY_BOUND",
+        );
+        identities.set(application, {
+          user: processOptions.env.PGUSER,
+          database: processOptions.env.PGDATABASE,
+        });
+        launchOwner.add(application);
         const child = start({
           ...processOptions,
           executable: `${PG_BIN}/psql`,
@@ -189,35 +300,48 @@ export function createNativePsqlExecutor({
       }
     },
   });
-  function isReadonlyRequest(request) {
-    return (
-      request?.role === "readonly" ||
-      request?.caseId === "roles.readonly.login-denied"
+  function startupRequest(request) {
+    const claimed = startupCases.get(request?.caseId);
+    const role = request?.role,
+      database = request?.database ?? "hedefora_dev";
+    const actual =
+      Object.hasOwn(ROLE_USERS, role) && DATABASES.has(database)
+        ? `${role}:${database}`
+        : null;
+    const protectedRequest = Boolean(
+      claimed || role === "readonly" || startupPairs.has(actual),
     );
-  }
-  function consumeReadonlyAttempt() {
-    const previous = readonlyAttempted;
-    readonlyAttempted = true;
-    requireLive(!previous, "SQL_NATIVE_STARTUP_ALREADY_ATTEMPTED");
+    const keys = new Set();
+    if (actual && (role === "readonly" || database !== "hedefora_dev"))
+      keys.add(actual);
+    if (role === "readonly") keys.add("readonly:hedefora_dev");
+    if (claimed) keys.add(`${claimed.role}:${claimed.database}`);
+    const previous = [...keys].some((key) => attempted.has(key));
+    for (const key of keys) attempted.add(key);
+    if (protectedRequest)
+      requireLive(!previous, "SQL_NATIVE_STARTUP_ALREADY_ATTEMPTED");
+    return { claimed, protectedRequest };
   }
   async function psql(request) {
-    const readonly = isReadonlyRequest(request);
-    if (readonly) consumeReadonlyAttempt();
+    const { claimed, protectedRequest } = startupRequest(request);
     requireLive(startupProof === null, "SQL_NATIVE_STARTUP_EXCLUSIVE");
-    if (!readonly) {
+    const owner = new Set();
+    if (!protectedRequest) {
       active++;
       try {
-        return await core.psql(request);
+        return await invoke("psql", request, owner);
       } finally {
         active--;
+        release(owner);
       }
     }
     requireLive(
       !negative &&
-        request.role === "readonly" &&
-        request.caseId === "roles.readonly.login-denied" &&
+        claimed &&
+        request.role === claimed.role &&
         (request.database === undefined ||
-          request.database === "hedefora_dev") &&
+          request.database === claimed.database) &&
+        (request.database ?? "hedefora_dev") === claimed.database &&
         request.inputSql === "SELECT 1;" &&
         (request.variables === undefined ||
           (request.variables !== null &&
@@ -235,10 +359,10 @@ export function createNativePsqlExecutor({
     active++;
     try {
       const before = snapshot();
-      // Startup authentication precedes application_name. This single reviewed
-      // denial is proven only from an exclusive, same-postmaster fresh suffix;
+      // Startup authentication/database permission checks precede application_name.
+      // These seven denials require an exclusive, same-postmaster fresh suffix;
       // it never supplies a generic client-stderr or server-log fallback.
-      const result = await core.psql(request);
+      const result = await invoke("psql", request, owner);
       requireLive(
         proof.raw?.origin === "exit" &&
           Number.isInteger(proof.raw.rawExit) &&
@@ -268,46 +392,48 @@ export function createNativePsqlExecutor({
         .filter((line) => /\b(?:ERROR|FATAL|PANIC):/.test(line));
       requireLive(errors.length === 1, "SQL_NATIVE_STARTUP_LOG_AMBIGUOUS");
       const accepted =
-        /^\[unknown\] (28000|28P01) FATAL:  \1: (role "hedefora_readonly" is not permitted to log in|password authentication failed for user "hedefora_readonly")$/.exec(
+        /^\[unknown\] (28000|28P01|42501) \[fixture:(hedefora_(?:readonly|migration|app|worker)):(hedefora_dev|postgres|template1)\] FATAL:  \1: (.*)$/.exec(
           errors[0],
         );
       requireLive(
         accepted &&
-          ((accepted[1] === "28000" &&
-            accepted[2] ===
-              'role "hedefora_readonly" is not permitted to log in') ||
-            (accepted[1] === "28P01" &&
-              accepted[2] ===
-                'password authentication failed for user "hedefora_readonly"')),
+          accepted[2] === ROLE_USERS[claimed.role] &&
+          accepted[3] === claimed.database &&
+          Object.hasOwn(claimed.messages, accepted[1]) &&
+          accepted[4] === claimed.messages[accepted[1]],
         "SQL_NATIVE_STARTUP_LOG_DENIAL",
       );
       return { ...result, origin: "postgres", sqlState: accepted[1] };
     } finally {
       active--;
       startupProof = null;
+      release(owner);
     }
   }
   async function openSession(request) {
-    if (isReadonlyRequest(request)) {
-      consumeReadonlyAttempt();
+    if (startupRequest(request).protectedRequest) {
       requireLive(false, "SQL_NATIVE_STARTUP_REQUEST");
     }
     requireLive(startupProof === null, "SQL_NATIVE_STARTUP_EXCLUSIVE");
     active++;
+    const owner = new Set();
     try {
-      const session = await core.openSession(request);
+      const session = await invoke("openSession", request, owner);
       session.closed.then(
         () => {
           active--;
+          release(owner);
         },
         () => {
           active--;
           unsafeLifetime = true;
+          release(owner);
         },
       );
       return session;
     } catch (error) {
       active--;
+      release(owner);
       throw error;
     }
   }

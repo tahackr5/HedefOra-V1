@@ -19,7 +19,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { command, startProcess, correlatedSqlState } from "./process.mjs";
 import { createPsqlExecutor, validateSqlRequest } from "./psql.mjs";
-import { createNativePsqlExecutor } from "./fixture-native-psql.mjs";
+import {
+  createNativePsqlExecutor,
+  normalizeNativeLogs,
+} from "./fixture-native-psql.mjs";
 import {
   createExecutionGuard,
   createRunBudget,
@@ -1059,10 +1062,10 @@ const readonlyStartupRequest = Object.freeze({
   timeoutMs: 1000,
 });
 const readonlyStartupFatal =
-  '[unknown] 28P01 FATAL:  28P01: password authentication failed for user "hedefora_readonly"\n';
+  '[unknown] 28P01 [fixture:hedefora_readonly:hedefora_dev] FATAL:  28P01: password authentication failed for user "hedefora_readonly"\n';
 function nativeStartupHarness({
   before = "",
-  suffix = readonlyStartupFatal,
+  suffix,
   raw = {},
   automatic = true,
   hasSnapshot = true,
@@ -1103,10 +1106,18 @@ function nativeStartupHarness({
         finish(overrides = {}) {
           if (done) return;
           done = true;
-          if (options.env.PGUSER === "hedefora_readonly")
-            h.current.text += suffix;
+          const startup =
+            options.env.PGUSER === "hedefora_readonly" ||
+            (options.env.PGUSER !== "hedefora_dev" &&
+              options.env.PGDATABASE !== "hedefora_dev");
+          if (startup)
+            h.current.text +=
+              suffix ??
+              (options.env.PGUSER === "hedefora_readonly"
+                ? readonlyStartupFatal
+                : `[unknown] 42501 [fixture:${options.env.PGUSER}:${options.env.PGDATABASE}] FATAL:  42501: permission denied for database "${options.env.PGDATABASE}"\n`);
           settle({
-            rawExit: options.env.PGUSER === "hedefora_readonly" ? 2 : 0,
+            rawExit: startup ? 2 : 0,
             origin: "exit",
             connectionClosed: true,
             stdout: "unchanged\n",
@@ -1135,7 +1146,7 @@ for (const [state, suffix] of [
   ["28P01", readonlyStartupFatal],
   [
     "28000",
-    '[unknown] 28000 FATAL:  28000: role "hedefora_readonly" is not permitted to log in\n',
+    '[unknown] 28000 [fixture:hedefora_readonly:hedefora_dev] FATAL:  28000: role "hedefora_readonly" is not permitted to log in\n',
   ],
 ])
   test(`native one-shot startup proof accepts exclusive fresh ${state} only after full settling`, async () => {
@@ -1457,4 +1468,302 @@ test("observed persistent close releases native activity only after session term
     "28P01",
   );
   assert.equal(h.calls.length, 2);
+});
+
+const externalStartupCases = ["migration", "app", "worker"].flatMap((role) =>
+  ["postgres", "template1"].map((database) => ({
+    ...readonlyStartupRequest,
+    role,
+    database,
+    caseId: `roles.${role}.${database}-connect-denied`,
+    variables: {},
+  })),
+);
+for (const candidate of externalStartupCases)
+  test(`native exact startup tuple ${candidate.role}/${candidate.database} admits one fresh identity-bound 42501`, async () => {
+    const h = nativeStartupHarness();
+    const result = await h.executor.psql(candidate);
+    assert.equal(result.sqlState, "42501");
+    assert.equal(result.origin, "postgres");
+    assert.equal(result.rawExit, 2);
+    assert.equal(h.calls[0].env.PGUSER, `hedefora_${candidate.role}`);
+    assert.equal(h.calls[0].env.PGDATABASE, candidate.database);
+    await assert.rejects(
+      h.executor.psql(candidate),
+      /SQL_NATIVE_STARTUP_ALREADY_ATTEMPTED/,
+    );
+    assert.equal(h.calls.length, 1);
+  });
+test("all seven startup tuples are independently one-shot in one executor", async () => {
+  const h = nativeStartupHarness();
+  for (const candidate of [readonlyStartupRequest, ...externalStartupCases]) {
+    const result = await h.executor.psql(candidate);
+    assert.equal(
+      result.sqlState,
+      candidate.role === "readonly" ? "28P01" : "42501",
+    );
+  }
+  assert.equal(h.calls.length, 7);
+  for (const candidate of [readonlyStartupRequest, ...externalStartupCases])
+    await assert.rejects(
+      h.executor.psql(candidate),
+      /SQL_NATIVE_STARTUP_ALREADY_ATTEMPTED/,
+    );
+});
+for (const [name, mutate] of [
+  [
+    "missing-identity",
+    (text) => text.replace(" [fixture:hedefora_migration:postgres]", ""),
+  ],
+  [
+    "wrong-prefix-role",
+    (text) => text.replace("hedefora_migration", "hedefora_worker"),
+  ],
+  [
+    "wrong-prefix-database",
+    (text) => text.replace(":postgres]", ":template1]"),
+  ],
+  [
+    "wrong-message-database",
+    (text) => text.replace('database "postgres"', 'database "template1"'),
+  ],
+  [
+    "wrong-message",
+    (text) =>
+      text.replace(
+        'permission denied for database "postgres"',
+        'permission denied for schema "postgres"',
+      ),
+  ],
+  [
+    "wrong-body-state",
+    (text) => text.replace("FATAL:  42501:", "FATAL:  28P01:"),
+  ],
+  [
+    "duplicate-identity",
+    (text) =>
+      text.replace(" FATAL:", " [fixture:hedefora_migration:postgres] FATAL:"),
+  ],
+])
+  test(`native external-database proof rejects ${name}`, async () => {
+    const text =
+      '[unknown] 42501 [fixture:hedefora_migration:postgres] FATAL:  42501: permission denied for database "postgres"\n';
+    const h = nativeStartupHarness({ suffix: mutate(text) });
+    await assert.rejects(
+      h.executor.psql(externalStartupCases[0]),
+      /SQL_NATIVE_STARTUP_LOG_DENIAL/,
+    );
+  });
+test("native readonly proof rejects legacy identity-free startup log", async () => {
+  const h = nativeStartupHarness({
+    suffix: readonlyStartupFatal.replace(
+      " [fixture:hedefora_readonly:hedefora_dev]",
+      "",
+    ),
+  });
+  await assert.rejects(
+    h.executor.psql(readonlyStartupRequest),
+    /SQL_NATIVE_STARTUP_LOG_DENIAL/,
+  );
+});
+for (const persistent of [false, true])
+  test(`wrong-case external ${persistent ? "persistent" : "psql"} attempt burns its actual tuple before launch`, async () => {
+    const h = nativeStartupHarness();
+    const altered = {
+      ...externalStartupCases[0],
+      caseId: "synthetic.external",
+    };
+    await assert.rejects(
+      h.executor[persistent ? "openSession" : "psql"](altered),
+      /SQL_NATIVE_STARTUP_REQUEST/,
+    );
+    h.current.text +=
+      '[unknown] 42501 [fixture:hedefora_migration:postgres] FATAL:  42501: permission denied for database "postgres"\n';
+    await assert.rejects(
+      h.executor.psql(externalStartupCases[0]),
+      /SQL_NATIVE_STARTUP_ALREADY_ATTEMPTED/,
+    );
+    assert.equal(h.calls.length, 0);
+  });
+for (const persistent of [false, true])
+  test(`forged known ${persistent ? "persistent" : "psql"} case consumes both claimed and actual startup tuples`, async () => {
+    const h = nativeStartupHarness();
+    const altered = {
+      ...externalStartupCases[0],
+      role: "worker",
+      database: "template1",
+    };
+    await assert.rejects(
+      h.executor[persistent ? "openSession" : "psql"](altered),
+      /SQL_NATIVE_STARTUP_REQUEST/,
+    );
+    for (const candidate of [externalStartupCases[0], externalStartupCases[5]])
+      await assert.rejects(
+        h.executor.psql(candidate),
+        /SQL_NATIVE_STARTUP_ALREADY_ATTEMPTED/,
+      );
+    assert.equal(h.calls.length, 0);
+  });
+test("nonempty variables consume and reject an external startup tuple", async () => {
+  const h = nativeStartupHarness();
+  await assert.rejects(
+    h.executor.psql({
+      ...externalStartupCases[0],
+      variables: { migration_checksum: "a".repeat(64) },
+    }),
+    /SQL_NATIVE_STARTUP_REQUEST/,
+  );
+  await assert.rejects(
+    h.executor.psql(externalStartupCases[0]),
+    /SQL_NATIVE_STARTUP_ALREADY_ATTEMPTED/,
+  );
+  assert.equal(h.calls.length, 0);
+});
+test("ordinary admin system-database readiness remains repeatable without startup authority", async () => {
+  const h = nativeStartupHarness({ hasSnapshot: false });
+  for (let index = 0; index < 3; index++)
+    assert.equal(
+      (
+        await h.executor.psql({
+          ...request,
+          role: "admin",
+          database: "postgres",
+        })
+      ).rawExit,
+      0,
+    );
+  assert.equal(h.snapshots, 0);
+});
+
+const logIdentity = Object.freeze({
+  application: `ho_${runId.slice(0, 16)}_1`,
+  user: "hedefora_app",
+  database: "hedefora_dev",
+});
+const normalIdentityError = `${logIdentity.application} 42501 [fixture:hedefora_app:hedefora_dev] ERROR:  42501: synthetic-private\n`;
+test("native normalizer removes only exact launch-bound identity for the target application", () => {
+  const normalized = normalizeNativeLogs(
+    `other 42501 ERROR: ignored\n${normalIdentityError}`,
+    logIdentity,
+  );
+  assert.equal(
+    normalized,
+    `${logIdentity.application} 42501 ERROR:  42501: synthetic-private`,
+  );
+  assert.equal(
+    correlatedSqlState(normalized, logIdentity.application),
+    "42501",
+  );
+});
+for (const [name, mutate] of [
+  [
+    "legacy",
+    (text) => text.replace(" [fixture:hedefora_app:hedefora_dev]", ""),
+  ],
+  ["wrong-role", (text) => text.replace("hedefora_app:", "hedefora_worker:")],
+  ["wrong-database", (text) => text.replace(":hedefora_dev]", ":postgres]")],
+  ["missing-close-bracket", (text) => text.replace("]", "")],
+  [
+    "duplicate-field",
+    (text) =>
+      text.replace(" ERROR:", " [fixture:hedefora_app:hedefora_dev] ERROR:"),
+  ],
+  [
+    "malformed-state",
+    (text) => text.replace(" 42501 [fixture", " ??? [fixture"),
+  ],
+  ["unterminated-target-line", (text) => text.trimEnd()],
+])
+  test(`native normalizer cannot accept a valid target error plus ${name} target error`, () => {
+    assert.throws(
+      () =>
+        normalizeNativeLogs(
+          normalIdentityError + mutate(normalIdentityError),
+          logIdentity,
+        ),
+      /SQL_NATIVE_LOG_/,
+    );
+  });
+for (const split of [
+  7,
+  normalIdentityError.indexOf("[fixture") + 5,
+  normalIdentityError.indexOf("ERROR:") + 3,
+])
+  test(`native ordinary error waits for complete split identity/body at byte ${split}`, async () => {
+    const h = nativeStartupHarness({ automatic: false });
+    const pending = h.executor.psql(request);
+    h.current.text = normalIdentityError.slice(0, split);
+    h.children[0].finish({ rawExit: 2 });
+    const timer = setTimeout(() => {
+      h.current.text = normalIdentityError;
+    }, 40);
+    try {
+      const result = await pending;
+      assert.equal(result.origin, "postgres");
+      assert.equal(result.sqlState, "42501");
+      assert.doesNotMatch(JSON.stringify(result), /synthetic-private/);
+    } finally {
+      clearTimeout(timer);
+    }
+  });
+for (const disappears of [false, true])
+  test(`native ordinary error rejects malformed plus valid target lines even if malformed line ${disappears ? "later disappears" : "remains"}`, async () => {
+    const h = nativeStartupHarness({ automatic: false });
+    const pending = h.executor.psql(request);
+    h.current.text =
+      normalIdentityError.replace("hedefora_app:", "hedefora_worker:") +
+      normalIdentityError;
+    h.children[0].finish({ rawExit: 2 });
+    const timer = disappears
+      ? setTimeout(() => {
+          h.current.text = normalIdentityError;
+        }, 40)
+      : null;
+    try {
+      const result = await pending;
+      assert.equal(result.origin, "channel");
+      assert.equal(result.sqlState, null);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  });
+test("native ordinary target application legacy error cannot use identity-free fallback", async () => {
+  const h = nativeStartupHarness({ automatic: false });
+  const pending = h.executor.psql(request);
+  h.current.text = normalIdentityError.replace(
+    " [fixture:hedefora_app:hedefora_dev]",
+    "",
+  );
+  h.children[0].finish({ rawExit: 2 });
+  const result = await pending;
+  assert.equal(result.origin, "channel");
+  assert.equal(result.sqlState, null);
+});
+test("native application identity map releases completed operations instead of growing indefinitely", async () => {
+  const h = nativeStartupHarness({ hasSnapshot: false });
+  for (let index = 0; index < 300; index++)
+    assert.equal((await h.executor.psql(request)).rawExit, 0);
+  assert.equal(h.calls.length, 300);
+});
+test("partial native tail cannot hide an earlier complete malformed target line", async () => {
+  const h = nativeStartupHarness({ automatic: false });
+  const pending = h.executor.psql(request);
+  h.current.text =
+    normalIdentityError.replace("hedefora_app:", "hedefora_worker:") +
+    normalIdentityError.slice(0, 30);
+  assert.throws(
+    () => normalizeNativeLogs(h.current.text, logIdentity),
+    /SQL_NATIVE_LOG_IDENTITY/,
+  );
+  h.children[0].finish({ rawExit: 2 });
+  const timer = setTimeout(() => {
+    h.current.text = normalIdentityError;
+  }, 40);
+  try {
+    const result = await pending;
+    assert.equal(result.origin, "channel");
+    assert.equal(result.sqlState, null);
+  } finally {
+    clearTimeout(timer);
+  }
 });

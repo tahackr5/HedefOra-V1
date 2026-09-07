@@ -187,3 +187,31 @@ logging severity sonrasında SQLSTATE'i tekrar basar; ilk sentetik örnek
 bunu atlıyordu. [PG17 elog source](https://github.com/postgres/postgres/blob/REL_17_11/src/backend/utils/error/elog.c)
 ile doğrulanan exact biçim regex/testlere alınır; prefix/body state eşitliği
 zorunludur. Log verbosity azaltılmaz; eksik veya uyuşmayan state reddedilir.
+
+## A7 — readonly kanıtı sonrası database CONNECT startup reddi
+
+Exactb0265440def08b10f0815941864e50a0ab00716c/treeff6a8417bb2019c266357334f0a86ffca9d5dbb4
+odaklı Node258/258/skip0 ve W001repolint exit0; dar security source PASS.
+A7 gerçek engine readonly login-denied aşamasını aştı fakat
+roles.migration.postgres-connect-denied / FIXTURE_SQL_EXECUTOR_TERMINATED
+ile FAIL oldu. Host cleanup PASS; failure artifact
+8685f19358b7a3be4317767d0bb530ff15a9c1e297e190f39d18e57530c7c014.
+Cold reviewer aynı P1'i bağımsız kaynak akışından buldu: CheckMyDatabase,
+process_startup_options'tan önce çalışır. Diğer beş CONNECT vakası da aynı
+yolu kullanır; eski source PASS bu yeni full-matrix FAIL'i kapatmaz.
+
+Dar forward fix yedi sabit tuple'a ortak güvenli startup korelasyonu ekler.
+PG'nin Port kaynaklı role/database kimliği native log prefix'e alınır;
+authenticated session_user olarak sunulmaz. Exact tuple first-only hakkı,
+exclusive lock, stable generation/no-eviction cursor, raw nonzero observed
+close, tam500ms settling ve tek exact verbose FATAL korunur. Ordinary native
+unique-app korelasyonu yalnız anchored prefix normalizer kullanır; hatalı
+veya çelişen hedef-app satırı atlanamaz, legacy fallback yoktur. SQL170,
+catalog ACL/NOLOGIN ve before/after atomiklik değişmez. Güvenlik tasarım
+kabulü koşulludur; yeni exact implementation review ve engine sonucu gerekir.
+
+Aynı b026 ara Windows fullCI exit0:690test/688PASS/iki tarihsel Windows
+skip, web3/3/kapsam100. Clean detached clone/fsck ve25rawhash replay PASS.
+Proof85b0f99af94e4517a863188af9da3fafb75ac8a74b77530bbb0e3b24a09b460c;
+CI log728cd2570ce11ac9051c2681fdfd5aac86435c8041889ad0576452ea7d4af15b.
+Bu sonuç A7 engine FAIL veya yeni exact full-tree/hosted kapıları değildir.

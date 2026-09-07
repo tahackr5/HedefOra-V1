@@ -1330,7 +1330,7 @@ test("native error waits for independently delivered matching postmaster log", a
     start(options) {
       application = options.env.PGAPPNAME;
       setTimeout(() => {
-        logs = `${application} 42501 ERROR: synthetic-secret\n`;
+        logs = `${application} 42501 [fixture:hedefora_app:hedefora_dev] ERROR: synthetic-secret\n`;
       }, 20);
       return {
         closed: Promise.resolve({
@@ -1363,6 +1363,9 @@ test("fixed PG configs retain redaction and durable engine semantics", () => {
   ]) {
     assert.match(text, /log_min_error_statement = 'panic'/);
     assert.match(text, /log_parameter_max_length_on_error = 0/);
+    assert.ok(text.includes("log_line_prefix = '%a %e [fixture:%u:%d] '"));
+    assert.ok(text.includes("log_error_verbosity = 'verbose'"));
+    assert.ok(text.includes("log_connections = off"));
     assert.match(text, /fsync = on/);
     assert.match(text, /password_encryption = 'scram-sha-256'/);
   }

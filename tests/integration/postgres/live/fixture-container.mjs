@@ -1000,7 +1000,7 @@ export function postgresConfiguration(negative) {
     "log_statement = 'none'",
     "log_min_error_statement = 'panic'",
     "log_error_verbosity = 'verbose'",
-    "log_line_prefix = '%a %e '",
+    "log_line_prefix = '%a %e [fixture:%u:%d] '",
     "log_parameter_max_length = 0",
     "log_parameter_max_length_on_error = 0",
     "log_connections = off",
