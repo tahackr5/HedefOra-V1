@@ -1197,6 +1197,61 @@ test("postmaster expired lease and unobserved close remain failure", async () =>
     /FIXTURE_POSTMASTER_REQUEST/,
   );
 });
+
+test("postmaster log snapshots bind a unique generation and preserve immutable cursors", async () => {
+  const child = fakeChild();
+  const server = startPostmaster({
+    directory: "/fixture/primary",
+    lifetimeMs: 1000,
+    spawnImpl: () => child,
+  });
+  const before = server.logSnapshot();
+  assert.deepEqual(Object.keys(before).sort(), [
+    "evicted",
+    "generation",
+    "text",
+  ]);
+  assert.match(before.generation, /^[a-f0-9]{32}$/);
+  assert.equal(Object.isFrozen(before), true);
+  assert.equal(before.evicted, false);
+  assert.equal(before.text, "");
+  child.stderr.write("[unknown] 00000 LOG: bounded synthetic line\n");
+  const after = server.logSnapshot();
+  assert.equal(after.generation, before.generation);
+  assert.equal(after.evicted, false);
+  assert.equal(after.text, server.readLogs());
+  assert.equal(before.text, "");
+  await server.stop();
+  const replacement = startPostmaster({
+    directory: "/fixture/primary",
+    lifetimeMs: 1000,
+    spawnImpl: () => fakeChild(),
+  });
+  assert.notEqual(replacement.logSnapshot().generation, before.generation);
+  await replacement.stop();
+});
+
+test("postmaster log eviction is sticky even after subsequent short log writes", async () => {
+  const child = fakeChild();
+  const server = startPostmaster({
+    directory: "/fixture/primary",
+    lifetimeMs: 1000,
+    spawnImpl: () => child,
+  });
+  const before = server.logSnapshot();
+  child.stderr.write("x".repeat(131073) + "\n");
+  const evicted = server.logSnapshot();
+  assert.equal(evicted.generation, before.generation);
+  assert.equal(evicted.evicted, true);
+  assert.ok(Buffer.byteLength(evicted.text) <= 131072);
+  child.stderr.write("[unknown] 00000 LOG: later synthetic line\n");
+  const later = server.logSnapshot();
+  assert.equal(later.evicted, true);
+  assert.equal(later.generation, before.generation);
+  assert.ok(Buffer.byteLength(later.text) <= 131072);
+  assert.equal(before.evicted, false);
+  await server.stop();
+});
 test("native psql launches real fixed native argv with role-specific environment", async () => {
   let seen;
   const secrets = createPrivateRunSecrets();

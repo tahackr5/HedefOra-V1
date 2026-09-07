@@ -78,6 +78,19 @@ output semantiğini korur. Docker taşıması yeni native profile'a geçirilmez;
 eski `createPsqlExecutor` davranışı ve testleri korunur. Parent environment
 secret içermez; native child env explicit ve role-specific olur.
 
+PG17 startup authentication, application_name uygulanmadan önce çalışır.
+Yalnız `roles.readonly.login-denied` / readonly / hedefora_dev / `SELECT 1;`
+negatifi için native adapter ilk ve tek readonly girişimini sahiplenir.
+Primary verify-full/SCRAM, gerçek nonzero exit ve observed close zorunludur.
+Diğer psql/session işleriyle çakışma reddedilir; kilit log kararı bitene kadar
+korunur. Postmaster generation, sticky eviction ve LF-bütünlüğü bağlı önce/
+sonra cursor yalnız yeni suffix'i kapsar. Close sonrası tam500ms beklenir;
+yalnız bir exact readonly-role FATAL28000/28P01 kabul edilir. Stale, başka
+role, duplicate/error ambiguity, restart/eviction/truncation, timeout veya
+stderr-only kanıt reddedilir. SQL170, NOLOGIN/password-null catalog assert ve
+before/after atomicity kontrolleri değişmez. Docker/core adapter'a fallback
+eklenmez; raw loglar dışarı çıkarılmaz.
+
 `runStaticChecks` + collectMigrationPlan + immutable up/down byte check
 bağlantıdan önce; mevcut `runLiveSqlAcceptance` tam matrisi değişmeden
 çalışır. Private0600 `/fixture/pg17-integration.json` mevcut v2 schema'yı

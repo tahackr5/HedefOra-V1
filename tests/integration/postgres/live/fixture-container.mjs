@@ -21,7 +21,11 @@ import {
   NATIVE_FAILURE_CATEGORIES,
 } from "./fixture-native-psql.mjs";
 import { runStaticChecks, collectMigrationPlan } from "../run.mjs";
-import { runLiveSqlAcceptance, verifyMigrationBundle } from "../live-sql.mjs";
+import {
+  runLiveSqlAcceptance,
+  verifyMigrationBundle,
+  SqlAcceptanceError,
+} from "../live-sql.mjs";
 import { strict } from "../../../../scripts/postgres-image/apk-runtime/sealed-io.mjs";
 
 export const FIXTURE_IMAGE = Object.freeze({
@@ -852,9 +856,11 @@ export function startPostmaster({ directory, lifetimeMs, spawnImpl = spawn }) {
     rawExit = -1,
     failure = false,
     logs = "",
+    logsEvicted = false,
     total = 0,
     timer,
     fallback;
+  const generation = randomBytes(16).toString("hex");
   let settle;
   const closed = new Promise((resolve) => {
     settle = resolve;
@@ -895,13 +901,15 @@ export function startPostmaster({ directory, lifetimeMs, spawnImpl = spawn }) {
           return;
         }
         logs += bytes.toString("utf8");
-        if (Buffer.byteLength(logs) > 131072)
+        if (Buffer.byteLength(logs) > 131072) {
+          logsEvicted = true;
           logs = Buffer.from(logs)
             .subarray(-131072)
             .toString("utf8")
             .split("\n")
             .slice(1)
             .join("\n");
+        }
       });
       stream.on("error", kill);
     }
@@ -918,6 +926,8 @@ export function startPostmaster({ directory, lifetimeMs, spawnImpl = spawn }) {
   return Object.freeze({
     closed,
     readLogs: () => logs,
+    logSnapshot: () =>
+      Object.freeze({ generation, evicted: logsEvicted, text: logs }),
     isRunning: () => !finished && !failure,
     async stop() {
       if (!finished) {
@@ -1258,6 +1268,7 @@ export async function runFixtureContainer() {
     const primary = createNativePsqlExecutor({
       ...common,
       readLogs: async () => servers.get("primary").readLogs(),
+      logSnapshot: () => servers.get("primary").logSnapshot(),
     });
     const negative = createNativePsqlExecutor({
       ...common,
@@ -1468,7 +1479,12 @@ export async function runFixtureContainer() {
     lease();
   } catch (error) {
     failure =
-      error instanceof LiveError ? error.code : "FIXTURE_EXECUTION_FAILED";
+      error instanceof LiveError
+        ? error.code
+        : error instanceof SqlAcceptanceError &&
+            /^[A-Z][A-Z0-9_]{0,63}$/.test(error.code)
+          ? `FIXTURE_SQL_${error.code}`
+          : "FIXTURE_EXECUTION_FAILED";
     if (
       typeof error?.caseId === "string" &&
       /^[a-z][a-z0-9.-]{0,95}$/.test(error.caseId)

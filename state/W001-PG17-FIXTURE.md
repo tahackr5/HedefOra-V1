@@ -152,3 +152,38 @@ yoktur. İmza matematiksel olarak CA anahtarıyla doğrulanır; sorun chain
 kurulmasıdır. Private key yalnız tmpfs, original hash unchanged ve owned
 removal/absence PASS. Kanıt
 b7f9bc839704333c96ef9a2cbdd8bba4fd65b2fb3b328c6684cc00487f5b2684.
+
+## TLS birlikte çalışma ve A6 startup-auth korelasyonu — 4609b92
+
+Düzeltilmiş iki Go TLS dosyası exact hash'leriyle ayrı Linux Go1.26.7
+test2/2 ve build PASS; OpenSSL doğru CA+IP exit0, yanlışCA exit2/error20,
+yanlışIP/host exit2/error64. Sentetik private key tmpfs/owned cleanup PASS.
+Dar kanıt30c9b0f12c26ade94cf5c9610ad74df014d95da1fd440c5e7b2b156aaa72fdac
+tam kaynak/engine kapısının yerine geçmez.
+
+Exact4609b92eefc57ed37be90728d83a77c5193efb05/tree9b99a2c05891087eda5d78ccc62c715555e3e0f1
+A6 fixture gerçek SQL matrisinde roles.readonly.login-denied aşamasına
+ulaştı ve FIXTURE_EXECUTION_FAILED ile FAIL oldu; tamSQL/Go PASS yok.
+Owned cleanup PASS; failure artifact
+fb933b5371923f35261146c5e3b4bdfc0060213d32cf80f7a2d9c422c507a36b.
+PG17 [startup source](https://github.com/postgres/postgres/blob/REL_17_11/src/backend/utils/init/postinit.c)
+authentication'ın application_name startup option'ından önce olduğunu
+gösterir. Bu nedenle application_name-only core korelasyonu reddedilen
+login için yeterli değildir; A6'nın raw logları saklanmadığından bu kök
+neden kaynak/control-flow çıkarımıdır, gözlenen exact server satırı değildir.
+
+Dar native çözüm: tek güven alanı/ağsız profile içinde exact readonly
+negatifi için first-and-only attempt, exclusive operation/session lock,
+generation/eviction bağlı taze log cursor ve actual nonzero observed close.
+Tam500ms settling sonunda yalnız exact readonly FATAL28000/28P01 ve tek
+error kabul edilir; belirsizlik fail-closed'dur. Read-only security design
+bu koşullarla kabul etti; implementation review ve yeni gerçek engine
+sonucu ayrıca gerekir. Güvenlik eşiği/SQL170/assertion gevşetilmez.
+Yeni güvenli tanı yalnız SqlAcceptanceError kapalı code/case bilgisini
+saklar; geçmiş FAIL'ler korunur, raw SQL/log/stderr dışarı çıkmaz.
+
+Bağımsız implementation review MEDIUM uyumluluk bulgusu: verbose server
+logging severity sonrasında SQLSTATE'i tekrar basar; ilk sentetik örnek
+bunu atlıyordu. [PG17 elog source](https://github.com/postgres/postgres/blob/REL_17_11/src/backend/utils/error/elog.c)
+ile doğrulanan exact biçim regex/testlere alınır; prefix/body state eşitliği
+zorunludur. Log verbosity azaltılmaz; eksik veya uyuşmayan state reddedilir.

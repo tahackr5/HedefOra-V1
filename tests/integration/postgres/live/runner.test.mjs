@@ -19,6 +19,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { command, startProcess, correlatedSqlState } from "./process.mjs";
 import { createPsqlExecutor, validateSqlRequest } from "./psql.mjs";
+import { createNativePsqlExecutor } from "./fixture-native-psql.mjs";
 import {
   createExecutionGuard,
   createRunBudget,
@@ -1049,4 +1050,411 @@ test("real controller rejects missing wrong malformed and duplicate private toke
   } finally {
     await controller.close();
   }
+});
+
+const readonlyStartupRequest = Object.freeze({
+  caseId: "roles.readonly.login-denied",
+  role: "readonly",
+  inputSql: "SELECT 1;",
+  timeoutMs: 1000,
+});
+const readonlyStartupFatal =
+  '[unknown] 28P01 FATAL:  28P01: password authentication failed for user "hedefora_readonly"\n';
+function nativeStartupHarness({
+  before = "",
+  suffix = readonlyStartupFatal,
+  raw = {},
+  automatic = true,
+  hasSnapshot = true,
+  negative = false,
+} = {}) {
+  const h = {
+    current: { generation: "7".repeat(32), evicted: false, text: before },
+    children: [],
+    calls: [],
+    snapshots: 0,
+    orphan: 0,
+  };
+  h.executor = createNativePsqlExecutor({
+    negative,
+    runId,
+    passwords: createPrivateRunSecrets().passwords,
+    markOrphanRisk: () => {
+      h.orphan++;
+    },
+    readLogs: async () => h.current.text,
+    ...(hasSnapshot
+      ? {
+          logSnapshot: () => {
+            h.snapshots++;
+            return { ...h.current };
+          },
+        }
+      : {}),
+    start(options) {
+      h.calls.push(options);
+      let settle,
+        done = false;
+      const closed = new Promise((resolve) => {
+        settle = resolve;
+      });
+      const child = {
+        closed,
+        finish(overrides = {}) {
+          if (done) return;
+          done = true;
+          if (options.env.PGUSER === "hedefora_readonly")
+            h.current.text += suffix;
+          settle({
+            rawExit: options.env.PGUSER === "hedefora_readonly" ? 2 : 0,
+            origin: "exit",
+            connectionClosed: true,
+            stdout: "unchanged\n",
+            stderr:
+              "synthetic-private-stderr 28P01 password authentication failed",
+            elapsedMs: 12,
+            ...raw,
+            ...overrides,
+          });
+        },
+        cancel: () => child.finish({ rawExit: -1, origin: "cancel" }),
+        end: () => child.finish(),
+        write: () => {},
+        onOutput: () => () => {},
+      };
+      h.children.push(child);
+      if (automatic && Object.hasOwn(options, "input"))
+        queueMicrotask(() => child.finish());
+      return child;
+    },
+  });
+  return h;
+}
+
+for (const [state, suffix] of [
+  ["28P01", readonlyStartupFatal],
+  [
+    "28000",
+    '[unknown] 28000 FATAL:  28000: role "hedefora_readonly" is not permitted to log in\n',
+  ],
+])
+  test(`native one-shot startup proof accepts exclusive fresh ${state} only after full settling`, async () => {
+    const h = nativeStartupHarness({
+        before: "[unknown] 00000 LOG:  ready\n",
+        suffix,
+      }),
+      began = performance.now();
+    const result = await h.executor.psql({
+      ...readonlyStartupRequest,
+      database: "hedefora_dev",
+    });
+    assert.ok(performance.now() - began >= 490);
+    assert.deepEqual(result, {
+      rawExit: 2,
+      origin: "postgres",
+      connectionClosed: true,
+      stdout: "unchanged\n",
+      elapsedMs: 12,
+      sqlState: state,
+    });
+    assert.equal(h.snapshots, 2);
+    assert.equal(h.calls.length, 1);
+    assert.equal(h.calls[0].executable, "/usr/lib/postgresql/17/bin/psql");
+    assert.equal(h.calls[0].env.PGHOST, "127.0.0.1");
+    assert.equal(h.calls[0].env.PGPORT, "5432");
+    assert.equal(h.calls[0].env.PGSSLMODE, "verify-full");
+    assert.equal(h.calls[0].env.PGREQUIREAUTH, "scram-sha-256");
+    assert.doesNotMatch(
+      JSON.stringify(result),
+      /synthetic-private|FATAL|password authentication|hedefora_readonly/,
+    );
+    h.current.generation = "9".repeat(32);
+    await assert.rejects(
+      h.executor.psql(readonlyStartupRequest),
+      /SQL_NATIVE_STARTUP_ALREADY_ATTEMPTED/,
+    );
+    assert.equal(h.calls.length, 1);
+  });
+
+for (const [name, configuration] of [
+  ["stale-before-cursor", { before: readonlyStartupFatal, suffix: "" }],
+  ["stderr-only", { suffix: "" }],
+  ["duplicate-fatal", { suffix: readonlyStartupFatal.repeat(2) }],
+  [
+    "extra-error",
+    {
+      suffix: readonlyStartupFatal + "other 42501 ERROR:  synthetic-private\n",
+    },
+  ],
+  [
+    "extra-panic",
+    {
+      suffix: readonlyStartupFatal + "other XX000 PANIC:  synthetic-private\n",
+    },
+  ],
+  [
+    "wrong-role",
+    {
+      suffix: readonlyStartupFatal.replace("hedefora_readonly", "hedefora_app"),
+    },
+  ],
+  ["wrong-state", { suffix: readonlyStartupFatal.replace("28P01", "42501") }],
+  [
+    "state-message-mismatch",
+    { suffix: readonlyStartupFatal.replaceAll("28P01", "28000") },
+  ],
+  [
+    "missing-verbose-state",
+    { suffix: readonlyStartupFatal.replace("FATAL:  28P01: ", "FATAL:  ") },
+  ],
+  [
+    "mismatched-verbose-state",
+    {
+      suffix: readonlyStartupFatal.replace("FATAL:  28P01:", "FATAL:  28000:"),
+    },
+  ],
+  [
+    "non-startup-prefix",
+    { suffix: readonlyStartupFatal.replace("[unknown]", "other") },
+  ],
+  [
+    "notice-only",
+    { suffix: readonlyStartupFatal.replace("FATAL:", "NOTICE:") },
+  ],
+  [
+    "detail-only",
+    { suffix: readonlyStartupFatal.replace("FATAL:", "DETAIL:") },
+  ],
+  ["incomplete-final-line", { suffix: readonlyStartupFatal.trimEnd() }],
+  ["incomplete-before-line", { before: "[unknown] 00000 LOG:  incomplete" }],
+  ["raw-success", { raw: { rawExit: 0 } }],
+  ["raw-timeout", { raw: { rawExit: -1, origin: "timeout" } }],
+  ["raw-channel", { raw: { rawExit: 2, origin: "channel" } }],
+  ["unobserved-close", { raw: { connectionClosed: false } }],
+  ["missing-owned-log-capability", { hasSnapshot: false }],
+])
+  test(`native startup proof rejects ${name} without exposing raw evidence`, async () => {
+    const h = nativeStartupHarness(configuration);
+    await assert.rejects(h.executor.psql(readonlyStartupRequest), (error) => {
+      assert.match(error.message, /^SQL_NATIVE_STARTUP_[A-Z_]+$/);
+      assert.doesNotMatch(
+        JSON.stringify(error),
+        /synthetic-private|FATAL|password authentication/,
+      );
+      return true;
+    });
+  });
+
+for (const [name, mutate] of [
+  [
+    "generation-changed",
+    (h) => {
+      h.current.generation = "8".repeat(32);
+    },
+  ],
+  [
+    "eviction",
+    (h) => {
+      h.current.evicted = true;
+    },
+  ],
+  [
+    "prefix-truncated",
+    (h) => {
+      h.current.text = readonlyStartupFatal;
+    },
+  ],
+  [
+    "delayed-second-fatal",
+    (h) => {
+      h.current.text += readonlyStartupFatal;
+    },
+  ],
+  [
+    "delayed-different-fatal",
+    (h) => {
+      h.current.text += readonlyStartupFatal.replace(
+        "hedefora_readonly",
+        "hedefora_app",
+      );
+    },
+  ],
+])
+  test(`native startup proof rejects ${name} throughout the full post-close window`, async () => {
+    const h = nativeStartupHarness({ before: "[unknown] 00000 LOG:  ready\n" });
+    const pending = h.executor.psql(readonlyStartupRequest);
+    const timer = setTimeout(() => mutate(h), 300);
+    try {
+      await assert.rejects(pending, /SQL_NATIVE_STARTUP_/);
+    } finally {
+      clearTimeout(timer);
+    }
+  });
+
+for (const [name, patch] of [
+  ["wrong-case", { caseId: "roles.readonly.other" }],
+  ["wrong-role", { role: "app" }],
+  ["wrong-database", { database: "postgres" }],
+  ["wrong-sql", { inputSql: "SELECT 2;" }],
+  ["extra-variable", { variables: { migration_checksum: "a".repeat(64) } }],
+])
+  test(`native startup proof rejects ${name} and burns the one-shot attempt`, async () => {
+    const h = nativeStartupHarness();
+    await assert.rejects(
+      h.executor.psql({ ...readonlyStartupRequest, ...patch }),
+      /SQL_NATIVE_STARTUP_REQUEST/,
+    );
+    await assert.rejects(
+      h.executor.psql(readonlyStartupRequest),
+      /SQL_NATIVE_STARTUP_ALREADY_ATTEMPTED/,
+    );
+    assert.equal(h.calls.length, 0);
+  });
+test("native SSL-off executor cannot use the readonly startup proof", async () => {
+  const h = nativeStartupHarness({ negative: true });
+  await assert.rejects(
+    h.executor.psql(readonlyStartupRequest),
+    /SQL_NATIVE_STARTUP_REQUEST/,
+  );
+  assert.equal(h.calls.length, 0);
+});
+test("any earlier readonly persistent request blocks delayed-old-log attribution", async () => {
+  const h = nativeStartupHarness();
+  await assert.rejects(
+    h.executor.openSession({
+      ...readonlyStartupRequest,
+      caseId: "readonly.other",
+    }),
+    /SQL_NATIVE_STARTUP_REQUEST/,
+  );
+  h.current.text += readonlyStartupFatal;
+  await assert.rejects(
+    h.executor.psql(readonlyStartupRequest),
+    /SQL_NATIVE_STARTUP_ALREADY_ATTEMPTED/,
+  );
+  assert.equal(h.calls.length, 0);
+});
+test("native startup lock rejects psql and persistent entry until log decision, not just child close", async () => {
+  const h = nativeStartupHarness(),
+    pending = h.executor.psql(readonlyStartupRequest);
+  await delay(30);
+  await assert.rejects(
+    h.executor.psql(request),
+    /SQL_NATIVE_STARTUP_EXCLUSIVE/,
+  );
+  await assert.rejects(
+    h.executor.openSession(request),
+    /SQL_NATIVE_STARTUP_EXCLUSIVE/,
+  );
+  assert.equal(h.calls.length, 1);
+  await pending;
+  assert.equal((await h.executor.psql(request)).rawExit, 0);
+});
+test("native startup proof rejects concurrent normal psql including its post-close log decision", async () => {
+  const h = nativeStartupHarness({ raw: { rawExit: 2 } }),
+    pending = h.executor.psql(request);
+  await delay(30);
+  await assert.rejects(
+    h.executor.psql(readonlyStartupRequest),
+    /SQL_NATIVE_STARTUP_EXCLUSIVE/,
+  );
+  await pending;
+  assert.equal(h.calls.length, 1);
+});
+test("native startup proof rejects an active persistent child", async () => {
+  const h = nativeStartupHarness(),
+    session = await h.executor.openSession(request);
+  await assert.rejects(
+    h.executor.psql(readonlyStartupRequest),
+    /SQL_NATIVE_STARTUP_EXCLUSIVE/,
+  );
+  assert.equal(h.calls.length, 1);
+  assert.deepEqual(await session.disconnect(), { closed: true });
+});
+test("native unobserved earlier child close cannot unlock startup authority", async () => {
+  const h = nativeStartupHarness({ raw: { connectionClosed: false } });
+  await h.executor.psql(request);
+  await assert.rejects(
+    h.executor.psql(readonlyStartupRequest),
+    /SQL_NATIVE_STARTUP_EXCLUSIVE/,
+  );
+});
+test("normal native errors without application correlation do not acquire generic startup fallback", async () => {
+  const h = nativeStartupHarness({
+    before: readonlyStartupFatal,
+    hasSnapshot: false,
+    raw: { rawExit: 2 },
+  });
+  const result = await h.executor.psql(request);
+  assert.equal(result.origin, "channel");
+  assert.equal(result.sqlState, null);
+  assert.equal(h.snapshots, 0);
+});
+test("native log DETAIL may coexist but is never the source of startup SQLSTATE", async () => {
+  const h = nativeStartupHarness({
+    suffix:
+      readonlyStartupFatal +
+      "[unknown] 28P01 DETAIL:  synthetic-private-password role has no password\n",
+  });
+  const result = await h.executor.psql(readonlyStartupRequest);
+  assert.equal(result.sqlState, "28P01");
+  assert.doesNotMatch(JSON.stringify(result), /synthetic-private|DETAIL/);
+});
+
+for (const [name, mutate] of [
+  [
+    "evicted-before-cursor",
+    (h) => {
+      h.current.evicted = true;
+    },
+  ],
+  [
+    "malformed-generation",
+    (h) => {
+      h.current.generation = "short";
+    },
+  ],
+  [
+    "missing-field",
+    (h) => {
+      delete h.current.evicted;
+    },
+  ],
+  [
+    "extra-field",
+    (h) => {
+      h.current.unowned = true;
+    },
+  ],
+  [
+    "oversized-text",
+    (h) => {
+      h.current.text = "x".repeat(131073) + "\n";
+    },
+  ],
+  [
+    "oversized-utf8",
+    (h) => {
+      h.current.text = "ü".repeat(70000) + "\n";
+    },
+  ],
+])
+  test(`native owned-log snapshot rejects ${name} before client launch`, async () => {
+    const h = nativeStartupHarness();
+    mutate(h);
+    await assert.rejects(
+      h.executor.psql(readonlyStartupRequest),
+      /SQL_NATIVE_STARTUP_LOG_INVALID/,
+    );
+    assert.equal(h.calls.length, 0);
+  });
+test("observed persistent close releases native activity only after session terminal", async () => {
+  const h = nativeStartupHarness();
+  const session = await h.executor.openSession(request);
+  assert.deepEqual(await session.disconnect(), { closed: true });
+  assert.equal(
+    (await h.executor.psql(readonlyStartupRequest)).sqlState,
+    "28P01",
+  );
+  assert.equal(h.calls.length, 2);
 });
