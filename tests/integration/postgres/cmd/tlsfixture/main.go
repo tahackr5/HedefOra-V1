@@ -7,6 +7,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
@@ -151,11 +152,18 @@ func authority(now time.Time) (*x509.Certificate, *ecdsa.PrivateKey, []byte, err
 	}
 	certificate := &x509.Certificate{
 		SerialNumber: number, IsCA: true, BasicConstraintsValid: true,
+		Subject:  pkix.Name{CommonName: "HedefOra ephemeral test CA " + number.Text(16)},
 		KeyUsage: x509.KeyUsageCertSign, MaxPathLen: 0, MaxPathLenZero: true,
 		NotBefore: now.Add(-time.Minute), NotAfter: now.Add(time.Hour),
 	}
 	der, err := x509.CreateCertificate(rand.Reader, certificate, certificate, &key.PublicKey, key)
-	return certificate, key, der, err
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	// Return the encoded authority, including its generated subject key ID, so
+	// leaf issuer names and authority key IDs bind the actual trust anchor.
+	parsed, err := x509.ParseCertificate(der)
+	return parsed, key, der, err
 }
 
 func server(now time.Time, ca *x509.Certificate, caKey *ecdsa.PrivateKey, mismatch bool) ([]byte, []byte, error) {

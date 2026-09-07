@@ -52,9 +52,15 @@ func TestGeneratePrivateBoundedTLSFixtures(t *testing.T) {
 	if err != nil || !ca.IsCA || ca.KeyUsage != x509.KeyUsageCertSign || !ca.MaxPathLenZero {
 		t.Fatal("invalid root authority constraints")
 	}
+	if ca.Subject.CommonName == "" || len(ca.SubjectKeyId) == 0 || !bytes.Equal(ca.RawIssuer, ca.RawSubject) {
+		t.Fatal("root authority must have a nonempty issuer identity and key identifier")
+	}
 	wrongCA, err := x509.ParseCertificate(readFixture(t, directory, "wrong-ca.crt", "CERTIFICATE"))
 	if err != nil || bytes.Equal(ca.Raw, wrongCA.Raw) {
 		t.Fatal("wrong CA must be independent")
+	}
+	if ca.Subject.CommonName == wrongCA.Subject.CommonName || bytes.Equal(ca.SubjectKeyId, wrongCA.SubjectKeyId) {
+		t.Fatal("independent authorities must have distinct names and key identifiers")
 	}
 	roots, wrongRoots := x509.NewCertPool(), x509.NewCertPool()
 	roots.AddCert(ca)
@@ -66,6 +72,9 @@ func TestGeneratePrivateBoundedTLSFixtures(t *testing.T) {
 		leaf, err := x509.ParseCertificate(readFixture(t, directory, item.certificate, "CERTIFICATE"))
 		if err != nil {
 			t.Fatal("invalid leaf")
+		}
+		if !bytes.Equal(leaf.RawIssuer, ca.RawSubject) || !bytes.Equal(leaf.AuthorityKeyId, ca.SubjectKeyId) {
+			t.Fatal("leaf issuer and authority key identifier must bind the actual root")
 		}
 		if leaf.NotAfter.Before(started.Add(59*time.Minute)) || leaf.NotAfter.After(time.Now().Add(61*time.Minute)) ||
 			leaf.NotBefore.After(started) || leaf.NotBefore.Before(started.Add(-2*time.Minute)) ||

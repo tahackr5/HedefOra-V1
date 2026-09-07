@@ -52,6 +52,11 @@ ayarları kullanır. Primary role/database bootstrap immutable010_roles.sql
 hash'ine bağlıdır. initdb17.11,builtinC.UTF-8,UTF8,data-checksums,nonroot.
 Keys/fixture/PGDATA yalnız tmpfs; main reader/noTLS negative gerçek PG'dir.
 
+Sentetik TLS authority her koşumda bağımsız key/serial, boş olmayan public
+CA subject/issuer ve gerçek DER'den alınan SKID taşır; leaf issuer/AKID
+aynı authority'ye bağlanır. Pozitif IP SAN, yanlış authority/hostname
+negatifleri ve bir saatlik sertifika ömrü korunur; verify-full gevşetilmez.
+
 ## İç runner ve host arasındaki veri sözleşmesi
 
 `/input/run.json`: schema `hedefora.pg17.fixture-run.v1`, runId32hex,

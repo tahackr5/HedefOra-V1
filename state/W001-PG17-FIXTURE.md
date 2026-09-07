@@ -126,3 +126,29 @@ Forward fix start idempotence'ını ancak gerçek SQL readiness ile kabul eder;
 stopped server için observed clean close/restart gerekir. Regresyonlar ve
 readiness aşaması/exit/SQLSTATE için sabit, sır içermeyen tanı sınıfları
 eklendi. Raw SQL/stderr/parola dışarı taşınmaz; eski FAIL korunur.
+
+## A5 dar TLS tanısı — 4ab16b9
+
+Exact4ab16b9718dd20781f656f6951543091854ebeae/tree6a3158955e94d48baec3ca1ef6b8bf669475e1d7
+Windows canonical CI641/639PASS/iki tarihselskip, web3/3/coverage100 ve
+W001repolint exit0. Node proofb0400351504e0f314c4231338f7a920cac8c7746e9a643abcf3b77283d5fe8d0.
+Cold dar re-review start kaynak düzeltmesini kabul etti, fakat gerçek
+engine/full-tree/hosted eksikliği nedeniyle BLOCKED_EVIDENCE kaldı.
+
+A5 gerçek engine yine FAIL: primary initial psql exit2, SQLSTATE NONE,
+TLS sınıfı. Host cleanup PASS; failure artifact
+83b37d96c4df1da6b2fa971079f51cbf0aa853524ecf1eb84c136956822f1f49.
+TLS fixture CA'sının boş subject/issuer kimliği saptandı. RFC5280
+[issuer](https://datatracker.ietf.org/doc/html/rfc5280#section-4.1.2.4) ve
+[CA subject](https://datatracker.ietf.org/doc/html/rfc5280#section-4.1.2.6)
+zorunlulukları doğrultusunda random-serial bağlı public CA adı ve gerçek
+encoded authority parse edilerek SKID/AKID bağı eklendi. SAN doğrulaması,
+yanlış CA/host negatifleri ve TLS güvenlik eşikleri değişmez. OpenSSL
+birlikte çalışma/gerçek motor kapanışı ayrı yeni kanıt ister.
+
+A5 aynı binary Go-only/OpenSSL3.0.20 tanısı: doğru CA+IP bile error18
+self-signed/exit2 ile reddedilir; CA/leaf issuer ve subject boş, leaf AKID
+yoktur. İmza matematiksel olarak CA anahtarıyla doğrulanır; sorun chain
+kurulmasıdır. Private key yalnız tmpfs, original hash unchanged ve owned
+removal/absence PASS. Kanıt
+b7f9bc839704333c96ef9a2cbdd8bba4fd65b2fb3b328c6684cc00487f5b2684.
