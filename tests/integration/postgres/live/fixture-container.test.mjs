@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
+import { constants } from "node:fs";
+import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import { GO_IMAGE, createPrivateRunSecrets } from "./live-runtime.mjs";
@@ -17,6 +19,10 @@ import {
   runGoPackage,
   startPostmaster,
   postgresConfiguration,
+  RO_PROBE_PATH,
+  RO_PROBE_CONTENT,
+  probeReadOnlyInputs,
+  verifyFiles,
 } from "./fixture-container.mjs";
 
 const now = Date.parse("2026-09-07T12:00:00.000Z");
@@ -193,6 +199,18 @@ for (const [name, mutate] of [
       v.sourceFiles[0].credential = "x";
     },
   ],
+  [
+    "reserved-canary-path",
+    (v) => {
+      v.sourceFiles[0].path = RO_PROBE_PATH;
+    },
+  ],
+  [
+    "reserved-canary-directory",
+    (v) => {
+      v.sourceFiles[0].path = ".fixture-ro-probe/extra";
+    },
+  ],
 ])
   test(`bundle rejects ${name}`, () => {
     const value = bundle();
@@ -310,6 +328,440 @@ for (const [name, mutate] of [
     mutate(value);
     assert.throws(() => validateSelfIsolation(value), /FIXTURE_/);
   });
+
+const inputRoots = ["/source", "/tools", "/input"];
+function canaryFixture({ fileMode = 0o666, rootMode = 0o555 } = {}) {
+  const metadata = new Map(),
+    contents = new Map(),
+    reads = [];
+  let inode = 0n,
+    closes = 0;
+  function info(directory, mode, bytes = 0) {
+    return {
+      dev: 1n,
+      ino: ++inode,
+      nlink: directory ? 2n : 1n,
+      mode: BigInt((directory ? 0o40000 : 0o100000) | mode),
+      uid: 0n,
+      gid: 0n,
+      size: BigInt(bytes),
+      mtimeNs: 1n,
+      ctimeNs: 1n,
+      isDirectory: () => directory,
+      isFile: () => !directory,
+      isSymbolicLink: () => false,
+    };
+  }
+  metadata.set("/", info(true, 0o755));
+  for (const root of inputRoots) {
+    metadata.set(root, info(true, rootMode));
+    metadata.set(`${root}/.fixture-ro-probe`, info(true, 0o777));
+    const path = `${root}/${RO_PROBE_PATH}`;
+    const bytes = Buffer.from(RO_PROBE_CONTENT);
+    metadata.set(path, info(false, fileMode, bytes.length));
+    contents.set(path, bytes);
+  }
+  return {
+    metadata,
+    contents,
+    reads,
+    get closes() {
+      return closes;
+    },
+    options: {
+      uid: 26,
+      gid: 102,
+      groups: [102],
+      realpathFile: async (path) => path,
+      lstatFile: async (path) => ({ ...metadata.get(path) }),
+      openFile: async (path, flags) => {
+        assert.equal(flags, constants.O_RDONLY | constants.O_NOFOLLOW);
+        reads.push(path);
+        return {
+          stat: async () => ({ ...metadata.get(path) }),
+          read: async (buffer, offset, length, position) => ({
+            bytesRead: contents
+              .get(path)
+              .copy(buffer, offset, position, position + length),
+          }),
+          close: async () => {
+            closes++;
+          },
+        };
+      },
+    },
+  };
+}
+const roFailure = (code = "EROFS") =>
+  Object.assign(new Error("synthetic"), { code });
+for (const fileMode of [0o666, 0o777])
+  test(`calibrated canaries with mode ${fileMode.toString(8)} require exactly six EROFS observations`, async () => {
+    const fixture = canaryFixture({
+        fileMode,
+        rootMode: fileMode === 0o777 ? 0o777 : 0o555,
+      }),
+      calls = [];
+    await probeReadOnlyInputs(async (path, flags, mode) => {
+      calls.push({ path, flags, mode });
+      throw roFailure();
+    }, fixture.options);
+    assert.equal(calls.length, 6);
+    assert.equal(fixture.closes, 3);
+    for (const [index, root] of inputRoots.entries()) {
+      const existing = calls[index * 2],
+        create = calls[index * 2 + 1];
+      assert.equal(existing.path, `${root}/${RO_PROBE_PATH}`);
+      assert.equal(existing.flags, constants.O_WRONLY | constants.O_NOFOLLOW);
+      assert.match(
+        create.path,
+        new RegExp(`^${root}/\\.fixture-ro-probe/\\.create-[a-f0-9]{32}$`),
+      );
+      assert.equal(
+        create.flags,
+        constants.O_WRONLY |
+          constants.O_CREAT |
+          constants.O_EXCL |
+          constants.O_NOFOLLOW,
+      );
+      assert.equal(create.mode, 0o600);
+      for (const call of [existing, create])
+        assert.equal(call.flags & (constants.O_TRUNC | constants.O_APPEND), 0);
+    }
+    assert.equal(
+      new Set(calls.filter((_, index) => index % 2).map((call) => call.path))
+        .size,
+      3,
+    );
+  });
+
+for (const code of ["EACCES", "EPERM", "ENOENT", "EIO", undefined])
+  for (const failedOpen of [0, 1])
+    test(`calibrated canary ${failedOpen ? "create" : "existing"} probe rejects ${code}`, async () => {
+      let calls = 0;
+      await assert.rejects(
+        probeReadOnlyInputs(async () => {
+          const next = calls++ === failedOpen ? code : "EROFS";
+          throw Object.assign(new Error("synthetic"), { code: next });
+        }, canaryFixture().options),
+        /FIXTURE_RO_PROBE_ERROR/,
+      );
+      assert.equal(calls, failedOpen + 1);
+    });
+for (const successfulOpen of [0, 1])
+  test(`unexpected successful ${successfulOpen ? "create" : "existing"} open closes without writing or truncating and fails`, async () => {
+    let calls = 0,
+      closed = 0;
+    await assert.rejects(
+      probeReadOnlyInputs(async (_path, flags) => {
+        assert.equal(flags & (constants.O_TRUNC | constants.O_APPEND), 0);
+        if (calls++ !== successfulOpen) throw roFailure();
+        return {
+          close: async () => {
+            closed++;
+          },
+          write: () => assert.fail("must not write"),
+        };
+      }, canaryFixture().options),
+      /FIXTURE_RO_PROBE_WRITABLE/,
+    );
+    assert.equal(closed, 1);
+    assert.equal(calls, successfulOpen + 1);
+  });
+
+for (const [name, mutate, expected] of [
+  [
+    "wrong-effective-uid",
+    (v) => {
+      v.options.uid = 0;
+    },
+    /FIXTURE_RO_PROBE_IDENTITY/,
+  ],
+  [
+    "wrong-effective-gid",
+    (v) => {
+      v.options.gid = 0;
+    },
+    /FIXTURE_RO_PROBE_IDENTITY/,
+  ],
+  [
+    "extra-supplementary-group",
+    (v) => {
+      v.options.groups.push(0);
+    },
+    /FIXTURE_RO_PROBE_IDENTITY/,
+  ],
+  [
+    "root-not-traversable",
+    (v) => {
+      v.metadata.get("/").mode = 0o40750n;
+    },
+    /FIXTURE_RO_PROBE_CALIBRATION/,
+  ],
+  [
+    "mount-not-traversable",
+    (v) => {
+      v.metadata.get("/source").mode = 0o40750n;
+    },
+    /FIXTURE_RO_PROBE_CALIBRATION/,
+  ],
+  [
+    "probe-directory-not-writable",
+    (v) => {
+      v.metadata.get("/source/.fixture-ro-probe").mode = 0o40755n;
+    },
+    /FIXTURE_RO_PROBE_CALIBRATION/,
+  ],
+  [
+    "probe-directory-owner-class-readonly",
+    (v) => {
+      Object.assign(v.metadata.get("/source/.fixture-ro-probe"), {
+        mode: 0o40577n,
+        uid: 26n,
+      });
+    },
+    /FIXTURE_RO_PROBE_CALIBRATION/,
+  ],
+  [
+    "probe-directory-symlink",
+    (v) => {
+      v.metadata.get("/source/.fixture-ro-probe").isSymbolicLink = () => true;
+    },
+    /FIXTURE_RO_PROBE_DIRECTORY/,
+  ],
+  [
+    "mount-symlink",
+    (v) => {
+      v.metadata.get("/source").isSymbolicLink = () => true;
+    },
+    /FIXTURE_RO_PROBE_DIRECTORY/,
+  ],
+  [
+    "probe-directory-alias",
+    (v) => {
+      v.options.realpathFile = async (path) =>
+        path.endsWith(".fixture-ro-probe") ? "/other" : path;
+    },
+    /FIXTURE_RO_PROBE_DIRECTORY/,
+  ],
+  [
+    "file-readonly",
+    (v) => {
+      v.metadata.get(`/source/${RO_PROBE_PATH}`).mode = 0o100444n;
+    },
+    /FIXTURE_RO_PROBE_CALIBRATION/,
+  ],
+  [
+    "file-owner-class-readonly",
+    (v) => {
+      Object.assign(v.metadata.get(`/source/${RO_PROBE_PATH}`), {
+        mode: 0o100466n,
+        uid: 26n,
+      });
+    },
+    /FIXTURE_RO_PROBE_CALIBRATION/,
+  ],
+  [
+    "file-group-class-readonly",
+    (v) => {
+      Object.assign(v.metadata.get(`/source/${RO_PROBE_PATH}`), {
+        mode: 0o100646n,
+        gid: 102n,
+      });
+    },
+    /FIXTURE_RO_PROBE_CALIBRATION/,
+  ],
+  [
+    "file-symlink",
+    (v) => {
+      v.metadata.get(`/source/${RO_PROBE_PATH}`).isSymbolicLink = () => true;
+    },
+    /FIXTURE_RO_PROBE_FILE/,
+  ],
+  [
+    "file-alias",
+    (v) => {
+      v.options.realpathFile = async (path) =>
+        path.endsWith("/canary") ? "/other" : path;
+    },
+    /FIXTURE_RO_PROBE_FILE/,
+  ],
+  [
+    "file-hardlink",
+    (v) => {
+      v.metadata.get(`/source/${RO_PROBE_PATH}`).nlink = 2n;
+    },
+    /FIXTURE_RO_PROBE_FILE/,
+  ],
+  [
+    "file-not-regular",
+    (v) => {
+      v.metadata.get(`/source/${RO_PROBE_PATH}`).isFile = () => false;
+    },
+    /FIXTURE_RO_PROBE_FILE/,
+  ],
+  [
+    "empty-file",
+    (v) => {
+      v.metadata.get(`/source/${RO_PROBE_PATH}`).size = 0n;
+    },
+    /INPUT_FILE/,
+  ],
+  [
+    "oversized-file",
+    (v) => {
+      v.metadata.get(`/source/${RO_PROBE_PATH}`).size += 1n;
+    },
+    /INPUT_FILE/,
+  ],
+  [
+    "truncated-file",
+    (v) => {
+      v.contents.set(`/source/${RO_PROBE_PATH}`, Buffer.from("short"));
+    },
+    /INPUT_CHANGED/,
+  ],
+  [
+    "wrong-content",
+    (v) => {
+      v.contents.get(`/source/${RO_PROBE_PATH}`)[0] ^= 1;
+    },
+    /FIXTURE_RO_PROBE_HASH/,
+  ],
+  [
+    "replaced-before-open",
+    (v) => {
+      const original = v.options.openFile;
+      v.options.openFile = async (...args) => {
+        v.metadata.get(args[0]).ino += 1n;
+        return original(...args);
+      };
+    },
+    /FIXTURE_RO_PROBE_CHANGED/,
+  ],
+  [
+    "metadata-changed-during-read",
+    (v) => {
+      const original = v.options.openFile;
+      v.options.openFile = async (...args) => {
+        const handle = await original(...args),
+          read = handle.read;
+        handle.read = async (...readArgs) => {
+          v.metadata.get(args[0]).ctimeNs += 1n;
+          return read(...readArgs);
+        };
+        return handle;
+      };
+    },
+    /INPUT_CHANGED/,
+  ],
+])
+  test(`canary calibration rejects ${name} before any write-open attempt`, async () => {
+    const fixture = canaryFixture();
+    mutate(fixture);
+    let writes = 0;
+    await assert.rejects(
+      probeReadOnlyInputs(async () => {
+        writes++;
+        throw roFailure();
+      }, fixture.options),
+      expected,
+    );
+    assert.equal(writes, 0);
+    assert.equal(fixture.closes, fixture.reads.length);
+  });
+
+function inventoryFixture() {
+  const canaries = canaryFixture(),
+    value = bundle();
+  const digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
+  value.sourceFiles[0].sha256 = digest("");
+  value.files.forEach((item) => {
+    item.sha256 = digest("x");
+  });
+  const inventories = new Map([
+    [
+      "/source",
+      [...value.sourceFiles.map((item) => item.path), RO_PROBE_PATH].sort(),
+    ],
+    [
+      "/tools",
+      [
+        ...value.files.map((item) => item.name),
+        "bundle.json",
+        RO_PROBE_PATH,
+      ].sort(),
+    ],
+    ["/input", [RO_PROBE_PATH, "run.json"]],
+  ]);
+  return {
+    value,
+    canaries,
+    inventories,
+    options: {
+      probeOptions: canaries.options,
+      inventoryFiles: async (path) => inventories.get(path),
+      readFile: async (path) =>
+        Buffer.from(path.startsWith("/source/") ? "" : "x"),
+    },
+  };
+}
+test("exact inventories accept only one fixed canary alongside unchanged source/tool/input files", async () => {
+  const fixture = inventoryFixture();
+  await verifyFiles(fixture.value, fixture.options);
+  assert.equal(fixture.canaries.closes, 3);
+  assert.equal(
+    fixture.value.sourceFiles.some((item) => item.path === RO_PROBE_PATH),
+    false,
+  );
+});
+for (const root of inputRoots)
+  for (const mutation of [
+    "missing",
+    "duplicate",
+    "extra-sibling",
+    "extra-prefix",
+    "wrong-case",
+  ])
+    test(`exact ${root} inventory rejects canary ${mutation}`, async () => {
+      const fixture = inventoryFixture(),
+        entries = fixture.inventories.get(root);
+      if (mutation === "missing")
+        entries.splice(entries.indexOf(RO_PROBE_PATH), 1);
+      else if (mutation === "duplicate") entries.push(RO_PROBE_PATH);
+      else if (mutation === "extra-sibling")
+        entries.push(".fixture-ro-probe/extra");
+      else if (mutation === "extra-prefix")
+        entries.push(".fixture-ro-probe-other/canary");
+      else entries[entries.indexOf(RO_PROBE_PATH)] = ".fixture-ro-probe/Canary";
+      entries.sort();
+      await assert.rejects(
+        verifyFiles(fixture.value, fixture.options),
+        /FIXTURE_(SOURCE_INVENTORY_DRIFT|MOUNT_INVENTORY)/,
+      );
+    });
+test("post-test verification rehashes every canary against the constant", async () => {
+  const fixture = inventoryFixture();
+  await verifyFiles(fixture.value, fixture.options);
+  fixture.canaries.contents.get(`/input/${RO_PROBE_PATH}`)[0] ^= 1;
+  await assert.rejects(
+    verifyFiles(fixture.value, fixture.options),
+    /FIXTURE_RO_PROBE_HASH/,
+  );
+  assert.equal(fixture.canaries.closes, 6);
+});
+test("post-test verification also rejects source and tool content drift", async () => {
+  for (const root of ["/source", "/tools"]) {
+    const fixture = inventoryFixture();
+    await verifyFiles(fixture.value, fixture.options);
+    const original = fixture.options.readFile;
+    fixture.options.readFile = async (path) =>
+      path.startsWith(`${root}/`) ? Buffer.from("changed") : original(path);
+    await assert.rejects(
+      verifyFiles(fixture.value, fixture.options),
+      /FIXTURE_(SOURCE|TOOL)_HASH/,
+    );
+  }
+});
 
 const packages = Object.keys(GO_PACKAGES),
   packageName = packages[0];

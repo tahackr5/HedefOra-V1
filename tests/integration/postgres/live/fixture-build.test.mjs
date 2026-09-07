@@ -5,6 +5,8 @@ import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 import path from "node:path";
 import { constants } from "node:fs";
+import * as fs from "node:fs/promises";
+import os from "node:os";
 import { runInNewContext } from "node:vm";
 import * as crypto from "node:crypto";
 import { GO_IMAGE } from "./live-runtime.mjs";
@@ -17,6 +19,7 @@ import {
   verifyGitBlob,
   readGitBlob,
   materializePublicSnapshot,
+  prepareReadOnlyProbe,
   buildContainerArguments,
   validateBuilderInspect,
   OwnedFixtureBuilder,
@@ -31,9 +34,21 @@ for (const mutation of [
   "hardlink",
   "extra-file",
   "same-size-rewrite",
+  "missing-probe",
+  "probe-hash",
+  "probe-extra-file",
+  "probe-symlink",
+  "probe-in-manifest",
 ]) {
   test(`actual in-builder source-verifier script: ${mutation}`, () => {
     const bytes = Buffer.from("public source\n");
+    const probeBytes = Buffer.from("hedefora.pg17.read-only-probe.v1\n");
+    const fileBytes = (file) =>
+      file === "/source/.fixture-ro-probe/canary"
+        ? mutation === "probe-hash"
+          ? Buffer.alloc(probeBytes.length, "x")
+          : probeBytes
+        : bytes;
     let stats = 0,
       stdout = "",
       stderr = "";
@@ -56,37 +71,48 @@ for (const mutation of [
         throw new Error("exit");
       },
     };
-    const stat = () => ({
+    const stat = (file) => ({
       isFile: () => true,
       dev: 1n,
       ino: 1n,
       nlink: mutation === "hardlink" ? 2n : 1n,
-      size: BigInt(bytes.length),
+      size: BigInt(fileBytes(file).length),
       mtimeNs: mutation === "same-size-rewrite" ? BigInt(++stats) : 1n,
       ctimeNs: 1n,
     });
     const io = {
       constants,
-      readdirSync() {
-        return (
-          mutation === "extra-file" ? ["file.go", "unexpected"] : ["file.go"]
-        ).map((name) => ({
+      readdirSync(directory) {
+        const names =
+          directory === "/source"
+            ? [
+                "file.go",
+                ...(mutation === "missing-probe" ? [] : [".fixture-ro-probe"]),
+                ...(mutation === "extra-file" ? ["unexpected"] : []),
+              ]
+            : [
+                "canary",
+                ...(mutation === "probe-extra-file" ? ["unexpected"] : []),
+              ];
+        return names.map((name) => ({
           name,
-          isDirectory: () => false,
-          isFile: () => true,
-          isSymbolicLink: () => false,
+          isDirectory: () =>
+            name === ".fixture-ro-probe" && mutation !== "probe-symlink",
+          isFile: () => name !== ".fixture-ro-probe",
+          isSymbolicLink: () =>
+            name === ".fixture-ro-probe" && mutation === "probe-symlink",
         }));
       },
       realpathSync(name) {
         return name;
       },
-      openSync() {
-        return 1;
+      openSync(file) {
+        return file;
       },
       fstatSync: stat,
       closeSync() {},
       readSync(fd, buffer, offset, length, position) {
-        const chunk = bytes.subarray(position, position + length);
+        const chunk = fileBytes(fd).subarray(position, position + length);
         chunk.copy(buffer, offset);
         return chunk.length;
       },
@@ -110,7 +136,21 @@ for (const mutation of [
           ? "0".repeat(64)
           : createHash("sha256").update(bytes).digest("hex"),
     };
-    stdin.emit("data", JSON.stringify([entry]));
+    stdin.emit(
+      "data",
+      JSON.stringify([
+        entry,
+        ...(mutation === "probe-in-manifest"
+          ? [
+              {
+                path: ".fixture-ro-probe/canary",
+                bytes: probeBytes.length,
+                sha256: createHash("sha256").update(probeBytes).digest("hex"),
+              },
+            ]
+          : []),
+      ]),
+    );
     stdin.emit("end");
     if (mutation === "none") {
       assert.equal(stdout, '{"status":"PASS","sourceFiles":1}\n');
@@ -181,6 +221,9 @@ for (const value of [
   "a\\b",
   "a,b",
   "a\nfile",
+  ".fixture-ro-probe",
+  ".fixture-ro-probe/canary",
+  ".FIXTURE-RO-PROBE/canary",
 ])
   test(`public snapshot denies unsafe/private path ${JSON.stringify(value)}`, () => {
     assert.throws(() => validatePublicSourcePath(value), /FIXTURE_BUILD_/);
@@ -190,6 +233,10 @@ test("public environment examples are allowed without reading real environment f
   assert.equal(
     validatePublicSourcePath("docs/.env.sample"),
     "docs/.env.sample",
+  );
+  assert.equal(
+    validatePublicSourcePath(".fixture-ro-probe-copy/file"),
+    ".fixture-ro-probe-copy/file",
   );
 });
 for (const [title, text] of [
@@ -232,22 +279,30 @@ function memoryIO({
   windowsModes = false,
   hardlink = false,
   ignoreChmod = false,
+  umask = 0,
 } = {}) {
   const records = new Map(),
     opens = [];
   return {
     records,
     opens,
+    async realpath(name) {
+      return name;
+    },
     async mkdir(name, { mode }) {
       if (records.has(name)) throw new Error("EXISTS");
-      records.set(name, { directory: true, mode });
+      records.set(name, { directory: true, mode: mode & ~umask });
     },
     async open(name, flags, mode) {
       assert.ok(flags & constants.O_EXCL);
       assert.ok(flags & constants.O_NOFOLLOW || process.platform === "win32");
       if (records.has(name)) throw new Error("EXISTS");
       opens.push(name);
-      const row = { directory: false, mode, bytes: Buffer.alloc(0) };
+      const row = {
+        directory: false,
+        mode: mode & ~umask,
+        bytes: Buffer.alloc(0),
+      };
       records.set(name, row);
       return {
         async writeFile(bytes) {
@@ -300,7 +355,18 @@ test("Windows snapshot writes exact Git blob LF/binary bytes, not CRLF worktree 
   assert.deepEqual(io.records.get("C:\\private\\source\\b.bin").bytes, binary);
   assert.equal(result.length, 2);
   assert.equal(io.records.get("C:\\private\\source").mode, 0o555);
-  assert.equal(io.opens.length, 2);
+  assert.equal(io.opens.length, 3);
+  assert.ok(
+    !result.some((entry) => entry.path.startsWith(".fixture-ro-probe")),
+  );
+  assert.equal(
+    io.records.get("C:\\private\\source\\.fixture-ro-probe").mode,
+    0o777,
+  );
+  assert.equal(
+    io.records.get("C:\\private\\source\\.fixture-ro-probe\\canary").mode,
+    0o666,
+  );
   assert.ok(!io.opens.some((item) => item.includes(".git")));
 });
 test("Linux snapshot enforces real0555/0444 and rejects hardlink even on Windows", async () => {
@@ -310,11 +376,23 @@ test("Linux snapshot enforces real0555/0444 and rejects hardlink even on Windows
     blobReader: async () => sourceBytes,
     paths: path.posix,
   };
-  await materializePublicSnapshot({
+  const io = memoryIO();
+  const manifest = await materializePublicSnapshot({
     ...args,
-    io: memoryIO(),
+    io,
     platform: "linux",
   });
+  assert.equal(io.records.get("/private/source").mode, 0o555);
+  assert.equal(io.records.get("/private/source/file.go").mode, 0o444);
+  assert.equal(io.records.get("/private/source/.fixture-ro-probe").mode, 0o777);
+  assert.equal(
+    io.records.get("/private/source/.fixture-ro-probe/canary").mode,
+    0o666,
+  );
+  assert.deepEqual(
+    manifest.map((entry) => entry.path),
+    ["file.go"],
+  );
   await assert.rejects(
     materializePublicSnapshot({
       ...args,
@@ -348,6 +426,115 @@ test("snapshot malformed private path fails before reading any Git blob", async 
     /FIXTURE_BUILD_PRIVATE_PATH/,
   );
   assert.equal(calls, 0);
+});
+
+test("calibrated probe fixes exact public bytes and DAC modes after a strict umask", async () => {
+  const io = memoryIO({ umask: 0o077 });
+  await io.mkdir("/owned/tools", { mode: 0o700 });
+  io.records.set("/owned/tools/node", {
+    directory: false,
+    mode: 0o555,
+    bytes: sourceBytes,
+  });
+  await prepareReadOnlyProbe("/owned/tools", io, path.posix);
+  assert.equal(io.records.get("/owned/tools").mode, 0o700);
+  assert.equal(io.records.get("/owned/tools/node").mode, 0o555);
+  assert.equal(io.records.get("/owned/tools/.fixture-ro-probe").mode, 0o777);
+  const canary = io.records.get("/owned/tools/.fixture-ro-probe/canary");
+  assert.equal(canary.mode, 0o666);
+  assert.deepEqual(
+    canary.bytes,
+    Buffer.from("hedefora.pg17.read-only-probe.v1\n"),
+  );
+  assert.deepEqual(io.opens, ["/owned/tools/.fixture-ro-probe/canary"]);
+});
+
+test("real filesystem probe creates fixed public bytes and rejects a second call", async (t) => {
+  const temporaryRoot = await fs.realpath(os.tmpdir());
+  const directory = await fs.mkdtemp(
+    path.join(temporaryRoot, "ho-pg17-probe-test-"),
+  );
+  t.after(async () => {
+    assert.equal(path.dirname(directory), temporaryRoot);
+    assert.ok(path.basename(directory).startsWith("ho-pg17-probe-test-"));
+    await fs.rm(directory, { recursive: true, force: true });
+  });
+  await prepareReadOnlyProbe(directory);
+  const probeDirectory = path.join(directory, ".fixture-ro-probe");
+  const canary = path.join(probeDirectory, "canary");
+  assert.equal(
+    await fs.readFile(canary, "utf8"),
+    "hedefora.pg17.read-only-probe.v1\n",
+  );
+  assert.deepEqual(await fs.readdir(probeDirectory), ["canary"]);
+  assert.equal((await fs.lstat(canary)).nlink, 1);
+  if (process.platform !== "win32") {
+    assert.equal((await fs.lstat(probeDirectory)).mode & 0o777, 0o777);
+    assert.equal((await fs.lstat(canary)).mode & 0o777, 0o666);
+  }
+  await assert.rejects(prepareReadOnlyProbe(directory), { code: "EEXIST" });
+  assert.equal(
+    await fs.readFile(canary, "utf8"),
+    "hedefora.pg17.read-only-probe.v1\n",
+  );
+});
+
+for (const existing of ["directory", "file", "canary"]) {
+  test(`probe exclusive creation rejects pre-existing ${existing} without replacement`, async () => {
+    const io = memoryIO();
+    await io.mkdir("/owned/input", { mode: 0o700 });
+    io.records.set("/owned/input/.fixture-ro-probe", {
+      directory: existing !== "file",
+      mode: 0o500,
+      bytes: Buffer.from("preserved"),
+    });
+    if (existing === "canary")
+      io.records.set("/owned/input/.fixture-ro-probe/canary", {
+        directory: false,
+        mode: 0o400,
+        bytes: Buffer.from("existing canary"),
+      });
+    const before = [...io.records].map(([name, row]) => [
+      name,
+      { ...row, ...(row.bytes ? { bytes: Buffer.from(row.bytes) } : {}) },
+    ]);
+    await assert.rejects(
+      prepareReadOnlyProbe("/owned/input", io, path.posix),
+      /EXISTS/,
+    );
+    assert.deepEqual([...io.records], before);
+    assert.equal(io.opens.length, 0);
+  });
+}
+
+test("reserved probe paths are rejected before snapshot creation or any Git blob read", async () => {
+  for (const reserved of [
+    ".fixture-ro-probe",
+    ".fixture-ro-probe/canary",
+    ".FIXTURE-RO-PROBE/other",
+  ]) {
+    const io = memoryIO();
+    let reads = 0;
+    await assert.rejects(
+      materializePublicSnapshot({
+        directory: "/owned/source",
+        entries: [
+          { path: "ordinary.go", objectId: sourceObject },
+          { path: reserved, objectId: sourceObject },
+        ],
+        blobReader: async () => {
+          reads++;
+          return sourceBytes;
+        },
+        io,
+        paths: path.posix,
+        platform: "linux",
+      }),
+      /FIXTURE_BUILD_RESERVED_PROBE_PATH/,
+    );
+    assert.equal(io.records.size, 0);
+    assert.equal(reads, 0);
+  }
 });
 
 function child() {

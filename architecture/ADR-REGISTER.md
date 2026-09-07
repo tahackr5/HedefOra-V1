@@ -203,3 +203,11 @@ Bağımsız security değerlendirmesi bu uygulama ayrıntısını uygun bulmuşt
 benign pinned Go helper gerçek Docker29.7.2/Node24.20 üzerinde mode0777,
 RWfalse, ikiEROFS ve owned removal/absence PASS vermiştir (kanıt
 e7b4cdbf092375d12e8b801219318ab4ff20564f8a25c6da3c155a5603507a2b).
+
+0444/0555 DAC izni write-open'ı EROFS öncesi EACCES ile durdurabileceği
+için probe her bind'ın `.fixture-ro-probe/canary` alanında kalibre edilir.
+Bu tek deterministic public dosya ve dizini0777/0666 olarak hazırlanır;
+asıl source/tool/run izinleri ve private ancestor/ACL korunur. Container
+DAC-yazılabilirlik, canonical/nlink1/type/byte doğrulaması sonrası altı
+strict EROFS ister; EACCES muafiyeti yoktur. Reserved tracked path reddi,
+exact ek inventory ve pre/post hash zorunludur; prefix/glob ignore yoktur.

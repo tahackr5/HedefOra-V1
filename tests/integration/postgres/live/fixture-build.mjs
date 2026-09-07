@@ -20,6 +20,8 @@ const OWNER_LABEL = "org.hedefora.pg17.builder";
 const OWNER_VALUE = "fixture-tools-v1";
 const RUN_LABEL = "org.hedefora.pg17.build-run";
 const GO = "/usr/local/go/bin/go";
+const READ_ONLY_PROBE_DIRECTORY = ".fixture-ro-probe";
+const READ_ONLY_PROBE_BYTES = Buffer.from("hedefora.pg17.read-only-probe.v1\n");
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 export const BUILD_ENV = Object.freeze({
   PATH: "/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
@@ -137,6 +139,10 @@ export function validatePublicSourcePath(value) {
     "FIXTURE_BUILD_SOURCE_PATH",
   );
   const parts = value.split("/");
+  requireLive(
+    parts[0].toLowerCase() !== READ_ONLY_PROBE_DIRECTORY,
+    "FIXTURE_BUILD_RESERVED_PROBE_PATH",
+  );
   requireLive(
     parts.length <= 64 &&
       parts.every(
@@ -352,10 +358,10 @@ async function createFile(filePath, bytes, mode, io = fs) {
   }
   await io.chmod(filePath, mode);
 }
-async function canonicalDirectory(directory, io = fs) {
+async function canonicalDirectory(directory, io = fs, paths = path) {
   requireLive(
-    path.isAbsolute(directory) &&
-      path.resolve(directory) === directory &&
+    paths.isAbsolute(directory) &&
+      paths.resolve(directory) === directory &&
       (await io.realpath(directory)) === directory,
     "FIXTURE_BUILD_DIRECTORY_PATH",
   );
@@ -363,6 +369,30 @@ async function canonicalDirectory(directory, io = fs) {
   requireLive(
     info.isDirectory() && !info.isSymbolicLink(),
     "FIXTURE_BUILD_DIRECTORY_TYPE",
+  );
+}
+
+// Only this exact public canary is DAC-writable. Source/tool bytes retain their
+// original modes; the private fixture ancestor and read-only bind isolate it.
+export async function prepareReadOnlyProbe(directory, io = fs, paths = path) {
+  await canonicalDirectory(directory, io, paths);
+  const probeDirectory = paths.join(directory, READ_ONLY_PROBE_DIRECTORY);
+  // Exclusive mkdir and createFile reject any pre-existing probe, including
+  // links, without chmod or replacement of material not created by this call.
+  await io.mkdir(probeDirectory, { mode: 0o700 });
+  await io.chmod(probeDirectory, 0o777);
+  const canary = paths.join(probeDirectory, "canary");
+  await createFile(canary, READ_ONLY_PROBE_BYTES, 0o666, io);
+  const directoryInfo = await io.lstat(probeDirectory);
+  const fileInfo = await io.lstat(canary);
+  requireLive(
+    directoryInfo.isDirectory() &&
+      !directoryInfo.isSymbolicLink() &&
+      fileInfo.isFile() &&
+      !fileInfo.isSymbolicLink() &&
+      fileInfo.nlink === 1 &&
+      fileInfo.size === READ_ONLY_PROBE_BYTES.length,
+    "FIXTURE_BUILD_PROBE_TYPE",
   );
 }
 
@@ -379,6 +409,7 @@ export async function materializePublicSnapshot({
   const dirs = new Set([directory]),
     manifest = [];
   let total = 0;
+  for (const entry of entries) validatePublicSourcePath(entry.path);
   await io.mkdir(directory, { mode: 0o700 });
   for (const entry of entries) {
     validatePublicSourcePath(entry.path);
@@ -411,6 +442,7 @@ export async function materializePublicSnapshot({
     );
     manifest.push({ path: entry.path, ...binding });
   }
+  await prepareReadOnlyProbe(directory, io, paths);
   for (const directoryPath of [...dirs].sort((a, b) => b.length - a.length)) {
     await io.chmod(directoryPath, 0o555);
     const info = await io.lstat(directoryPath);
@@ -762,11 +794,14 @@ const fs = require('node:fs'); const path = require('node:path'); const crypto =
 let input = ''; process.stdin.on('data', b => { input += b; if (Buffer.byteLength(input) > 4194304) process.exit(1); });
 process.stdin.on('end', () => { try {
  const entries = JSON.parse(input); const seen = []; let count = 0;
+ if (!Array.isArray(entries) || entries.some(e => typeof e.path !== 'string' || e.path.split('/')[0].toLowerCase() === '.fixture-ro-probe')) throw Error();
+ const probeBytes = Buffer.from('hedefora.pg17.read-only-probe.v1\n');
+ const expected = [...entries, {path:'.fixture-ro-probe/canary', bytes:probeBytes.length, sha256:crypto.createHash('sha256').update(probeBytes).digest('hex')}];
  const walk = (dir, prefix = '') => { const rows = fs.readdirSync(dir, {withFileTypes:true}); if (!rows.length) throw Error(); for (const row of rows) {
   if (++count > 20000) throw Error(); const name = prefix ? prefix + '/' + row.name : row.name; if (name.length > 511) throw Error();
   if (row.isDirectory()) walk(path.join(dir, row.name), name); else if (row.isFile() && !row.isSymbolicLink()) seen.push(name); else throw Error(); }};
- walk('/source'); seen.sort(); if (JSON.stringify(seen) !== JSON.stringify(entries.map(e => e.path))) throw Error();
- for (const e of entries) { if (!/^[A-Za-z0-9_.@/-]+$/.test(e.path) || e.path.split('/').some(p => !p || p === '.' || p === '..')) throw Error();
+ walk('/source'); seen.sort(); if (JSON.stringify(seen) !== JSON.stringify(expected.map(e => e.path).sort())) throw Error();
+ for (const e of expected) { if (!/^[A-Za-z0-9_.@/-]+$/.test(e.path) || e.path.split('/').some(p => !p || p === '.' || p === '..')) throw Error();
   const p = '/source/' + e.path; if (fs.realpathSync(p) !== p) throw Error(); const fd = fs.openSync(p, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
   try { const a = fs.fstatSync(fd, {bigint:true}); if (!a.isFile() || a.nlink !== 1n || a.size !== BigInt(e.bytes) || a.size > 16777216n) throw Error();
    const b = Buffer.alloc(e.bytes + 1); let n = 0; while(n < b.length) { const got = fs.readSync(fd, b, n, Math.min(65536,b.length-n), n); if (!got) break; n += got; }
@@ -1215,6 +1250,7 @@ export async function prepareFixtureTools({
     bundleBytes,
     0o444,
   );
+  await prepareReadOnlyProbe(toolsDirectory);
   await fs.chmod(toolsDirectory, 0o555);
   requireLive(
     process.platform === "win32" ||

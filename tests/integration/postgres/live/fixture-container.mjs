@@ -31,6 +31,9 @@ export const ROLES_SHA256 =
 const HEX = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
 const ROOT = "/source";
+export const RO_PROBE_PATH = ".fixture-ro-probe/canary";
+export const RO_PROBE_CONTENT = "hedefora.pg17.read-only-probe.v1\n";
+const INPUT_ROOTS = [ROOT, "/tools", "/input"];
 let readOnlyInputsVerified = false;
 const BASE_ENV = Object.freeze({
   PATH: `${PG_BIN}:/usr/bin:/bin`,
@@ -172,6 +175,7 @@ export function validateToolBundle(bundle, run) {
       exactKeys(item, ["path", "sha256", "bytes"]) &&
         typeof item.path === "string" &&
         /^[A-Za-z0-9_.@/-]+$/.test(item.path) &&
+        item.path.split("/")[0] !== ".fixture-ro-probe" &&
         !item.path
           .split("/")
           .some(
@@ -330,21 +334,120 @@ export function validateSelfIsolation({
   });
 }
 
-export async function probeReadOnlyInputs(openFile = open) {
-  for (const [root, file] of [
-    ["/source", "package.json"],
-    ["/tools", "bundle.json"],
-    ["/input", "run.json"],
-  ]) {
+// These public canaries make the write probes meaningful even when ordinary
+// snapshot files are DAC-readonly. Mode calibration is not an ACL assertion:
+// both actual write-open attempts must still return exactly EROFS.
+export async function verifyProbeCanaries({
+  openFile = open,
+  lstatFile = lstat,
+  realpathFile = realpath,
+  uid = process.geteuid?.(),
+  gid = process.getegid?.(),
+  groups = process.getgroups?.(),
+} = {}) {
+  requireLive(
+    uid === 26 &&
+      gid === 102 &&
+      Array.isArray(groups) &&
+      groups.every((group) => group === 102),
+    "FIXTURE_RO_PROBE_IDENTITY",
+  );
+  const effectiveBits = (info) => {
+    const mode = Number(info.mode);
+    if (Number(info.uid) === uid) return (mode >> 6) & 7;
+    if (Number(info.gid) === gid || groups.includes(Number(info.gid)))
+      return (mode >> 3) & 7;
+    return mode & 7;
+  };
+  async function directory(path, required) {
+    const info = await lstatFile(path, { bigint: true });
+    requireLive(
+      info.isDirectory() &&
+        !info.isSymbolicLink() &&
+        (await realpathFile(path)) === path,
+      "FIXTURE_RO_PROBE_DIRECTORY",
+    );
+    requireLive(
+      (Number(info.mode) & required) === required &&
+        (effectiveBits(info) & required) === required,
+      "FIXTURE_RO_PROBE_CALIBRATION",
+    );
+  }
+  await directory("/", 1);
+  for (const root of INPUT_ROOTS) {
+    await directory(root, 1);
+    await directory(`${root}/.fixture-ro-probe`, 7);
+    const path = `${root}/${RO_PROBE_PATH}`;
+    const before = await lstatFile(path, { bigint: true });
+    requireLive(
+      before.isFile() &&
+        !before.isSymbolicLink() &&
+        before.nlink === 1n &&
+        (await realpathFile(path)) === path,
+      "FIXTURE_RO_PROBE_FILE",
+    );
+    requireLive(
+      (Number(before.mode) & 2) === 2 && (effectiveBits(before) & 2) === 2,
+      "FIXTURE_RO_PROBE_CALIBRATION",
+    );
+    const file = await openFile(
+      path,
+      constants.O_RDONLY | constants.O_NOFOLLOW,
+    );
+    try {
+      const sameFile = (info) =>
+        info.isFile() &&
+        info.nlink === 1n &&
+        [
+          "dev",
+          "ino",
+          "nlink",
+          "size",
+          "mode",
+          "uid",
+          "gid",
+          "mtimeNs",
+          "ctimeNs",
+        ].every(
+          (key) => typeof before[key] === "bigint" && before[key] === info[key],
+        );
+      requireLive(
+        sameFile(await file.stat({ bigint: true })),
+        "FIXTURE_RO_PROBE_CHANGED",
+      );
+      const bytes = await readBoundedRegularHandle(
+        file,
+        Buffer.byteLength(RO_PROBE_CONTENT),
+      );
+      requireLive(
+        bytes.equals(Buffer.from(RO_PROBE_CONTENT)) &&
+          hash(bytes) === hash(RO_PROBE_CONTENT),
+        "FIXTURE_RO_PROBE_HASH",
+      );
+      requireLive(
+        sameFile(await file.stat({ bigint: true })) &&
+          sameFile(await lstatFile(path, { bigint: true })) &&
+          (await realpathFile(path)) === path,
+        "FIXTURE_RO_PROBE_CHANGED",
+      );
+    } finally {
+      await file.close();
+    }
+  }
+}
+
+export async function probeReadOnlyInputs(openFile = open, probeOptions = {}) {
+  await verifyProbeCanaries(probeOptions);
+  for (const root of INPUT_ROOTS) {
     for (const [path, flags] of [
+      [`${root}/${RO_PROBE_PATH}`, constants.O_WRONLY | constants.O_NOFOLLOW],
       [
-        `${root}/.fixture-ro-${randomBytes(16).toString("hex")}`,
+        `${root}/.fixture-ro-probe/.create-${randomBytes(16).toString("hex")}`,
         constants.O_WRONLY |
           constants.O_CREAT |
           constants.O_EXCL |
           constants.O_NOFOLLOW,
       ],
-      [`${root}/${file}`, constants.O_WRONLY | constants.O_NOFOLLOW],
     ]) {
       let handle;
       try {
@@ -415,8 +518,8 @@ async function inventory(root) {
     for (const entry of entries) {
       const name = relative ? `${relative}/${entry.name}` : entry.name;
       requireLive(
-        ++entriesSeen <= 20000 &&
-          found.length < 10000 &&
+        ++entriesSeen <= 20002 &&
+          found.length < 10001 &&
           name.length < 512 &&
           name.split("/").length <= 64,
         "FIXTURE_INVENTORY_BOUND",
@@ -434,32 +537,39 @@ async function inventory(root) {
   await visit("");
   return found.sort();
 }
-async function verifyFiles(bundle) {
+export async function verifyFiles(
+  bundle,
+  { inventoryFiles = inventory, readFile = readRegular, probeOptions } = {},
+) {
   requireLive(
-    JSON.stringify(await inventory(ROOT)) ===
-      JSON.stringify(bundle.sourceFiles.map((item) => item.path)),
+    JSON.stringify(await inventoryFiles(ROOT)) ===
+      JSON.stringify(
+        [...bundle.sourceFiles.map((item) => item.path), RO_PROBE_PATH].sort(),
+      ),
     "FIXTURE_SOURCE_INVENTORY_DRIFT",
   );
   requireLive(
-    JSON.stringify(await inventory("/tools")) ===
-      JSON.stringify([...TOOL_NAMES, "bundle.json"].sort()) &&
-      JSON.stringify(await inventory("/input")) === '["run.json"]',
+    JSON.stringify(await inventoryFiles("/tools")) ===
+      JSON.stringify([...TOOL_NAMES, "bundle.json", RO_PROBE_PATH].sort()) &&
+      JSON.stringify(await inventoryFiles("/input")) ===
+        JSON.stringify([RO_PROBE_PATH, "run.json"]),
     "FIXTURE_MOUNT_INVENTORY",
   );
   for (const item of bundle.sourceFiles) {
-    const bytes = await readRegular(`${ROOT}/${item.path}`, 16777216, true);
+    const bytes = await readFile(`${ROOT}/${item.path}`, 16777216, true);
     requireLive(
       bytes.length === item.bytes && hash(bytes) === item.sha256,
       "FIXTURE_SOURCE_HASH",
     );
   }
   for (const item of bundle.files) {
-    const bytes = await readRegular(`/tools/${item.name}`, 268435456, true);
+    const bytes = await readFile(`/tools/${item.name}`, 268435456, true);
     requireLive(
       bytes.length === item.bytes && hash(bytes) === item.sha256,
       "FIXTURE_TOOL_HASH",
     );
   }
+  await verifyProbeCanaries(probeOptions);
 }
 
 // Raw test output stays in bounded memory. Only known test names and numerical
@@ -1292,6 +1402,8 @@ export async function runFixtureContainer() {
       [...servers.values()].every((server) => server.isRunning()),
       "FIXTURE_POSTMASTER_EXITED",
     );
+    await verifyFiles(bundle);
+    lease();
   } catch (error) {
     failure =
       error instanceof LiveError ? error.code : "FIXTURE_EXECUTION_FAILED";

@@ -22,6 +22,17 @@ Path/hash/FD/hardlink/inventory kısıtları sürer; native Linux chmod0555/0444
 ek savunmadır, readonly authority değildir. Private public snapshot üzerinde
 eşzamanlı writer yoktur; trusted host/daemon varsayımı açıktır.
 
+DAC reddinin RO kontrolünü maskelememesi için her üç bind altında yalnız
+`.fixture-ro-probe/canary` ek public dosyası bulunur; sabit içerik
+`hedefora.pg17.read-only-probe.v1` ve son LF'dir. Probe dizini0777,
+dosyası0666 hazırlanır; container efektif yazılabilir mode bitlerini,
+canonical path/regular/nlink1/byte hash'ini doğrular. Altı strict EROFS
+kontrolü bu canary ve aynı dizindeki exclusive yeni ad üzerinde yapılır;
+EACCES kabul edilmez, existing-open truncate/write yapmaz. Tracked source
+reserved probe yolunu içeremez. Exact pre/post inventory yalnız bu tek
+dosyayı ek kabul eder; glob/prefix muafiyeti yoktur. Asıl source/tool/run
+izinleri0444/0555 korunur; private host ancestor ve ACL değiştirilmez.
+
 Host Node controller, exact committed source'un yalnız tracked regular
 public byte snapshot'ını ve hash-bound precompiled test araçlarını RO mount
 eder. Image create sonrası/start öncesi actual inspect: exact configID,

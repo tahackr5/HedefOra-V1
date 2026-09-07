@@ -115,12 +115,48 @@ test("malformed scanner rows cannot be accepted", () => {
     }),
   );
 });
-test("RO inputs accept only six actual EROFS observations, independent of mode bits", async () => {
+function calibratedProbe() {
+  const bytes = Buffer.from("hedefora.pg17.read-only-probe.v1\n");
+  const info = (path) => ({
+    dev: 1n,
+    ino: 2n,
+    nlink: 1n,
+    size: BigInt(bytes.length),
+    mode: 0o777n,
+    uid: 0n,
+    gid: 0n,
+    mtimeNs: 1n,
+    ctimeNs: 1n,
+    isFile: () => path.endsWith("/canary"),
+    isDirectory: () => !path.endsWith("/canary"),
+    isSymbolicLink: () => false,
+  });
+  return {
+    uid: 26,
+    gid: 102,
+    groups: [102],
+    lstatFile: async (path) => info(path),
+    realpathFile: async (path) => path,
+    openFile: async (path) => ({
+      stat: async () => info(path),
+      read: async (buffer, offset, length, position) => ({
+        bytesRead: bytes.copy(
+          buffer,
+          offset,
+          position,
+          Math.min(position + length, bytes.length),
+        ),
+      }),
+      close: async () => {},
+    }),
+  };
+}
+test("RO inputs require six EROFS observations after DAC-writable canary calibration", async () => {
   const calls = [];
   await probeReadOnlyInputs(async (path, flags) => {
     calls.push({ path, flags });
     throw Object.assign(new Error(), { code: "EROFS" });
-  });
+  }, calibratedProbe());
   assert.equal(calls.length, 6);
 });
 for (const code of ["EACCES", "EPERM", "ENOENT", "EIO", undefined])
@@ -128,13 +164,16 @@ for (const code of ["EACCES", "EPERM", "ENOENT", "EIO", undefined])
     assert.rejects(
       probeReadOnlyInputs(async () => {
         throw Object.assign(new Error(), { code });
-      }),
+      }, calibratedProbe()),
       /FIXTURE_RO_PROBE_ERROR/,
     ));
 test("RO inputs reject a successful writable open without ever writing or truncating", async () => {
   let closed = 0;
   await assert.rejects(
-    probeReadOnlyInputs(async () => ({ close: async () => closed++ })),
+    probeReadOnlyInputs(
+      async () => ({ close: async () => closed++ }),
+      calibratedProbe(),
+    ),
     /FIXTURE_RO_PROBE_WRITABLE/,
   );
   assert.equal(closed, 1);

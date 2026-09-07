@@ -30,7 +30,7 @@ import {
   verifyFixtureReceipt,
   verifyFixtureImageInspect,
 } from "./fixture-host-policy.mjs";
-import { prepareFixtureTools } from "./fixture-build.mjs";
+import { prepareFixtureTools, prepareReadOnlyProbe } from "./fixture-build.mjs";
 import { readBoundedRegularHandle } from "./live-runtime.mjs";
 
 const ok = (result) =>
@@ -97,15 +97,25 @@ export async function verifyFixturePostInputs({
     4194304,
   );
   const bundle = strict(bundleBytes, "FIXTURE_POST_BUNDLE", 4194304);
-  await exactInventory(
-    sourceDirectory,
-    bundle.sourceFiles.map((item) => item.path),
-  );
+  const probePath = ".fixture-ro-probe/canary";
+  const probeBytes = Buffer.from("hedefora.pg17.read-only-probe.v1\n");
+  await exactInventory(sourceDirectory, [
+    ...bundle.sourceFiles.map((item) => item.path),
+    probePath,
+  ]);
   await exactInventory(toolsDirectory, [
     ...bundle.files.map((item) => item.name),
     "bundle.json",
+    probePath,
   ]);
-  await exactInventory(inputDirectory, ["run.json"]);
+  await exactInventory(inputDirectory, ["run.json", probePath]);
+  for (const directory of [sourceDirectory, toolsDirectory, inputDirectory])
+    await readSealed(
+      directory,
+      probePath,
+      { sha256: hash(probeBytes), size: probeBytes.length },
+      128,
+    );
   await readSealed(
     inputDirectory,
     "run.json",
@@ -542,6 +552,7 @@ export async function runFixtureHost(config) {
     flag: "wx",
     mode: 0o444,
   });
+  await prepareReadOnlyProbe(resolve(inputDirectory));
   await chmod(inputDirectory, 0o555);
   const name = `hedefora-pg17-fixture-${run.runId}`;
   const sourceDirectory = safePath(prepared.sourceDirectory),

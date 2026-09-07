@@ -89,3 +89,27 @@ Bağımsız never-started metadata probe aynı davranışı doğruladı; yalnız
 bu isteğe bağlı boş alanın undefined/null/empty-map eşdeğerliği kabul edilir,
 dolu port haritası ve geçersiz tipler reddedilir. Diğer created kontrolleri
 değişmeden actual replay PASS; diagnosis evidence9c2dd243df30a0e6f060ddc58247bb6642e87105f6a6da6813f29d44a6491384.
+
+## RO probe kalibrasyonu — 638952f
+
+a3 pinned builder PASS; gerçek fixture Node başladı fakat initdb öncesi
+FIXTURE_RO_PROBE_ERROR ile FAIL oldu. Owned removal/absence PASS; SQL/Go
+engine henüz çalışmadı. Final failure artifact
+b0c307b88cc17934570ca0f29d684596a5e46da080a68bac454eadb4cbaca898.
+Bağımsız aynı UID26:102 Go-only tanıda mevcut üç dosya0555/root:root ve
+Windows ReadOnly|Archive: write-open EACCES;
+üç yeni dosya denemesi EROFS. Orijinal byte hash'leri değişmedi;
+kanıt41d6e52bf4e37c17533ace32d6e212b8024c9465875d853ee88ed67e81b1ca63.
+
+Güvenlik tasarım incelemesiyle her bind'a tek exact public calibrated
+canary eklendi. Orijinal dosya izinleri korunur; canary DAC-yazılabilir
+0777/0666 hazırlanır. Strict altı EROFS, hostRWfalse/self mountinfoRO,
+nested mount yasağı, exact inventory/hash ve private ancestor değişmez.
+EACCES başarı sayılmaz. Sonraki gerçek koşum ve exact full-tree/review
+sonuçları ayrı kanıt olacaktır; bu düzeltme geçmiş FAIL'i değiştirmez.
+
+Yeni yalnız sentetik public byte Go-only tanı: aynı UID26:102/üç RO bind
+altıEROFS; RW negatif kontrolde altı başarılı open/create strictFAIL42
+üretir. İki owned container removal/absence ve unchanged hash PASS;
+kanıta2ab493a9137e494c25d0e2d3ee4cf3cde0687d6f7856637d2efef935e6cae27.
+Bu davranış tanısı engine/full-tree yerine kullanılamaz.

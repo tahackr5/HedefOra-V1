@@ -9,6 +9,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { FIXTURE_IMAGE } from "./fixture-container.mjs";
+import { prepareReadOnlyProbe } from "./fixture-build.mjs";
 
 function setup(options = {}) {
   const now = Date.now(),
@@ -265,8 +266,10 @@ test("post execution rejects added inventory, changed run bytes and changed sour
     const sourceDirectory = join(root, "source"),
       toolsDirectory = join(root, "tools"),
       inputDirectory = join(root, "input");
-    for (const path of [sourceDirectory, toolsDirectory, inputDirectory])
+    for (const path of [sourceDirectory, toolsDirectory, inputDirectory]) {
       await mkdir(path);
+      await prepareReadOnlyProbe(path);
+    }
     await writeFile(join(sourceDirectory, "public.txt"), "source");
     await writeFile(join(toolsDirectory, "tool"), "tool");
     const bundleBytes = Buffer.from(
@@ -293,11 +296,22 @@ test("post execution rejects added inventory, changed run bytes and changed sour
         /FIXTURE_POST_INVENTORY/,
       );
       await rm(join(path, "extra"));
+      const extraProbe = join(path, ".fixture-ro-probe", "extra");
+      await writeFile(extraProbe, "x");
+      await assert.rejects(
+        verifyFixturePostInputs(params),
+        /FIXTURE_POST_INVENTORY/,
+      );
+      await rm(extraProbe);
     }
     for (const [path, original] of [
       [join(sourceDirectory, "public.txt"), "source"],
       [join(toolsDirectory, "tool"), "tool"],
       [join(inputDirectory, "run.json"), runBytes],
+      ...[sourceDirectory, toolsDirectory, inputDirectory].map((directory) => [
+        join(directory, ".fixture-ro-probe", "canary"),
+        "hedefora.pg17.read-only-probe.v1\n",
+      ]),
     ]) {
       await writeFile(path, "mutation");
       await assert.rejects(verifyFixturePostInputs(params));
