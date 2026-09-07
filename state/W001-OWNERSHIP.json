@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "d8d7f0c9b2876ad6f6d8ed68226bac75b2f0348c",
+  "verifiedThrough": "ac2b9d9bcf073a77917f411ce23f6dbb208d85ec",
   "trailingAllowedPaths": [
     "state/W001-OWNERSHIP.json"
   ],
@@ -913,6 +913,41 @@
         "state/RELEASE-LEDGER.md",
         "state/W001-EVIDENCE.md",
         "state/W001-PHASE-B.md"
+      ]
+    },
+    "W001-T04FB-hosted-remediation-seal": {
+      "base": "d8d7f0c9b2876ad6f6d8ed68226bac75b2f0348c",
+      "head": "cf69d6a129bd1bc95af9ef90dd8b06b7edecb34d",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-isolated-test-fixture": {
+      "base": "cf69d6a129bd1bc95af9ef90dd8b06b7edecb34d",
+      "head": "ac2b9d9bcf073a77917f411ce23f6dbb208d85ec",
+      "allowedPaths": [
+        "DECISIONS.md",
+        "FILE-INDEX.md",
+        "architecture/ADR-REGISTER.md",
+        "package.json",
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "security/postgres-test-fixture-admission.json",
+        "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/W001-OWNERSHIP.md",
+        "state/W001-PG17-FIXTURE.md",
+        "tests/integration/postgres/live/FIXTURE-CONTRACT.md",
+        "tests/integration/postgres/live/fixture-admission.mjs",
+        "tests/integration/postgres/live/fixture-admission.test.mjs",
+        "tests/integration/postgres/live/fixture-build.mjs",
+        "tests/integration/postgres/live/fixture-build.test.mjs",
+        "tests/integration/postgres/live/fixture-container.mjs",
+        "tests/integration/postgres/live/fixture-container.test.mjs",
+        "tests/integration/postgres/live/fixture-host-policy.mjs",
+        "tests/integration/postgres/live/fixture-host-policy.test.mjs",
+        "tests/integration/postgres/live/fixture-native-psql.mjs",
+        "tests/integration/postgres/live/fixture-run.mjs",
+        "tests/integration/postgres/live/fixture-run.test.mjs",
+        "tests/integration/postgres/live/psql.mjs"
       ]
     }
   }
