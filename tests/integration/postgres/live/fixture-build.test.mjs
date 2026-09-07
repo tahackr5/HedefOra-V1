@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { spawn as spawnChild } from "node:child_process";
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 import path from "node:path";
@@ -10,6 +11,7 @@ import os from "node:os";
 import { runInNewContext } from "node:vm";
 import * as crypto from "node:crypto";
 import { GO_IMAGE } from "./live-runtime.mjs";
+import { withFixtureHostSignals } from "./fixture-run.mjs";
 import {
   BUILD_ENV,
   BUILD_COMMANDS,
@@ -18,6 +20,7 @@ import {
   parseTrackedTree,
   verifyGitBlob,
   readGitBlob,
+  fixtureCommand,
   materializePublicSnapshot,
   prepareReadOnlyProbe,
   buildContainerArguments,
@@ -539,6 +542,7 @@ test("reserved probe paths are rejected before snapshot creation or any Git blob
 
 function child() {
   const value = new EventEmitter();
+  value.stdin = new PassThrough();
   value.stdout = new PassThrough();
   value.stderr = new PassThrough();
   value.kills = [];
@@ -548,6 +552,77 @@ function child() {
     return true;
   };
   return value;
+}
+test("pre-aborted build command and Git blob never spawn", async () => {
+  const controller = new AbortController();
+  controller.abort();
+  const spawnImpl = () => assert.fail("aborted work spawned");
+  await assert.rejects(
+    fixtureCommand({ spawnImpl }, controller.signal),
+    /FIXTURE_COMMAND_ABORTED/,
+  );
+  await assert.rejects(
+    readGitBlob({ signal: controller.signal, spawnImpl }),
+    /FIXTURE_BUILD_ABORTED/,
+  );
+});
+for (const missingClose of [false, true]) {
+  test(`active build command abort reaps or fails missing close (${missingClose})`, async () => {
+    const controller = new AbortController(),
+      value = child();
+    if (missingClose) value.kill = (signal) => value.kills.push(signal);
+    await assert.rejects(
+      fixtureCommand(
+        {
+          executable: process.execPath,
+          args: [],
+          env: {},
+          timeoutMs: 30000,
+          spawnImpl() {
+            queueMicrotask(() => controller.abort());
+            return value;
+          },
+        },
+        controller.signal,
+      ),
+      /FIXTURE_COMMAND_ABORTED/,
+    );
+    assert.deepEqual(value.kills, ["SIGKILL"]);
+    // Cleanup has its own budget and deliberately does not receive the abort.
+    const clean = await fixtureCommand({
+      executable: process.execPath,
+      args: [],
+      env: {},
+      timeoutMs: 1000,
+      spawnImpl() {
+        const value = child();
+        queueMicrotask(() => value.emit("close", 0));
+        return value;
+      },
+    });
+    assert.equal(clean.rawExit, 0);
+    assert.equal(clean.connectionClosed, true);
+  });
+  test(`active Git blob abort rejects even with missing close (${missingClose})`, async () => {
+    const controller = new AbortController(),
+      value = child();
+    if (missingClose) value.kill = (signal) => value.kills.push(signal);
+    await assert.rejects(
+      readGitBlob({
+        git: { path: process.execPath },
+        repository: "/public/repo",
+        objectId: sourceObject,
+        timeoutMs: 30000,
+        signal: controller.signal,
+        spawnImpl() {
+          queueMicrotask(() => controller.abort());
+          return value;
+        },
+      }),
+      /FIXTURE_BUILD_BLOB_TRANSPORT/,
+    );
+    assert.deepEqual(value.kills, ["SIGKILL"]);
+  });
 }
 test("raw Git blob transport preserves nonUTF8 bytes and observes actual close", async () => {
   const bytes = Buffer.from([255, 128, 0, 10]);
@@ -863,6 +938,128 @@ function mockTransport({
     },
   };
 }
+// The child receives real OS signals on POSIX. Windows cannot deliver catchable
+// SIGINT/SIGTERM with child.kill, so its separately labelled branch uses IPC
+// events. The daemon below is stateful synthetic data, never Docker or PG.
+for (const signalName of ["SIGINT", "SIGTERM"]) {
+  for (const phase of [
+    "post-create",
+    "post-start",
+    "compile-wait",
+    "lost-create-ack",
+  ]) {
+    test(`child signal scope and simulated builder cleanup: ${signalName}/${phase} (${process.platform === "win32" ? "Windows IPC event" : "POSIX OS signal"})`, async () => {
+      const program = `
+import {fixtureCommand,OwnedFixtureBuilder,BUILD_ENV} from ${JSON.stringify(new URL("./fixture-build.mjs", import.meta.url).href)};
+import {withFixtureHostSignals} from ${JSON.stringify(new URL("./fixture-run.mjs", import.meta.url).href)};
+import {GO_IMAGE} from ${JSON.stringify(new URL("./live-runtime.mjs", import.meta.url).href)};
+const runId=${JSON.stringify(runId)}, name=${JSON.stringify(name)}, id=${JSON.stringify(id)}, imageId=${JSON.stringify(imageId)}, mounts=${JSON.stringify(mounts)};
+const ok=${ok.toString()}, inspected=${inspected.toString()}, mockTransport=${mockTransport.toString()};
+const phase=${JSON.stringify(phase)}, transport=mockTransport();
+const before=[process.rawListeners('SIGINT'),process.rawListeners('SIGTERM')];
+let cleanup, cleanupAnnounced=false, failure;
+process.on('message',m=>{if(process.platform==='win32'&&m?.kind==='signal'&&['SIGINT','SIGTERM'].includes(m.signal))process.emit(m.signal);});
+const cli=(signal,ms)=>fixtureCommand({executable:process.execPath,args:['-e','setTimeout(()=>process.exit(0),'+ms+')'],env:{},timeoutMs:3000},signal);
+try {
+ await withFixtureHostSignals(async signal=>{
+  const waitForSignal=async()=>{const pending=cli(signal,2000);process.send({stage:'ready'});return pending;};
+  const execute=async(args,options={})=>{
+   if(options.cleanup){
+    if(signal.aborted&&!cleanupAnnounced){cleanupAnnounced=true;process.send({stage:'cleanup'});await cli(undefined,150);}
+    return transport.execute(args);
+   }
+   if(signal.aborted)throw Error('FIXTURE_COMMAND_ABORTED');
+   const result=await transport.execute(args);
+   if(phase==='lost-create-ack'&&args[1]==='create')return waitForSignal();
+   return result;
+  };
+  const owner=new OwnedFixtureBuilder({execute,runId,imageId});
+  try {
+   await owner.create(mounts);
+   if(phase==='post-create')await waitForSignal();
+   await owner.start();
+   if(phase==='post-start')await waitForSignal();
+   await waitForSignal();
+  }finally{cleanup=await owner.cleanup();}
+ });
+}catch(e){failure=e.code||e.message;}
+const restored=['SIGINT','SIGTERM'].every((s,i)=>process.rawListeners(s).length===before[i].length&&process.rawListeners(s).every((f,j)=>f===before[i][j]));
+process.stdout.write(JSON.stringify({status:failure?'FAIL':'PASS',code:failure,cleanup,restored,signalDelivery:process.platform==='win32'?'IPC-event':'OS-signal',removedIds:transport.calls.filter(a=>a[1]==='rm').map(a=>a[3]),lastOperation:transport.calls.at(-1)?.[1]})+'\\n');
+process.exitCode=failure?1:0;process.disconnect();
+`;
+      const value = spawnChild(
+        process.execPath,
+        ["--input-type=module", "-e", program],
+        {
+          env:
+            process.platform === "win32"
+              ? { SystemRoot: process.env.SystemRoot }
+              : {},
+          shell: false,
+          windowsHide: true,
+          stdio: ["ignore", "pipe", "pipe", "ipc"],
+        },
+      );
+      let stdout = "",
+        stderr = "",
+        ready = 0,
+        cleaning = 0,
+        timedOut = false;
+      const sendSignal = (signal) => {
+        if (process.platform === "win32")
+          value.send({ kind: "signal", signal });
+        else value.kill(signal);
+      };
+      value.on("message", (message) => {
+        if (message.stage === "ready") {
+          ready++;
+          sendSignal(signalName);
+        }
+        if (message.stage === "cleanup") {
+          cleaning++;
+          sendSignal(signalName);
+          sendSignal(signalName === "SIGINT" ? "SIGTERM" : "SIGINT");
+        }
+      });
+      value.stdout.on("data", (bytes) => {
+        stdout += bytes;
+        if (stdout.length > 4096) value.kill("SIGKILL");
+      });
+      value.stderr.on("data", (bytes) => {
+        stderr += bytes;
+        if (stderr.length > 4096) value.kill("SIGKILL");
+      });
+      const timeout = setTimeout(() => {
+        timedOut = true;
+        value.kill("SIGKILL");
+      }, 10000);
+      const closed = await new Promise((resolve, reject) => {
+        value.once("error", reject);
+        value.once("close", (code, signal) => resolve({ code, signal }));
+      }).finally(() => clearTimeout(timeout));
+      assert.equal(timedOut, false);
+      assert.deepEqual(closed, { code: 1, signal: null });
+      assert.equal(stderr, "");
+      const result = JSON.parse(stdout);
+      assert.equal(result.status, "FAIL");
+      assert.equal(result.code, "FIXTURE_COMMAND_ABORTED");
+      assert.equal(
+        result.signalDelivery,
+        process.platform === "win32" ? "IPC-event" : "OS-signal",
+      );
+      assert.equal(result.restored, true);
+      assert.deepEqual(result.cleanup, {
+        status: "PASS",
+        removed: true,
+        absent: true,
+      });
+      assert.deepEqual(result.removedIds, [id]);
+      assert.equal(result.lastOperation, "ls");
+      assert.equal(ready, 1);
+      assert.equal(cleaning, 1);
+    });
+  }
+}
 test("owned builder checks create/start then removes exact ID and observes absence", async () => {
   const transport = mockTransport();
   const owner = new OwnedFixtureBuilder({
@@ -882,6 +1079,107 @@ test("owned builder checks create/start then removes exact ID and observes absen
     ["container", "rm", "--force", id],
   );
 });
+for (const operation of ["ls", "inspect", "rm"]) {
+  test(`owned builder cleanup rejects missing ${operation} close`, async () => {
+    const transport = mockTransport();
+    let cleaning = false;
+    const owner = new OwnedFixtureBuilder({
+      runId,
+      imageId,
+      execute: async (args, options) => {
+        const result = await transport.execute(args, options);
+        return cleaning && args[1] === operation
+          ? { ...result, connectionClosed: false }
+          : result;
+      },
+    });
+    await owner.create(mounts);
+    cleaning = true;
+    await assert.rejects(owner.cleanup(), /FIXTURE_BUILD_PROCESS/);
+  });
+}
+for (const signalName of ["SIGINT", "SIGTERM"]) {
+  for (const phase of [
+    "post-create",
+    "post-start",
+    "compile-wait",
+    "lost-create-ack",
+  ]) {
+    test(`simulated owned builder ${signalName} event during ${phase} cannot bypass cleanup`, async () => {
+      const transport = mockTransport(),
+        target = new EventEmitter();
+      let cleanup, abortedSignal, cancelledChild;
+      const cleanupSignals = [];
+      await assert.rejects(
+        withFixtureHostSignals(async (signal) => {
+          abortedSignal = signal;
+          const execute = async (args, options = {}) => {
+            if (options.cleanup) {
+              // Real cleanup transport omits the aborted signal even on repeats.
+              cleanupSignals.push(signal.aborted);
+              if (signal.aborted) target.emit(signalName);
+              return transport.execute(args);
+            }
+            if (signal.aborted) throw Error("FIXTURE_COMMAND_ABORTED");
+            const result =
+              args[1] === "exec" ? ok("") : await transport.execute(args);
+            if (
+              (phase === "lost-create-ack" && args[1] === "create") ||
+              args[1] === "exec"
+            ) {
+              return fixtureCommand(
+                {
+                  executable: process.execPath,
+                  args: [],
+                  env: {},
+                  timeoutMs: 30000,
+                  spawnImpl() {
+                    cancelledChild = child();
+                    queueMicrotask(() => target.emit(signalName));
+                    return cancelledChild;
+                  },
+                },
+                signal,
+              );
+            }
+            return result;
+          };
+          const owner = new OwnedFixtureBuilder({ execute, runId, imageId });
+          try {
+            await owner.create(mounts);
+            if (phase === "post-create") target.emit(signalName);
+            await owner.start();
+            if (phase === "post-start") target.emit(signalName);
+            await execute([
+              "container",
+              "exec",
+              owner.id,
+              "controlled-compile-wait",
+            ]);
+          } finally {
+            cleanup = await owner.cleanup();
+          }
+        }, target),
+        /FIXTURE_COMMAND_ABORTED/,
+      );
+      assert.equal(abortedSignal.aborted, true);
+      assert.deepEqual(cleanup, {
+        status: "PASS",
+        removed: true,
+        absent: true,
+      });
+      assert.ok(cleanupSignals.some(Boolean));
+      assert.equal(target.listenerCount("SIGINT"), 0);
+      assert.equal(target.listenerCount("SIGTERM"), 0);
+      assert.deepEqual(
+        transport.calls.find((args) => args[1] === "rm"),
+        ["container", "rm", "--force", id],
+      );
+      assert.equal(transport.calls.at(-1)[1], "ls");
+      if (cancelledChild) assert.deepEqual(cancelledChild.kills, ["SIGKILL"]);
+    });
+  }
+}
 test("lost create ACK still cleans the exact random owned builder", async () => {
   const transport = mockTransport({ lostAck: true });
   const owner = new OwnedFixtureBuilder({

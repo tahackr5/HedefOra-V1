@@ -3,13 +3,68 @@ import assert from "node:assert/strict";
 import {
   executeFixtureLifecycle,
   verifyFixturePostInputs,
+  withFixtureHostSignals,
+  runFixtureHost,
 } from "./fixture-run.mjs";
+import { EventEmitter } from "node:events";
 import { mkdtemp, mkdir, writeFile, rm, realpath } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { FIXTURE_IMAGE } from "./fixture-container.mjs";
 import { prepareReadOnlyProbe } from "./fixture-build.mjs";
+
+test("host registers both signal handlers before config/preflight work", async () => {
+  const before = [
+    process.rawListeners("SIGINT"),
+    process.rawListeners("SIGTERM"),
+  ];
+  const config = new Proxy(
+    {},
+    {
+      ownKeys() {
+        assert.equal(process.listenerCount("SIGINT"), before[0].length + 1);
+        assert.equal(process.listenerCount("SIGTERM"), before[1].length + 1);
+        throw Error("CONTROLLED_PREFLIGHT_STOP");
+      },
+    },
+  );
+  await assert.rejects(runFixtureHost(config), /CONTROLLED_PREFLIGHT_STOP/);
+  assert.deepEqual(process.rawListeners("SIGINT"), before[0]);
+  assert.deepEqual(process.rawListeners("SIGTERM"), before[1]);
+});
+for (const signalName of ["SIGINT", "SIGTERM"]) {
+  test(`portable host ${signalName} event retains repeated-signal guard through cleanup`, async () => {
+    const target = new EventEmitter(),
+      prior = () => {};
+    target.on(signalName, prior);
+    const original = target.rawListeners(signalName);
+    let cleaned = false;
+    await assert.rejects(
+      withFixtureHostSignals(async (signal) => {
+        target.emit(signalName);
+        assert.equal(signal.aborted, true);
+        try {
+          await Promise.resolve();
+        } finally {
+          target.emit(signalName);
+          target.emit(signalName === "SIGINT" ? "SIGTERM" : "SIGINT");
+          assert.equal(target.listenerCount(signalName), original.length + 1);
+          await Promise.resolve();
+          cleaned = true;
+        }
+        return { status: "PASS" };
+      }, target),
+      /FIXTURE_HOST_CANCELLED/,
+    );
+    assert.equal(cleaned, true);
+    assert.deepEqual(target.rawListeners(signalName), original);
+    assert.equal(
+      target.listenerCount(signalName === "SIGINT" ? "SIGTERM" : "SIGINT"),
+      0,
+    );
+  });
+}
 
 function setup(options = {}) {
   const now = Date.now(),

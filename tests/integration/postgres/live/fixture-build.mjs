@@ -4,7 +4,7 @@ import { constants } from "node:fs";
 import * as fs from "node:fs/promises";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import { command, requireLive, LiveError } from "./process.mjs";
+import { startProcess, requireLive, LiveError } from "./process.mjs";
 import {
   GO_IMAGE,
   createRunBudget,
@@ -130,6 +130,23 @@ const gitArgs = (repository, args) => [
   ...args,
 ];
 
+// Abort owns the local CLI process only. Server-side work is reconciled by the
+// builder's independently bounded cleanup, which deliberately passes no signal.
+export async function fixtureCommand(options, signal) {
+  requireLive(!signal?.aborted, "FIXTURE_COMMAND_ABORTED");
+  const child = startProcess({ ...options, input: options.input ?? "" });
+  const cancel = () => child.cancel("cancel");
+  signal?.addEventListener("abort", cancel, { once: true });
+  if (signal?.aborted) cancel();
+  try {
+    const result = await child.closed;
+    requireLive(!signal?.aborted, "FIXTURE_COMMAND_ABORTED");
+    return result;
+  } finally {
+    signal?.removeEventListener("abort", cancel);
+  }
+}
+
 export function validatePublicSourcePath(value) {
   requireLive(
     typeof value === "string" &&
@@ -237,8 +254,10 @@ export async function readGitBlob({
   repository,
   objectId,
   timeoutMs,
+  signal,
   spawnImpl = spawn,
 }) {
+  requireLive(!signal?.aborted, "FIXTURE_BUILD_ABORTED");
   requireLive(
     OID.test(objectId) &&
       Number.isInteger(timeoutMs) &&
@@ -299,12 +318,19 @@ export async function readGitBlob({
     child.once("error", cancel);
     child.once("close", (code) => finish(code, true));
     timer = setTimeout(cancel, timeoutMs);
+    signal?.addEventListener("abort", cancel, { once: true });
+    if (signal?.aborted) cancel();
   } catch {
     cancel();
   }
-  const terminal = await result;
+  let terminal;
+  try {
+    terminal = await result;
+  } finally {
+    signal?.removeEventListener("abort", cancel);
+  }
   requireLive(
-    !bad && terminal.code === 0 && terminal.closeObserved,
+    !signal?.aborted && !bad && terminal.code === 0 && terminal.closeObserved,
     "FIXTURE_BUILD_BLOB_TRANSPORT",
   );
   const bytes = Buffer.concat(buffers, total);
@@ -673,8 +699,18 @@ export class OwnedFixtureBuilder {
     this.creationObserved = false;
     this.mounts = null;
   }
+  async checked(args, options) {
+    const result = await this.execute(args, options);
+    requireLive(
+      result?.rawExit === 0 &&
+        result.origin === "exit" &&
+        result.connectionClosed === true,
+      "FIXTURE_BUILD_PROCESS",
+    );
+    return result;
+  }
   async list() {
-    const result = await this.execute(
+    const result = await this.checked(
       [
         "container",
         "ls",
@@ -695,7 +731,7 @@ export class OwnedFixtureBuilder {
     return ids;
   }
   async inspect(id, running, full = true) {
-    const result = await this.execute(["container", "inspect", id], {
+    const result = await this.checked(["container", "inspect", id], {
       cleanup: !full,
     });
     let rows;
@@ -732,7 +768,7 @@ export class OwnedFixtureBuilder {
     expectedBuilderMounts(mounts);
     this.mounts = { ...mounts };
     this.intent = true;
-    const result = await this.execute(
+    const result = await this.checked(
       buildContainerArguments({
         ...mounts,
         name: this.name,
@@ -754,7 +790,7 @@ export class OwnedFixtureBuilder {
   }
   async start() {
     requireLive(this.id, "FIXTURE_BUILD_NOT_CREATED");
-    await this.execute(["container", "start", this.id]);
+    await this.checked(["container", "start", this.id]);
     await this.inspect(this.id, true);
   }
   async cleanup() {
@@ -776,7 +812,7 @@ export class OwnedFixtureBuilder {
     );
     await this.inspect(ids[0], undefined, false);
     this.creationObserved = true;
-    await this.execute(["container", "rm", "--force", ids[0]], {
+    await this.checked(["container", "rm", "--force", ids[0]], {
       cleanup: true,
     });
     requireLive(
@@ -923,7 +959,10 @@ export async function prepareFixtureTools({
   dockerEnv,
   goModCache,
   linuxNode,
+  signal,
 }) {
+  const active = () => requireLive(!signal?.aborted, "FIXTURE_BUILD_ABORTED");
+  active();
   // No test image is created here. This is a public-source/tools build stage,
   // separate from the PG17 admission and engine execution authority.
   requireLive(
@@ -994,14 +1033,17 @@ export async function prepareFixtureTools({
   const budget = createRunBudget();
   const runId = randomBytes(16).toString("hex");
   async function gitRead(args, maximum = 4194304) {
-    const result = await command({
-      executable: git.path,
-      args: gitArgs(repository, args),
-      env: gitEnv(),
-      input: "",
-      timeoutMs: budget.limit(30000),
-      maxBytes: maximum,
-    });
+    const result = await fixtureCommand(
+      {
+        executable: git.path,
+        args: gitArgs(repository, args),
+        env: gitEnv(),
+        input: "",
+        timeoutMs: budget.limit(30000),
+        maxBytes: maximum,
+      },
+      signal,
+    );
     requireLive(
       result.rawExit === 0 &&
         result.origin === "exit" &&
@@ -1058,6 +1100,7 @@ export async function prepareFixtureTools({
         repository,
         objectId,
         timeoutMs: budget.limit(30000),
+        signal,
       }),
   });
   await fs.mkdir(toolsDirectory, { mode: 0o700 });
@@ -1074,15 +1117,18 @@ export async function prepareFixtureTools({
     args,
     { cleanup = false, input = "", timeoutMs = 30000, maxBytes = 4194304 } = {},
   ) {
-    const result = await command({
-      executable: docker.path,
-      args,
-      env: privateDockerEnv,
-      cwd: repository,
-      input,
-      timeoutMs: cleanup ? 30000 : budget.limit(timeoutMs),
-      maxBytes,
-    });
+    const result = await fixtureCommand(
+      {
+        executable: docker.path,
+        args,
+        env: privateDockerEnv,
+        cwd: repository,
+        input,
+        timeoutMs: cleanup ? 30000 : budget.limit(timeoutMs),
+        maxBytes,
+      },
+      cleanup ? undefined : signal,
+    );
     requireLive(
       result.rawExit === 0 &&
         result.origin === "exit" &&
@@ -1178,6 +1224,7 @@ export async function prepareFixtureTools({
     await verifyExecutable(git);
     await verifyExecutable(docker);
     await verifyExecutable(linuxNode, LINUX_NODE_SHA256);
+    active();
     evidence = {
       status: "PASS",
       scope: "public-source-test-tools-only",
@@ -1212,6 +1259,7 @@ export async function prepareFixtureTools({
     }
   }
   if (failure) throw failure;
+  active();
   const found = await fs.readdir(toolsDirectory, { withFileTypes: true });
   requireLive(
     found.every((entry) => entry.isFile() && !entry.isSymbolicLink()) &&
@@ -1245,6 +1293,7 @@ export async function prepareFixtureTools({
     sourceFiles,
   };
   const bundleBytes = Buffer.from(JSON.stringify(bundle) + "\n");
+  active();
   await createFile(
     path.join(toolsDirectory, "bundle.json"),
     bundleBytes,
@@ -1257,6 +1306,7 @@ export async function prepareFixtureTools({
       ((await fs.lstat(toolsDirectory)).mode & 0o777) === 0o555,
     "FIXTURE_BUILD_FINAL_DIRECTORY_MODE",
   );
+  active();
   return {
     ...initial,
     sourceDirectory,

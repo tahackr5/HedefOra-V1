@@ -12,7 +12,7 @@ import { resolve, dirname, basename, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
 import { performance } from "node:perf_hooks";
 import { setTimeout as delay } from "node:timers/promises";
-import { startProcess, requireLive } from "./process.mjs";
+import { requireLive } from "./process.mjs";
 import {
   hash,
   strict,
@@ -30,7 +30,11 @@ import {
   verifyFixtureReceipt,
   verifyFixtureImageInspect,
 } from "./fixture-host-policy.mjs";
-import { prepareFixtureTools, prepareReadOnlyProbe } from "./fixture-build.mjs";
+import {
+  prepareFixtureTools,
+  prepareReadOnlyProbe,
+  fixtureCommand,
+} from "./fixture-build.mjs";
 import { readBoundedRegularHandle } from "./live-runtime.mjs";
 
 const ok = (result) =>
@@ -449,7 +453,29 @@ async function executable(spec) {
   );
   return spec.path;
 }
+// This scope starts before preflight/build/image work. Persistent listeners keep
+// repeated signals from restoring Node's default exit before owned cleanup ends.
+// Existing listeners are neither removed nor re-registered (including once).
+export async function withFixtureHostSignals(work, signalTarget = process) {
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  signalTarget.on("SIGINT", cancel);
+  signalTarget.on("SIGTERM", cancel);
+  try {
+    const result = await work(controller.signal);
+    requireLive(!controller.signal.aborted, "FIXTURE_HOST_CANCELLED");
+    return result;
+  } finally {
+    signalTarget.removeListener("SIGINT", cancel);
+    signalTarget.removeListener("SIGTERM", cancel);
+  }
+}
 export async function runFixtureHost(config) {
+  return withFixtureHostSignals((signal) => runFixtureHostWork(config, signal));
+}
+async function runFixtureHostWork(config, signal) {
+  const active = () => requireLive(!signal.aborted, "FIXTURE_HOST_CANCELLED");
+  active();
   requireLive(
     process.version === "v24.20.0" &&
       ["win32", "linux"].includes(process.platform),
@@ -484,25 +510,25 @@ export async function runFixtureHost(config) {
   const env = dockerEnvironment(root),
     docker = await executable(config.docker);
   const transport = async (args, timeoutMs = 15000, input = "", signal) => {
-    const child = startProcess({
-      executable: docker,
-      args,
-      env,
-      cwd: root,
-      timeoutMs,
-      maxBytes: 1048576,
-      input,
-    });
-    const cancel = () => child.cancel("cancel");
-    signal?.addEventListener("abort", cancel, { once: true });
-    if (signal?.aborted) cancel();
-    try {
-      return await child.closed;
-    } finally {
-      signal?.removeEventListener("abort", cancel);
-    }
+    return fixtureCommand(
+      {
+        executable: docker,
+        args,
+        env,
+        cwd: root,
+        timeoutMs,
+        maxBytes: 1048576,
+        input,
+      },
+      signal,
+    );
   };
-  const daemon = await transport(["version", "--format", "{{json .}}"]);
+  const daemon = await transport(
+    ["version", "--format", "{{json .}}"],
+    15000,
+    "",
+    signal,
+  );
   requireLive(ok(daemon), "FIXTURE_DOCKER_IDENTITY");
   const version = strict(daemon.stdout, "FIXTURE_DOCKER_VERSION", 65536);
   requireLive(
@@ -516,15 +542,24 @@ export async function runFixtureHost(config) {
     ...config,
     outputRoot: resolve(root, "build"),
     dockerEnv: env,
+    signal,
   });
+  active();
   const capability = await admitFixture({ ...config });
+  active();
   const loaded = await transport(
     ["image", "load"],
     300000,
     fixtureArchive(capability),
+    signal,
   );
   requireLive(ok(loaded), "FIXTURE_IMAGE_LOAD");
-  const image = await transport(["image", "inspect", FIXTURE_IMAGE.manifest]);
+  const image = await transport(
+    ["image", "inspect", FIXTURE_IMAGE.manifest],
+    15000,
+    "",
+    signal,
+  );
   requireLive(ok(image), "FIXTURE_IMAGE_INSPECT_PROCESS");
   verifyFixtureImageInspect(
     strict(image.stdout, "FIXTURE_IMAGE_INSPECT", 1048576),
@@ -569,61 +604,49 @@ export async function runFixtureHost(config) {
     });
   await persist("admission.json", capability);
   await persist("build-evidence.json", prepared.buildEvidence);
-  const controller = new AbortController();
-  let cancelled = false;
-  const cancel = () => {
-    cancelled = true;
-    controller.abort();
-  };
-  process.once("SIGINT", cancel);
-  process.once("SIGTERM", cancel);
-  try {
-    const result = await executeFixtureLifecycle({
+  active();
+  const result = await executeFixtureLifecycle({
+    run,
+    name,
+    mountSources,
+    createArgs: fixtureCreateArgs({
       run,
       name,
-      mountSources,
-      createArgs: fixtureCreateArgs({
-        run,
-        name,
-        sourceDirectory,
-        toolsDirectory,
-        inputDirectory,
-      }),
-      transport,
-      persist,
-      aborted: () => cancelled,
-      signal: controller.signal,
-    });
-    // Re-read the exact mount inventory after execution; host/daemon are trusted,
-    // and no concurrent snapshot writer is allowed (not an ABA-proof claim).
-    await verifyFixturePostInputs({
       sourceDirectory,
       toolsDirectory,
       inputDirectory,
-      run,
-      runBytes,
-    });
-    requireLive(
-      (await realpath(inputDirectory)) === resolve(inputDirectory) &&
-        (await lstat(inputDirectory)).isDirectory(),
-      "FIXTURE_POST_INPUT",
-    );
-    await persist("final-result.json", {
-      ...result,
-      sourceAndToolsPostHash: "PASS",
-      archiveSha256: capability.archiveSha256,
-    });
-    return {
-      status: result.status,
-      code: result.code,
-      sourceCommit: run.sourceCommit,
-      sourceTree: run.sourceTree,
-      outputRoot: root,
-    };
-  } finally {
-    process.removeListener("SIGINT", cancel);
-    process.removeListener("SIGTERM", cancel);
-  }
+    }),
+    transport,
+    persist,
+    signal,
+  });
+  // Re-read the exact mount inventory after execution; host/daemon are trusted,
+  // and no concurrent snapshot writer is allowed (not an ABA-proof claim).
+  await verifyFixturePostInputs({
+    sourceDirectory,
+    toolsDirectory,
+    inputDirectory,
+    run,
+    runBytes,
+  });
+  active();
+  requireLive(
+    (await realpath(inputDirectory)) === resolve(inputDirectory) &&
+      (await lstat(inputDirectory)).isDirectory(),
+    "FIXTURE_POST_INPUT",
+  );
+  await persist("final-result.json", {
+    ...result,
+    sourceAndToolsPostHash: "PASS",
+    archiveSha256: capability.archiveSha256,
+  });
+  return {
+    status: result.status,
+    code: result.code,
+    sourceCommit: run.sourceCommit,
+    sourceTree: run.sourceTree,
+    outputRoot: root,
+  };
 }
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   try {
