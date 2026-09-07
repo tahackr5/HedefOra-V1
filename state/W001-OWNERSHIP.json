@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "8fbc4558a3ea687e15f6ded5a1df8f8495f1d4d1",
+  "verifiedThrough": "dce7df72d16c5ebc3a89f80ff63702c77a9ed958",
   "trailingAllowedPaths": [
     "state/W001-OWNERSHIP.json"
   ],
@@ -972,6 +972,27 @@
         "state/W001-PG17-FIXTURE.md",
         "tests/integration/postgres/live/fixture-host-policy.mjs",
         "tests/integration/postgres/live/fixture-host-policy.test.mjs"
+      ]
+    },
+    "W001-T04FB-fixture-inspect-seal": {
+      "base": "8fbc4558a3ea687e15f6ded5a1df8f8495f1d4d1",
+      "head": "638952fd4518ae17cdfd2bcd0287acb0adbf475d",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-fixture-calibrated-ro-probes": {
+      "base": "638952fd4518ae17cdfd2bcd0287acb0adbf475d",
+      "head": "dce7df72d16c5ebc3a89f80ff63702c77a9ed958",
+      "allowedPaths": [
+        "architecture/ADR-REGISTER.md",
+        "state/W001-PG17-FIXTURE.md",
+        "tests/integration/postgres/live/FIXTURE-CONTRACT.md",
+        "tests/integration/postgres/live/fixture-admission.test.mjs",
+        "tests/integration/postgres/live/fixture-build.mjs",
+        "tests/integration/postgres/live/fixture-build.test.mjs",
+        "tests/integration/postgres/live/fixture-container.mjs",
+        "tests/integration/postgres/live/fixture-container.test.mjs",
+        "tests/integration/postgres/live/fixture-run.mjs",
+        "tests/integration/postgres/live/fixture-run.test.mjs"
       ]
     }
   }
