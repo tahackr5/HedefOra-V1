@@ -8,7 +8,12 @@ import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import { GO_IMAGE, createPrivateRunSecrets } from "./live-runtime.mjs";
 import { command } from "./process.mjs";
-import { createNativePsqlExecutor, PG_BIN } from "./fixture-native-psql.mjs";
+import {
+  createNativePsqlExecutor,
+  PG_BIN,
+  classifyNativeFailure,
+  NATIVE_FAILURE_CATEGORIES,
+} from "./fixture-native-psql.mjs";
 import {
   FIXTURE_IMAGE,
   GO_PACKAGES,
@@ -23,9 +28,124 @@ import {
   RO_PROBE_CONTENT,
   probeReadOnlyInputs,
   verifyFiles,
+  ensurePostmasterStarted,
+  readinessFailureCode,
 } from "./fixture-container.mjs";
 
 const now = Date.parse("2026-09-07T12:00:00.000Z");
+test("repeated postmaster start verifies readiness without a replacement", async () => {
+  let ready = 0;
+  await ensurePostmasterStarted({
+    current: {
+      isRunning: () => true,
+      get closed() {
+        throw new Error("must not await running server");
+      },
+    },
+    restart: async () => assert.fail("must not restart"),
+    readiness: async () => {
+      ready++;
+    },
+  });
+  assert.equal(ready, 1);
+  await assert.rejects(
+    ensurePostmasterStarted({
+      current: { isRunning: () => true },
+      restart: async () => assert.fail(),
+      readiness: async () => {
+        throw new Error("not ready");
+      },
+    }),
+    /not ready/,
+  );
+});
+test("stopped postmaster requires observed clean close and real restart readiness", async () => {
+  const order = [];
+  await ensurePostmasterStarted({
+    current: {
+      isRunning: () => false,
+      closed: Promise.resolve({
+        rawExit: 0,
+        origin: "exit",
+        connectionClosed: true,
+      }),
+    },
+    restart: async () => order.push("restart"),
+    readiness: async () => order.push("readiness"),
+  });
+  assert.deepEqual(order, ["restart", "readiness"]);
+  for (const closed of [
+    undefined,
+    { rawExit: 1, origin: "exit", connectionClosed: true },
+    { rawExit: 0, origin: "channel", connectionClosed: true },
+    { rawExit: 0, origin: "exit", connectionClosed: false },
+  ])
+    await assert.rejects(
+      ensurePostmasterStarted({
+        current: { isRunning: () => false, closed: Promise.resolve(closed) },
+        restart: async () => assert.fail("unclean close"),
+        readiness: async () => assert.fail("unclean close"),
+      }),
+      /FIXTURE_START_UNCLEAN_CLOSE/,
+    );
+});
+test("readiness failure emits bounded phase and numeric state without arbitrary diagnostics", () => {
+  assert.equal(
+    readinessFailureCode(
+      "primary",
+      "postgres",
+      { rawExit: 2, sqlState: "28P01" },
+      "AUTHENTICATION",
+    ),
+    "FIXTURE_READINESS_P_INIT_EXIT_2_STATE_28P01_AUTHENTICATION",
+  );
+  const safe = readinessFailureCode(
+    "secret-user",
+    "secret-db",
+    { rawExit: "secret", sqlState: "secret-password" },
+    "secret-diagnostic",
+  );
+  assert.equal(
+    safe,
+    "FIXTURE_READINESS_U_UNKNOWN_EXIT_UNKNOWN_STATE_NONE_UNKNOWN",
+  );
+  for (const category of NATIVE_FAILURE_CATEGORIES) {
+    const code = readinessFailureCode(
+      "negative",
+      "hedefora_dev",
+      { rawExit: 255, sqlState: "XXXXX" },
+      category,
+    );
+    assert.match(code, /^[A-Z][A-Z0-9_]{0,95}$/);
+  }
+});
+test("native diagnostics classify failure only into a closed non-secret category", () => {
+  for (const [stderr, category] of [
+    ["password authentication failed for user secret", "AUTHENTICATION"],
+    ["SSL error: certificate verify failed secret", "TLS"],
+    ["connection refused secret", "CONNECT"],
+    ["invalid value for parameter secret", "CLIENT_CONFIGURATION"],
+    ["sensitive arbitrary error secret", "SERVER_SQL_OTHER"],
+  ])
+    assert.equal(
+      classifyNativeFailure({
+        rawExit: 2,
+        origin: "exit",
+        connectionClosed: true,
+        stderr,
+      }),
+      category,
+    );
+  for (const raw of [
+    { rawExit: -1, origin: "channel", stderr: "secret" },
+    { rawExit: -1, origin: "timeout", stderr: "secret" },
+    { rawExit: 0, origin: "exit", connectionClosed: true, stderr: "secret" },
+  ]) {
+    const category = classifyNativeFailure(raw);
+    assert.ok(NATIVE_FAILURE_CATEGORIES.includes(category));
+    assert.doesNotMatch(category, /secret/i);
+  }
+});
 function run() {
   return {
     schema: "hedefora.pg17.fixture-run.v1",

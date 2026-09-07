@@ -15,7 +15,11 @@ import {
   GO_IMAGE,
 } from "./live-runtime.mjs";
 import { command, requireLive, LiveError } from "./process.mjs";
-import { createNativePsqlExecutor, PG_BIN } from "./fixture-native-psql.mjs";
+import {
+  createNativePsqlExecutor,
+  PG_BIN,
+  NATIVE_FAILURE_CATEGORIES,
+} from "./fixture-native-psql.mjs";
 import { runStaticChecks, collectMigrationPlan } from "../run.mjs";
 import { runLiveSqlAcceptance, verifyMigrationBundle } from "../live-sql.mjs";
 import { strict } from "../../../../scripts/postgres-image/apk-runtime/sealed-io.mjs";
@@ -1010,6 +1014,52 @@ export function postgresConfiguration(negative) {
 const HBA =
   "local all all scram-sha-256\nhostnossl all all 0.0.0.0/0 reject\nhostnossl all all ::/0 reject\nhostssl all all 127.0.0.1/32 scram-sha-256\nhost all all 0.0.0.0/0 reject\nhost all all ::/0 reject\n";
 
+export function readinessFailureCode(key, database, result, category) {
+  const server = key === "primary" ? "P" : key === "negative" ? "N" : "U";
+  const phase =
+    database === "postgres"
+      ? "INIT"
+      : database === "hedefora_dev"
+        ? "APP"
+        : "UNKNOWN";
+  const exit =
+    Number.isInteger(result?.rawExit) &&
+    result.rawExit >= 0 &&
+    result.rawExit <= 255
+      ? String(result.rawExit)
+      : "UNKNOWN";
+  const state = /^[0-9A-Z]{5}$/.test(result?.sqlState ?? "")
+    ? result.sqlState
+    : "NONE";
+  const safeCategory = NATIVE_FAILURE_CATEGORIES.includes(category)
+    ? category
+    : "UNKNOWN";
+  return `FIXTURE_READINESS_${server}_${phase}_EXIT_${exit}_STATE_${state}_${safeCategory}`;
+}
+
+// A repeated start is acknowledged only after actual SQL readiness. A stopped
+// postmaster must have an observed clean close before a replacement is created.
+export async function ensurePostmasterStarted({ current, restart, readiness }) {
+  requireLive(
+    current &&
+      typeof current.isRunning === "function" &&
+      typeof restart === "function" &&
+      typeof readiness === "function",
+    "FIXTURE_START_REQUEST",
+  );
+  if (!current.isRunning()) {
+    const closed = await current.closed;
+    requireLive(
+      closed?.connectionClosed === true &&
+        closed.origin === "exit" &&
+        closed.rawExit === 0,
+      "FIXTURE_START_UNCLEAN_CLOSE",
+    );
+    await restart();
+  }
+  await readiness();
+}
+
 export async function runFixtureContainer() {
   let run = null,
     isolation = null,
@@ -1222,6 +1272,7 @@ export async function runFixtureContainer() {
       milliseconds = 10000,
     ) {
       const end = performance.now() + milliseconds;
+      let lastResult;
       while (performance.now() < end) {
         lease();
         requireLive(servers.get(key).isRunning(), "FIXTURE_POSTMASTER_EXITED");
@@ -1233,6 +1284,7 @@ export async function runFixtureContainer() {
           inputSql:
             "SELECT json_build_object('version',current_setting('server_version_num')::int,'ssl',current_setting('ssl'),'auth',system_user,'checksums',current_setting('data_checksums'),'encoding',current_setting('server_encoding'),'provider',datlocprovider,'locale',datlocale) FROM pg_database WHERE datname=current_database();",
         });
+        lastResult = result;
         if (
           result.rawExit === 0 &&
           result.connectionClosed &&
@@ -1258,7 +1310,14 @@ export async function runFixtureContainer() {
         }
         await delay(100);
       }
-      throw new LiveError("FIXTURE_READINESS_TIMEOUT");
+      throw new LiveError(
+        readinessFailureCode(
+          key,
+          database,
+          lastResult,
+          executor.lastFailureCategory(),
+        ),
+      );
     }
     await readiness(primary, "primary", "postgres", 15000);
     await readiness(negative, "negative", "postgres", 15000);
@@ -1321,24 +1380,27 @@ export async function runFixtureContainer() {
       start: async () => {
         lease();
         const current = servers.get("primary");
-        requireLive(!current.isRunning(), "FIXTURE_ALREADY_RUNNING");
-        await current.closed;
-        servers.set(
-          "primary",
-          startPostmaster({
-            directory: "/fixture/primary",
-            lifetimeMs: Math.max(
-              1,
-              Math.floor(
-                Math.min(
-                  leaseEnd - Date.now(),
-                  monotonicEnd - performance.now(),
+        await ensurePostmasterStarted({
+          current,
+          restart: async () => {
+            servers.set(
+              "primary",
+              startPostmaster({
+                directory: "/fixture/primary",
+                lifetimeMs: Math.max(
+                  1,
+                  Math.floor(
+                    Math.min(
+                      leaseEnd - Date.now(),
+                      monotonicEnd - performance.now(),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          }),
-        );
-        await readiness(primary, "primary");
+              }),
+            );
+          },
+          readiness: () => readiness(primary, "primary"),
+        });
       },
       stop: async () => {
         lease();

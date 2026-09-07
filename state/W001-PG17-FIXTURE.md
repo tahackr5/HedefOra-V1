@@ -113,3 +113,16 @@ altıEROFS; RW negatif kontrolde altı başarılı open/create strictFAIL42
 üretir. İki owned container removal/absence ve unchanged hash PASS;
 kanıta2ab493a9137e494c25d0e2d3ee4cf3cde0687d6f7856637d2efef935e6cae27.
 Bu davranış tanısı engine/full-tree yerine kullanılamaz.
+
+## Gerçek motor a4 ve bağımsız cold FAIL — f8552b1
+
+Exact f8552b17ff42ef46e63b9b7e88e48c08bf4dacb6/tree0dc66ee2330896eb112d75939091a27f3ca2fc8e
+owned ağsız fixture başladı; FIXTURE_READINESS_TIMEOUT ile durdu. SQL/Go
+receipt yok, host cleanup PASS. Failure artifact
+8571652e0ddef7d65e848f0761f3f28bea0665b311360ac5b299411935443126.
+Cold reviewer ayrıca P1 API cleanup tekrar-start uyumsuzluğunu doğruladı:
+test recovery sonunda çalışan primary'ye cleanup start503 veriyordu.
+Forward fix start idempotence'ını ancak gerçek SQL readiness ile kabul eder;
+stopped server için observed clean close/restart gerekir. Regresyonlar ve
+readiness aşaması/exit/SQLSTATE için sabit, sır içermeyen tanı sınıfları
+eklendi. Raw SQL/stderr/parola dışarı taşınmaz; eski FAIL korunur.

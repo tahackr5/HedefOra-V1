@@ -95,6 +95,11 @@ goEvidence, cleanup. Hata code/failedCase ve execution status taşır;
 raw SQL/error/log/env/key/token/parola dışarı çıkmaz. Host final receipt'e
 actual inspect/start/wait/exit and owned removal/absence kanıtını ekler.
 
+Controller start tekrarı yalnız actual SQL readiness sonrası başarılıdır;
+stopped postmaster observed clean close vermeden yeniden başlatılmaz.
+Readiness başarısızlığı primary/negative, initial/app aşaması, bounded exit,
+SQLSTATE ve kapalı native hata sınıfı içerir; raw stderr tanı çıktısı değildir.
+
 ## Negatifler, tamamlama ve rollback
 
 Forged/expired/stale/future/same-count-different-finding admission; source,
