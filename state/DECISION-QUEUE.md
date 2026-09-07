@@ -135,6 +135,21 @@
 - Resolution: DEC-030 / ADR-0020; güncel uygulama ve NOT_RUN admission kapıları `state/W001-PHASE-B.md` içindedir. Onay scanner/engine/review PASS yerine geçmez.
 - Closed commit: `7cbf26e6605b8129cbeb498cd60984550fd8afad`; continuous ownership seal `bb57a51bfe3cd0c3cae6d3197ef2b69462d38b17`.
 
+## Son owner kararı
+
+### DQ-011 — Test-time PG17 admission istisnası
+
+- Opened/owner decision: 2026-09-07; owner açıkça yalnız ağsız, cap-dropALL,
+  ephemeral local/CI test fixture execution onayı verdi.
+- Önceki çatışma: ADR-0020/DEC-030 tüm image execution'ında blocking advisory
+  reddeder; Phase B gerçek engine acceptance bu yüzden NOT_RUN idi.
+- Resolution: DEC-031/ADR-0021, ayrı exact-digest test-fixture profile ve
+  sonlu risk kabul kaydı; eski/global/production policy değişmez.
+- Sınır: owner risk acceptance scanner/review/engine PASS değildir. Testler
+  sonrası PR draft kaldırılabilir; main merge yeni exact-SHA onayı ister.
+- Implementation/evidence: `tests/integration/postgres/live/FIXTURE-CONTRACT.md`;
+  source/exception/tool/image/DB bindings ve negative gates pending.
+
 ## Item template
 
 - ID:

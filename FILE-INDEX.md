@@ -76,6 +76,7 @@
 ## Aktif W001 control-plane ve runtime foundation
 
 - `state/W001-PHASE-B.md` (PR #6 post-merge exact kanıtı, onaylı DQ-008/009/010 Phase B DAG/path ownership ve admission sınırları)
+- `state/W001-PG17-FIXTURE.md` (DEC-031 owner test-time istisnası, cf69 checkpoint kapanışı ve yeni engine gate kanıtı)
 
 - `state/W001-OWNERSHIP.md` (W001 immutable-base yazma sahipliği ve görev DAG'ı)
 - `state/W001-OWNERSHIP.json` (W001 commit aralığı ve path allowlist kanıtı)
@@ -93,6 +94,8 @@
 
 - `scripts/postgres-image/apk-runtime/**` (Stage S data-only signed-APK/OCI byte replay; execution authority null)
 - `tests/integration/postgres/live/RUNNER-CONTRACT.md` (kapalı PG17 launcher, private fixture v2 ve engine NOT_RUN sınırı)
+- `tests/integration/postgres/live/FIXTURE-CONTRACT.md` (DEC-031 ayrı local/CI risk kabulü; network none, cap-drop ALL, ephemeral gerçek engine matrisi)
+- `security/postgres-test-fixture-admission.json` (sonlu raw scan/OCI/DB/lisans hash bağlı test istisnası; production admission yok)
 
 
 Ana oturum bütün dosyaları her görevde okumaz. İlgili read map kullanılır; alt ajanlar kısa sonuç ve file references döndürür.

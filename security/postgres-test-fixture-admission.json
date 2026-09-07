@@ -1,0 +1,133 @@
+{
+  "schema": "hedefora.pg17.test-fixture-admission.v1",
+  "decision": "DEC-031",
+  "approval": "OWNER_ACCEPTED_TEST_TIME_RISK",
+  "approvalDate": "2026-09-07",
+  "expiresAt": "2026-09-08T06:27:35.000Z",
+  "scope": "unchanged-non-redistributed-local-ci-test-fixture-only",
+  "productionAdmission": false,
+  "vexNotAffectedClaim": false,
+  "image": {
+    "name": "ghcr.io/cloudnative-pg/postgresql:17.11-minimal-trixie",
+    "platform": "linux/amd64",
+    "registryIndex": "sha256:c3c572b1cae6404fb508516456b0288d1c35feda39d4ef59857af2c9abe9282d",
+    "manifest": "sha256:74bd7677a9d9bde0258dc3593106539a1fd5a0b23fecb4ee97dfb67589f8b6f2",
+    "config": "sha256:2479c67c1284d28d3d03a0eb8f0cff34d1388a20b5e11f8ea0f9756e918b21bb",
+    "publisherRevision": "9f65985cea224d41cfd1866b74f005c520e8a1e1",
+    "cryptographicSignerVerification": "NOT_RUN",
+    "reproduciblePublisherBuild": "NOT_PROVEN"
+  },
+  "vulnerabilities": {
+    "scanStatus": "FAIL",
+    "rawExit": 2,
+    "grypeVersion": "0.118.0",
+    "syftVersion": "1.51.1",
+    "databaseBuilt": "2026-09-06T06:27:35Z",
+    "databaseSha256": "b46475b87396aac20557f409356989900390786038759b213dc69a057051b598",
+    "databaseMaxAgeMs": 172800000,
+    "matches": 357,
+    "blockingMatches": 184,
+    "blockingMultisetSha256": "92a98d1ea3e9706bb0ee71c08320d720384e854f2a20bd8b1c1094f5e93348ee",
+    "blockingAlgorithm": "primary-or-related-unknown-high-critical-or-cvss-base-gte7; full-recursive-codepoint-key-canonical-match-strings-sorted-with-duplicates; sha256-json-array",
+    "ignoredMatches": 0
+  },
+  "isolation": {
+    "network": "none",
+    "user": "26:102",
+    "capDrop": ["ALL"],
+    "readOnlyRoot": true,
+    "noNewPrivileges": true,
+    "seccomp": "default",
+    "hostPorts": false,
+    "hostNamespaces": false,
+    "dockerSocket": false,
+    "writableHostMounts": false,
+    "persistentVolumes": false,
+    "syntheticDataOnly": true,
+    "memoryBytes": 1610612736,
+    "memorySwapBytes": 1610612736,
+    "nanoCpus": 2000000000,
+    "pids": 256,
+    "shmBytes": 134217728,
+    "leaseMaxMs": 1200000,
+    "requirePrestartInspect": true,
+    "requireDuringRunInspect": true,
+    "requirePostExitInspect": true,
+    "requireOwnedRemovalAndAbsence": true
+  },
+  "license": {
+    "noticeInventory": "PASS",
+    "scope": "unchanged-non-redistributed-internal-test-use",
+    "demonstratedInternalUseBlocker": "NONE_FOUND",
+    "correspondingSourceCompleteness": "NOT_PROVEN",
+    "distributionAdmission": false,
+    "inventorySha256": "00b094982e95a24272da217ead194ca8c751a5dc7a6ce91f53b5e99a3e412435"
+  },
+  "evidenceFiles": [
+    {
+      "path": "cnpg-minimal.grype.json",
+      "sha256": "69d5d21fdbfba53a2f623f2c7e79398f13fe70db129c1a6f340b5e193361710d",
+      "bytes": 1605835
+    },
+    {
+      "path": "cnpg-minimal.grype.json.stderr.log",
+      "sha256": "3aba8e9ff2cdedfdade6e3ff7eb2becfb1233566b1914100e235cb6a4fdee683",
+      "bytes": 84
+    },
+    {
+      "path": "cnpg-minimal.syft.json",
+      "sha256": "74e863faf3452904b83b454a734f68570b99d8f9b1d4aa8e02e5dd8f030801a3",
+      "bytes": 1448612
+    },
+    {
+      "path": "cnpg-minimal.summary.json",
+      "sha256": "05d8f21a0d5d4ef240493b2de8cc9fa605cad8b7046f357b559af6110f3a62b9",
+      "bytes": 79717
+    },
+    {
+      "path": "scan-proof.json",
+      "sha256": "e999dcd71d4104b3f566b7b8338e989a87b2c720a118ec1d9768b6d81efcf46f",
+      "bytes": 6479
+    },
+    {
+      "path": "catalog-proof.json",
+      "sha256": "31a31d8969848571c1f8bad8506f3c736c6edb4413006a617248d35da75f98a7",
+      "bytes": 3348
+    },
+    {
+      "path": "cnpg-minimal.inventory-db-parity.json",
+      "sha256": "2a511e0de1e4ce269bc1ad3cf5739d75a2c6654226ec05cda1d7afdaa2bae6e9",
+      "bytes": 20665
+    },
+    {
+      "path": "cnpg-minimal.independent-inventory-proof.json",
+      "sha256": "bd205d09e1009af30a5fea61290155bdb1977354cbbf202f5461388999c5d5dc",
+      "bytes": 1292
+    },
+    {
+      "path": "cnpg-minimal.provenance.json",
+      "sha256": "40f92c92c4cfccb0756ac20f86fc03dc9cea8f68d88208589111a5fd2e409adb",
+      "bytes": 4634
+    },
+    {
+      "path": "cnpg-minimal.attestation-0.json",
+      "sha256": "698c6cf0fb4613eff4db25d70ce96b6f0d7071dfb075ddd4c19bec264ca8fc37",
+      "bytes": 5023894
+    },
+    {
+      "path": "cnpg-minimal.attestation-1.json",
+      "sha256": "3d5a2467d0bae71831beda02d183a618b058317e973c4a84fc7a291b2ce93389",
+      "bytes": 21126
+    },
+    {
+      "path": "cnpg-minimal.oci/index.json",
+      "sha256": "145432e34f3082e8c4dd6f053cd3df71c5a2597aa57046555c74536829f40756",
+      "bytes": 236
+    },
+    {
+      "path": "cnpg-minimal.oci/oci-layout",
+      "sha256": "18f0797eab35a4597c1e9624aa4f15fd91f6254e5538c1e0d193b2a95dd4acc6",
+      "bytes": 30
+    }
+  ]
+}

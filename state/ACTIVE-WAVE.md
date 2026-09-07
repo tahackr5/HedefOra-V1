@@ -19,6 +19,13 @@
 
 ## Historical task/gate record
 
+Güncel devam kaydı (2026-09-07): `state/W001-PG17-FIXTURE.md`.
+cf69d6a exact checkpoint local/hosted/CodeQL/R016/cold PASS; önceki444 FAIL
+tarihseldir. Owner DEC-031 ile yalnız networknone/cap-dropALL/ephemeral
+test-time istisnasını onayladı. Yeni fixture profili uygulanıyor; engine
+NOT_RUN, PR8 DRAFT, production admission yok. Üstteki last-checkpoint,
+istisna öncesi tarihsel durumdur; yeni exact gate yerine kullanılamaz.
+
 Aşağıdaki geçmiş tablolar yalnız kendi exact SHA kapsamındadır. Güncel Phase B kaydı `state/W001-PHASE-B.md`, tarihsel controller kanıtı `state/W001-R016-GO-GRAPH.md` içindedir. Eski hosted execution SUCCESS, canonical Go1.26.7 admission değildir.
 
 ## Active tasks

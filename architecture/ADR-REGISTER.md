@@ -149,3 +149,57 @@ Eski critical/high sinyalli PostgreSQL image'leri inert kalır. Yeni image; dige
 Npm/Go R-016 policy dosyaları değiştirilmez. Image paket lisansları ve varsa dağıtım/source yükümlülükleri ayrı kayıt ve review ister; image üretim onayı dağıtım/lisans exception'ı değildir. Başlangıç hedefi yalnız disposable local/CI ortamıdır; registry yayınlama veya staging/production deployment yoktur. Kaynak/DB publisher compromise ve reproducible-build riskleri kanıtta açık tutulur. Execution admission, canonical scan ve bağımsız security kabulünden sonra açılır. Rollback inert Compose'u korumak ve yalnız bu task'ın disposable kaynaklarını temizlemektir; production/veri migration etkisi yoktur.
 
 `templates/ADR.md` kullanılır. Yeni karar burada yalnız tek satır özetle indekslenir.
+
+## ADR-0021 — Ağsız, geçici PG17 test-fixture risk kabulü
+
+- Durum: Accepted; owner onayı 2026-09-07, DEC-031 / DQ-011.
+- Kapsam: W001-T04F Phase B gerçek SQL/TLS/SCRAM/pool/readiness acceptance.
+
+Owner, bilinen zafiyetler için yalnız local/CI test-time execution istisnası
+vermiştir. ADR-0020 hardened-image ve production kuralları değişmez. Ayrı
+test profili, mevcut glibc test araçlarıyla uyumlu CNPG17.11 minimal Trixie
+adayının exact OCI manifest/config ve ham scanner/DB/sonlu bulgu kimliğine
+bağlanır. Vulnerability sonucu FAIL olarak saklanır; `not_affected`, ignore,
+only-fixed veya tüm image'lere yayılan bir PASS kullanılmaz. DB48saat
+freshness ve run20dakika bütçesi korunur. Lisans/provenance ayrıca
+değerlendirilir; bu onay bilinmeyen byte kaynağı veya dağıtım lisansı değildir.
+
+İki PostgreSQL process'i ve test istemcileri tek `--network none` container'ın
+loopback namespace'inde bulunur. Container explicit26:102 nonroot, read-only
+root, cap-dropALL/no-new-privileges/default seccomp, private PID/IPC,
+bounded memory/CPU/PID ve UID-owned ephemeral tmpfs kullanır. Publish port,
+host network/PID/IPC, ek capability/device, Docker socket, gerçek credential,
+production data, writable host bind veya kalıcı volume yoktur. Host create
+sonrası/start öncesi ve koşum boyunca actual inspect'i doğrular; receipt
+self-claim'i izolasyon authority'si değildir. Exact owned ID+etiket ile
+cleanup ve absence zorunlu; timeout/iptal/lost ACK hata olarak korunur.
+
+Go1.26.7 integration/race binary'leri, test2json ve TLS generator ayrı mevcut
+pinned Go tooling aşamasında derlenir; kaynak/tool/build provenance ve
+binary hash'leri bağlanır. Güvenilir readonly Node supervisor container'da
+native initdb/postgres/psql süreçlerini yönetir. Mevcut migration/role SQL,
+SQL acceptance ve iki Go v2 fixture consumer'ı korunur. Her SQL koşulu ve
+tam altı package-qualified Go testi gerçek engine üzerinde PASS, skip0 ve
+raw0 ister. Fixture testleri image/hardened-entrypoint/production kabulü
+değildir; PG/Node/Go aynı UID tek trust domain, hostile image'a karşı
+bağımsız attestation iddiası yoktur.
+
+Eski `postgres:live` ve APK authority null kalır; inert Compose değişmez.
+Test fixture imajı yayımlanmaz, dağıtım artifact'ına bağlanmaz. Rollback
+ayrı fixture profilini kapatmak/dar reviewed revert ve yalnız owned geçici
+resource'ları temizlemektir. API/DB veri migration etkisi yoktur. Başarılı
+engine/full-tree/hosted/security/cold sonrası yalnız PR #8 draft kaldırma
+yetkisi verilmiştir; main merge bu kararla yapılmaz.
+
+Docker Desktop Windows bind mount'ları Linux'ta0777 mode gösterebilir;
+bu profil için gerçek readonly mount sınırı esastır. Host exact path/RWfalse,
+container mountinfo ro/no nested mount ve her bind'de mevcut regular file'ı
+truncate etmeden write-open + benzersiz file-create girişimlerinin yalnız
+EROFS ile reddi zorunludur. Stat mode biti tek başına RO kanıtı değildir.
+Symlink/hardlink, canonical path, FD/fstat/inventory/hash kontrolleri korunur.
+Güvenilir host/daemon ve private snapshot üzerinde eşzamanlı writer yokluğu
+varsayılır; pre/post hash kötü niyetli ABA yarışını dışlayan bir kanıt değildir.
+Bağımsız security değerlendirmesi bu uygulama ayrıntısını uygun bulmuştur;
+benign pinned Go helper gerçek Docker29.7.2/Node24.20 üzerinde mode0777,
+RWfalse, ikiEROFS ve owned removal/absence PASS vermiştir (kanıt
+e7b4cdbf092375d12e8b801219318ab4ff20564f8a25c6da3c155a5603507a2b).

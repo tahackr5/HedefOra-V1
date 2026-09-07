@@ -179,6 +179,19 @@ aralığın allowlist'i gelecekte yazma yetkisi değildir; validator değişmez.
 
 ## Secret ve artifact sınırı
 
+### W001-T04FB — DEC-031 isolated test fixture
+
+Başlangıç source checkpoint cf69d6a; trusted/task-phase base aba3d13 aynı.
+Yeni ayrı fixture-admission/run root, fixture-container/native/psql assigned
+runtime worker, fixture-build aynı worker'ın sonraki disjoint görevi;
+fixture-host-policy ayrı worker. Handoff sonrası root yalnız gereken
+entegrasyon düzeltmelerini yapar. Shared decision/ADR/DQ/index/package,
+check-generated allowlist ve state dosyaları yalnız orchestrator.
+Final manifest actual committed path union'u kapsar; immutable SQL,
+Go runtime consumer'ları ve protected R016 policy değişmez. Güvenlik/cold
+read-only, image/provenance araştırması TEMP-only. Ayrıntı ve acceptance:
+`state/W001-PG17-FIXTURE.md`; artifact secret-free, source yalnız public Git bytes.
+
 ### W001-T04FB — Stage S / runner continuation
 
 Source baseline2ee64c1; task-phase/trusted base aba3d13 ve tarihsel wave start

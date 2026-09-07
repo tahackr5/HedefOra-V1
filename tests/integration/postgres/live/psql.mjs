@@ -76,8 +76,42 @@ export function createPsqlExecutor({
     /^[a-f0-9]{64}$/.test(containerId) && /^[a-f0-9]{32}$/.test(runId),
     "SQL_CONTAINER",
   );
+  requireLive(typeof docker === "function", "SQL_TRANSPORT");
+  return createPsqlCore({
+    runId,
+    passwords,
+    readLogs,
+    markOrphanRisk,
+    commandBudget,
+    host: socketOnly ? "/run/postgresql" : "127.0.0.1",
+    sslMode: socketOnly ? "disable" : "verify-full",
+    launchClient(args, options) {
+      const prefix = ["exec", "-i", "--user", "70:70"];
+      for (const key of Object.keys(options.env)) prefix.push("--env", key);
+      return docker(
+        [...prefix, containerId, "/usr/libexec/postgresql17/psql", ...args],
+        options,
+      );
+    },
+  });
+}
+
+// Shared SQL validation/framing/evidence core. Native and Docker transports
+// supply their real child launcher; neither transport emulates the other.
+export function createPsqlCore({
+  launchClient,
+  runId,
+  passwords,
+  readLogs,
+  markOrphanRisk,
+  commandBudget = (requested) => requested,
+  host = "127.0.0.1",
+  port = "5432",
+  sslMode = "verify-full",
+}) {
+  requireLive(/^[a-f0-9]{32}$/.test(runId), "SQL_CONTAINER");
   requireLive(
-    typeof docker === "function" &&
+    typeof launchClient === "function" &&
       typeof readLogs === "function" &&
       typeof markOrphanRisk === "function",
     "SQL_TRANSPORT",
@@ -90,13 +124,13 @@ export function createPsqlExecutor({
     requireLive(++serial < 10000000, "SQL_SESSION_LIMIT");
     const application = `ho_${runId.slice(0, 16)}_${serial}`;
     const env = {
-      PGHOST: socketOnly ? "/run/postgresql" : "127.0.0.1",
-      PGPORT: "5432",
+      PGHOST: host,
+      PGPORT: port,
       PGUSER: ROLES[request.role],
       PGDATABASE: request.database ?? "hedefora_dev",
       PGPASSWORD: passwords[request.role],
       PGAPPNAME: application,
-      PGSSLMODE: socketOnly ? "disable" : "verify-full",
+      PGSSLMODE: sslMode,
       PGSSLROOTCERT: "/fixture/tls/ca.crt",
       PGSSLMINPROTOCOLVERSION: "TLSv1.2",
       PGREQUIREAUTH: "scram-sha-256",
@@ -114,21 +148,17 @@ export function createPsqlExecutor({
         /^synthetic-pg17-[a-f0-9]{64}$/.test(env.PGPASSWORD),
       "SYNTHETIC_CREDENTIAL_REQUIRED",
     );
-    const args = ["exec", "-i", "--user", "70:70"];
-    for (const key of Object.keys(env)) args.push("--env", key);
-    args.push(
-      containerId,
-      "/usr/libexec/postgresql17/psql",
+    const args = [
       "-X",
       "-Atq",
       "-w",
       "--set=ON_ERROR_STOP=1",
       "--set=VERBOSITY=sqlstate",
-    );
+    ];
     for (const [key, value] of Object.entries(request.variables ?? {}))
       args.push(`--set=${key}=${value}`);
     const since = new Date().toISOString();
-    const process = docker(args, {
+    const process = launchClient(args, {
       env,
       timeoutMs,
       maxBytes: 131072,
