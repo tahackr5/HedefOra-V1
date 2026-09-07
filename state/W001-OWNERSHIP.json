@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "35e621d511443f2562c9e463b6b920d4abecbf7e",
+  "verifiedThrough": "8fbc4558a3ea687e15f6ded5a1df8f8495f1d4d1",
   "trailingAllowedPaths": [
     "state/W001-OWNERSHIP.json"
   ],
@@ -959,6 +959,20 @@
       "base": "57caff3f6405e6ef8bc3ff9dcb64109cb5954666",
       "head": "35e621d511443f2562c9e463b6b920d4abecbf7e",
       "allowedPaths": ["scripts/check-generated.test.mjs"]
+    },
+    "W001-T04FB-fixture-format-seal": {
+      "base": "35e621d511443f2562c9e463b6b920d4abecbf7e",
+      "head": "43e26cb5d11439104198be621dfc1eca8a0f3337",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-fixture-inspect-omitempty": {
+      "base": "43e26cb5d11439104198be621dfc1eca8a0f3337",
+      "head": "8fbc4558a3ea687e15f6ded5a1df8f8495f1d4d1",
+      "allowedPaths": [
+        "state/W001-PG17-FIXTURE.md",
+        "tests/integration/postgres/live/fixture-host-policy.mjs",
+        "tests/integration/postgres/live/fixture-host-policy.test.mjs"
+      ]
     }
   }
 }
