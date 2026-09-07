@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "32ca6ee3257f2cf3fff09fb750c2a466f962b49b",
+  "verifiedThrough": "42b8494670281cdb69a33e2dfb35a44315405e8b",
   "trailingAllowedPaths": [
     "state/W001-OWNERSHIP.json"
   ],
@@ -1047,6 +1047,21 @@
       "base": "1ef7c3ac1461f33e48bd54c9b1e5917b9b708b31",
       "head": "b0265440def08b10f0815941864e50a0ab00716c",
       "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-fixture-startup-identity-seal": {
+      "base": "32ca6ee3257f2cf3fff09fb750c2a466f962b49b",
+      "head": "0e9046948c770c7574cb5a563fc046cc05607530",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-fixture-go-diagnostics": {
+      "base": "0e9046948c770c7574cb5a563fc046cc05607530",
+      "head": "42b8494670281cdb69a33e2dfb35a44315405e8b",
+      "allowedPaths": [
+        "state/W001-PG17-FIXTURE.md",
+        "tests/integration/postgres/live/FIXTURE-CONTRACT.md",
+        "tests/integration/postgres/live/fixture-container.mjs",
+        "tests/integration/postgres/live/fixture-container.test.mjs"
+      ]
     },
     "W001-T04FB-fixture-startup-identity": {
       "base": "b0265440def08b10f0815941864e50a0ab00716c",
