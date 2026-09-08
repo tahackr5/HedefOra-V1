@@ -1,11 +1,29 @@
 # W001-T04F Phase B — plan, ownership ve kanıt
 
-- Status: IN_PROGRESS; tarih: 2026-09-06.
+- Status: IN_PROGRESS; güncel checkpoint tarihi: 2026-09-08.
 - Initial Phase B immutable base: `7a1e124e432b51694e7d60c0d3d1589867a8835f`; tree `ec6d12847c657adedbd84e44565598d234c7b928`.
 - Current continuation checkpoint: `aba3d13ed057bbe80a2e67486058180479c3c50e`; tree `ed51da48638d362ff52169658321604dedba442a`. PR #7 owner merge ve aşağıdaki post-merge admission sonrasında ilerletildi; mevcut runtime lineage yeniden yazılmadı.
 - Historical W001 base değişmez: `bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b`.
 - Orchestrator branch/worktree: `codex/w001-t04f-phase-b`, `C:\Users\ihsan\.codex\worktrees\HedefOra\W001\T04FB`.
 - Etkin model/effort tool kanıtında doğrulanmadı: UNKNOWN/UNKNOWN; repository config değiştirilmedi, alt ajanlara override gönderilmedi.
+
+## Güncel runtime engine checkpoint — 2026-09-08
+
+DEC-031/DQ-011 ayrı test-time profili ile exactff09a6cfa95a30b1526e3144ed632afde1cd8203
+/treee1c7a6b95e886473e8d0917984af4d92c5b31f80 A10 actual engine PASS:
+SQL170, Go6/race, TLS/SCRAM/pool ve /health/ready startup/outage/recovery/drain.
+Bağımsız source/admission/engine security, artifact replay ve actual owned
+daemon absence PASS. Ayrıntı, tarihsel A1-A9 FAIL'ler, günlük EPSS artışları,
+fresh DB48h/run20min kaydı ve evidence hash'leri state/W001-PG17-FIXTURE.md.
+Bu kayıt final metadata seal öncesidir; sonraki exact source kapıları ve PR
+owner raporu artifacts/PR8-PHASE-B-OWNER-GATE.md üzerinden ayrı doğrulanır.
+Production/hardened-image R026 BLOCKED_EXTERNAL ve eski inert services
+korunur; yerel fixture PASS production dağıtımı değildir. T04G/River ve
+main merge burada yapılmadı; final owner gate sonrası yeni yetki gerekir.
+
+Aşağıdaki eski image/engine NOT_RUN ve hosted FAIL anlatımları tarihsel
+exact checkpoint'lere aittir; yeni A10 kanıtını geçersiz kılmaz veya kendi
+kendilerine final exact source PASS'ına dönüşmez.
 
 ## PR #6 post-merge doğrulaması
 

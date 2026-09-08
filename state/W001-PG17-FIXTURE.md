@@ -1,7 +1,7 @@
 # W001 Phase B — owner test-fixture admission
 
-Güncel durum: IMPLEMENTING; son engine A9 FAIL, düzeltme sonrası yeni engine
-bekleniyor; PR #8 DRAFT. Güncel 2026-09-08 kaydı dosya sonundadır. DEC-031/DQ-011,
+Güncel mühür-öncesi checkpoint: gerçek A10 engine PASS; final exact
+checkpoint kapıları bekleniyor. PR #8 draft kaldırma koşulu dosya sonundadır. DEC-031/DQ-011,
 owner 2026-09-07. Task-phase/trusted base aba3d13 ve historical wave start
 bde560f değişmez. Başlangıç checkpoint cf69d6a129bd1bc95af9ef90dd8b06b7edecb34d,
 tree0c1c34c5784a55c3f43c4b5f43633ba0c0fa5c85; branch codex/w001-t04f-phase-b.
@@ -416,3 +416,70 @@ test dosyası170/170PASS, fail/cancel/skip/todo0, gerçek process exit0.
 ExactlyDBbuilt ve expiry-1ms kabul; built-1ms/expiry/eski zaman/NaN/Infinity
 ret, DBhash/DBtime/age ve önceki pin/scope mutasyonları ret. Bu odaklı kaynak
 kanıtı full-tree/engine veya yeni exact security sonucu değildir.
+
+## A10 — gerçek PG17 engine checkpoint PASS, 2026-09-08
+
+Source90d7d151136c6aa1efa68deb6da8c7b027f9bed7, JSON-only ownership seal
+ff09a6cfa95a30b1526e3144ed632afde1cd8203 /
+treee1c7a6b95e886473e8d0917984af4d92c5b31f80. Continuous W001repolint ve
+generated boundary exit0, clean source. Independent PREEXEC_SOURCE_AND_DATA_PASS:
+gerçek admitFixture/fixtureArchive46file+DB/OCI/license okuması raw0,
+altı actual-receipt projection eşleşmesi,6pozitif/19negatif PASS. Bu admission
+Grype FAIL'i değiştirmedi; current finite4722d2c… test kaydı kullanıldı.
+
+Canonical Node24.20 fixture-run.mjs config-a10-20260908 ile actual process
+exit0 ve source/tree-bound PASS verdi (tool session93593, terminal77c0d7).
+Run52936b824d862b2d986fba1205f52605, issued2026-09-08T16:44:07.846Z;
+PG start16:44:09.393Z, finish16:45:14.679Z, süre65285ms/20minlease içinde.
+Final-result SHA256752c9d0c503c33ff02948f425674535ee159057282b3a9b989efa2c5bb2c33ec;
+container-receipt17e1b8b31d3174e468c6d46a1af94598acd28a693e99a6570ec79157966225a5;
+toolbundle34a23b84069602d9ca9eaf7ac73d58fab55a1a576f84752d940386229e088ce1.
+
+Gerçek SQL170/170 sıralı case PASS: immutable up/down/checksum/rollback,
+role catalog/NOLOGIN/password-null/membership/ACL, DML/DDL/advisory-lock ve
+hedef-dışı DB reddi. Readonly28P01, diğer altı login-denied42501; lock3013ms
+55P03, statement15002ms57014, idle15097ms25P03. Altı exact Go test/iki package
+PASS: TLS/SCRAM, yanlış CA/hostname/parola ve plaintext fallback reddi,
+ambient endpoint sınırı, pool capacity/deadline/reuse/Close, gerçek in-flight
+cancel/recovery ve API startup/outage/recovery/drain. Binary/converter0/0,
+fail/skip0, Go1.26.7/race/integration. /health/ready startup503→200,
+outage503→200 ve drain sonrası geç başarı503; health/live bağımsızlığı korunur.
+
+Owned container ae217e59aa69b5851cf8bc8f4c841708657d54cadae9cad1cacc41c2cd2fdabc,
+üç actual inspect ile exact profile bağlı,59host event raw0; OOMfalse.
+İç iki postmaster close ile dış host removal ayrı authority'dir. Host
+ownedRemovalAndAbsence PASS ve source/tools/input post hash PASS. Ayrı
+güncel exact ID/name/run+source label listeleri boş, inspect NoSuchContainer
+raw1; bağımsız verifier hiçbir cleanup komutu çalıştırmadı.
+
+Independent PASS_ENGINE_SECURITY_SCOPE ve artifact replay PASS:
+SQL170/Go6/full Git snapshot/tool/input/inspect/lifecycle kontrolleri eşleşti.
+A9 CLOSED_VERIFIED_TEST_ORACLE_ONLY; production leak veya immediate
+server-side SQL cancellation düzeltilmiş iddiası yok. A1-A9 FAIL'ler saklı.
+Offline replay proof20641c62c427035687a72001cb881b7861117ec1692aa7bfc3a14c7b7783304b.
+İlk replay preflight NON_CANONICAL_PATH/raw1 proof6d71b8758843fa1a8e253708452ca864aa8d334c712e7c1874468e8a5b1ba9c0
+korundu. pnpm Node executable AppX canonical path/nlink4 nedeniyle strict
+verifier reddetti; aynı5c9760… hash'li exclusive ordinary TEMP kopya
+canonical+nlink1 ile geçti. Verifier kodu/eşikleri değiştirilmedi.
+
+Kanıt sınırı: persisted inspect JSON yeniden pretty-encoded olduğundan
+saklanmayan tüm raw inspect stdout hash'leri replay edilmiş sayılmaz.
+Yapısal üç inspect ve sekiz bilinen-output hash replay ayrıdır; ana CLI raw0
+tool gözlemi, gerçek admission ve güncel daemon absence ayrı kanıtlardır.
+Trusted host/daemon ve eşzamanlı snapshot writer yokluğu varsayımı sürer.
+Cryptographic execution attestation, malicious-image isolation veya
+production/hardened-image admission iddiası yoktur.
+
+### Final exact checkpoint protokolü
+
+Bu state/ledger promotion'ı yeni exact SHA üretir; A10 PASS yeni SHA'ya
+yeniden etiketlenmez. Yeni engine koşumu, clean-clone27quality gate,
+nonroot full CI, local/trusted+push hosted R016, dört dilli CodeQL ve fresh
+security/cold sonucu ayrı hash-bağlı artifact'larda tamamlanır. Final rapor
+artifacts/PR8-PHASE-B-OWNER-GATE.md; ilgili exact SHA ve tüm raw exit/hash
+bağları olmadan PR8 draft kaldırılmaz. Hosted source gate, yerel PG engine
+yerine geçmez. PR8 merge ayrıca yeni exact-head owner onayı ister; post-merge
+full-tree/CI/R016 sonraki yetkili adımdır. R026 production/hardened-image
+BLOCKED_EXTERNAL, R014 server enforcement ve CodeRabbit/Sonar boşlukları
+PASS sayılmaz. Rollback reviewed dar revert veya yeni profili kullanmama;
+production/SSH/DNS/secret/gerçek veri mutation yoktur.

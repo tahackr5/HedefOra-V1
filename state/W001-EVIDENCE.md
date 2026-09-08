@@ -357,3 +357,20 @@ ulaşılabilir taşma bulmadı. Dar cleanup ve literal-bound static-proof
 değişiklikleri, odaklı Node15/15 ve actual nonrootLinux reproducer/configrace
 kanıtları `state/W001-PHASE-B.md` içindedir. Yeni sealed-head gate'leri
 henüz beklenir; PR DRAFT/owner-ready=false/image BLOCKED_SECURITY.
+
+## 2026-09-08 — PG17 gerçek engine ve final checkpoint ayrımı
+
+cf69 checkpoint local/hosted/CodeQL/R016/cold PASS ve ayrı DEC-031 test-only
+admission kaydı state/W001-PG17-FIXTURE.md içindedir. Aynı immutable image
+için fresh DB/risk kaydı4722d2c… expiry2026-09-10T06:30:10Z/run20min;
+GrypeFAIL/raw2/184blocking ve günlük EPSS artışları korunur. Exactff09a6c /
+treee1c7a6b A10 SQL170/Go6/race/host isolation/removal/posthash PASS,
+independent source/data/engine security ve artifact+daemon replay PASS.
+Final-result752c9d0c503c33ff02948f425674535ee159057282b3a9b989efa2c5bb2c33ec;
+replay20641c62c427035687a72001cb881b7861117ec1692aa7bfc3a14c7b7783304b.
+Önceki A1-A9 FAIL, A10 offline verifier canonical-path preflightFAIL ve eski
+02a1df kalite kanıtı yalnız kendi exact scope'unda korunur. Bu state
+promotion'ının yeni exact engine/full-tree/local+hostedR016/CI/CodeQL ve
+fresh review'leri ayrı artifact'larda tamamlanır; final owner raporu
+artifacts/PR8-PHASE-B-OWNER-GATE.md. R016 istisnası/production admission
+üretilmez; raw inspect stream'in saklanmayan byte'ları replay edilmiş sayılmaz.

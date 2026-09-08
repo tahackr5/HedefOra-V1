@@ -148,7 +148,11 @@
 - Sınır: owner risk acceptance scanner/review/engine PASS değildir. Testler
   sonrası PR draft kaldırılabilir; main merge yeni exact-SHA onayı ister.
 - Implementation/evidence: `tests/integration/postgres/live/FIXTURE-CONTRACT.md`;
-  source/exception/tool/image/DB bindings ve negative gates pending.
+  exactff09a6c A10 source/exception/tool/image/DB bindings, SQL170/Go6 ve
+  host isolation/cleanup PASS; state/W001-PG17-FIXTURE.md. Fresh finite
+  DB kaydı original ownerDate2026-09-07'yi korur; expiry2026-09-10T06:30:10Z.
+  Grype FAIL/EPSS artışları ve production exclusion değişmedi. Final metadata
+  seal'in yeni exact engine/full-tree/R016/hosted/review kapıları ayrı beklenir.
 
 ## Item template
 
