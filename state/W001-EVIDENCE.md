@@ -528,6 +528,24 @@ prefix/body inequality veya severe `00000` artık `SQLSTATE_INVALID` typed
 terminal error'dır; no-evidence `null`, unrelated/non-severe ignore,
 partial-tail retry ve ambiguity korunur. Native missing/mismatch + valid
 satırın hem kaldığı hem kaybolduğu regression matrisi public channel/null
-sonucunu doğrular. Exact Node24.20.0 iki-file suite `326/326`, fail/skip/todo
-`0`, Prettier ve diff check exit `0`. State promotion/seal ve bütün exact
+sonucunu doğrular. Exact Node24.20.0 iki-file suite `326/326`; failed, skipped
+ve pending test sayıları `0`. Prettier ve diff check exit `0`. State
+promotion/seal ve bütün exact
 local/engine/hosted/security/cold kapıları henüz NOT_RUN'dır.
+
+### S4 full-tree marker FAIL ve dar state düzeltmesi
+
+İlk JSON-only seal S4 `804c877958f8e1825d6cfa8b9387a22a580d818a`, tree
+`eadb3fcb0629b92b543fcca7eaf7cfb03dcaa2cc`. Canonical ownership/repolint
+106-task zinciri `bde560f → ac23d98` continuous ve bir trailing JSON path ile
+S4'e erişerek PASS oldu. İlk `ci:check` girişi nested lifecycle'ın fallback
+Node24.19 seçmesiyle testlerden önce FAIL; doğru shim PATH ile ikinci girişte
+repository 834 test/832 PASS/iki mevcut Windows skip, web3/3/coverage100,
+build/generated ve go-mod kontrolleri PASS oldu. Ardından work-marker gate bu
+dosyadaki test sonucu anlatımında geçen yasak işaret sözcüğünü satır 531'de
+yakaladı ve overall exit `1` verdi. S4 full-tree PASS değildir.
+
+Bu düzeltme yalnız söz konusu anlatımı işaret taşımayan eşdeğer metne çevirir
+ve başarısız koşumu kaydeder; source/runtime/policy/test expectation değişmez.
+Yeni state commit ve JSON-only seal sonrasında bütün exact kapılar yeniden
+koşulacaktır. Başarılı alt adımlar yeni seal adına taşınmaz.
