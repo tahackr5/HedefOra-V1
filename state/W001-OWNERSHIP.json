@@ -1,11 +1,29 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "90d7d151136c6aa1efa68deb6da8c7b027f9bed7",
+  "verifiedThrough": "784049d411604b43bee1d5be24c22d2f8fda67b2",
   "trailingAllowedPaths": [
     "state/W001-OWNERSHIP.json"
   ],
   "tasks": {
+    "W001-T04FB-fixture-fresh-admission-seal": {
+      "base": "90d7d151136c6aa1efa68deb6da8c7b027f9bed7",
+      "head": "ff09a6cfa95a30b1526e3144ed632afde1cd8203",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-fixture-engine-checkpoint": {
+      "base": "ff09a6cfa95a30b1526e3144ed632afde1cd8203",
+      "head": "784049d411604b43bee1d5be24c22d2f8fda67b2",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-PG17-FIXTURE.md",
+        "state/W001-PHASE-B.md"
+      ]
+    },
     "W001-T04FB-fixture-host-signals-seal": {
       "base": "acc427b9d6cf1fb907e57004cedae715eedbcd32",
       "head": "02a1df04f315b2c0e823f834888df2110acb454f",
