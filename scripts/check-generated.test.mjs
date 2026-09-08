@@ -192,22 +192,28 @@ test("only the exact sealed OpenAPI generated file is allowlisted", () => {
   );
 });
 
-test("only the exact T04D runtime source set is allowlisted", () => {
+test("only the exact T04FB runtime source set is allowlisted", () => {
   assert.deepEqual(
     [...allowedW001RuntimeSourceFiles],
     [
       "cmd/hedefora/main.go",
       "cmd/hedefora/main_test.go",
       "internal/platform/app/api.go",
+      "internal/platform/app/api_integration_test.go",
       "internal/platform/app/api_test.go",
       "internal/platform/config/api.go",
       "internal/platform/config/api_test.go",
+      "internal/platform/config/postgres.go",
+      "internal/platform/config/postgres_test.go",
       "internal/platform/health/service.go",
       "internal/platform/health/service_test.go",
       "internal/platform/http/handler.go",
       "internal/platform/http/handler_test.go",
       "internal/platform/http/server.go",
       "internal/platform/http/server_test.go",
+      "internal/platform/postgres/pool.go",
+      "internal/platform/postgres/pool_integration_test.go",
+      "internal/platform/postgres/pool_test.go",
       "internal/platform/telemetry/telemetry.go",
       "internal/platform/telemetry/telemetry_test.go",
     ],
@@ -240,12 +246,40 @@ test("only the exact T04F database, infrastructure and PostgreSQL test files are
       "infra/README.md",
       "infra/compose.dev.yml",
       "infra/postgres/README.md",
+      "infra/postgres/image/.dockerignore",
+      "infra/postgres/image/Dockerfile",
+      "infra/postgres/image/README.md",
+      "infra/postgres/image/entrypoint.sh",
+      "infra/postgres/image/inputs.lock.json",
+      "infra/postgres/image/package-sources.lock.json",
       "infra/postgres/initdb/010_roles.sql",
     ],
   );
   assert.deepEqual(
     [...allowedW001PostgresTestSourceFiles],
     [
+      "tests/integration/postgres/cmd/tlsfixture/main.go",
+      "tests/integration/postgres/cmd/tlsfixture/main_linux_test.go",
+      "tests/integration/postgres/live/RUNNER-CONTRACT.md",
+      "tests/integration/postgres/live/FIXTURE-CONTRACT.md",
+      "tests/integration/postgres/live/fixture-admission.mjs",
+      "tests/integration/postgres/live/fixture-admission.test.mjs",
+      "tests/integration/postgres/live/fixture-build.mjs",
+      "tests/integration/postgres/live/fixture-build.test.mjs",
+      "tests/integration/postgres/live/fixture-container.mjs",
+      "tests/integration/postgres/live/fixture-container.test.mjs",
+      "tests/integration/postgres/live/fixture-host-policy.mjs",
+      "tests/integration/postgres/live/fixture-host-policy.test.mjs",
+      "tests/integration/postgres/live/fixture-native-psql.mjs",
+      "tests/integration/postgres/live/fixture-run.mjs",
+      "tests/integration/postgres/live/fixture-run.test.mjs",
+      "tests/integration/postgres/live/live-runtime.mjs",
+      "tests/integration/postgres/live/process.mjs",
+      "tests/integration/postgres/live/psql.mjs",
+      "tests/integration/postgres/live/run-live.mjs",
+      "tests/integration/postgres/live/runner.test.mjs",
+      "tests/integration/postgres/live-sql.mjs",
+      "tests/integration/postgres/live-sql.test.mjs",
       "tests/integration/postgres/run.mjs",
       "tests/integration/postgres/run.test.mjs",
     ],
@@ -261,6 +295,9 @@ test("only the exact T04F database, infrastructure and PostgreSQL test files are
     "db/migrations/000001_database_foundation.UP.sql",
     "db/migrations/000002_unreviewed.up.sql",
     "infra/postgres/bootstrap.sh",
+    "infra/postgres/image/.env",
+    "infra/postgres/image/Dockerfile.extra",
+    "infra/postgres/image/helper.sh",
     "tests/integration/postgres/Run.mjs",
     "tests/integration/postgres/helper.mjs",
   ]) {
@@ -284,9 +321,18 @@ test("only the exact T04F database, infrastructure and PostgreSQL test files are
       path.join(root, "tests", "integration", "postgres", "helper.mjs"),
       "export {};\n",
     );
+    for (const name of [".env", "Dockerfile.extra", "helper.sh"]) {
+      await writeFile(
+        path.join(root, "infra", "postgres", "image", name),
+        "fixture\n",
+      );
+    }
     assert.deepEqual(await findGeneratedArtifacts(root), [
       "db/migrations/000002_unreviewed.up.sql#unexpected-runtime-source",
       "infra/postgres/bootstrap.sh#unexpected-runtime-source",
+      "infra/postgres/image/.env#unexpected-runtime-source",
+      "infra/postgres/image/Dockerfile.extra#unexpected-runtime-source",
+      "infra/postgres/image/helper.sh#unexpected-runtime-source",
       "tests/integration/postgres/helper.mjs#unexpected-runtime-source",
     ]);
   } finally {

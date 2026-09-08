@@ -29,7 +29,10 @@ import {
   parseGeneratorMode,
   writeGeneratedArtifact,
 } from "./generate-openapi.mjs";
-import { negativeMutations } from "./fixtures/openapi-negative-mutations.mjs";
+import {
+  negativeMutations,
+  scopeHealthMutation,
+} from "./fixtures/openapi-negative-mutations.mjs";
 import { applySingleMutation } from "./validate-contracts.mjs";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -39,7 +42,7 @@ const canonicalSource = await readFile(
   path.join(repositoryRoot, ...canonicalContractRelativePath.split("/")),
 );
 const expectedArtifactSha256 =
-  "d5dbb7623e3c9603be2f580ccae07600fa3f86df8b03a740f9a1c9a068a872bd";
+  "a1db83acdb832ef09af14f9f05870da71f4b532e72e34aaa19b3d56c54b5aa4e";
 
 test("sealed source produces one deterministic, reviewed Go artifact", () => {
   assert.equal(canonicalSource.length, expectedContractBytes);
@@ -61,6 +64,11 @@ test("sealed source produces one deterministic, reviewed Go artifact", () => {
   );
   assert.match(generated, /type RequestID string/u);
   assert.match(generated, /type HealthLiveResponse struct/u);
+  assert.match(generated, /type HealthReadyResponse struct/u);
+  assert.match(
+    generated,
+    /HealthReadyStatusReady HealthReadyStatus = "ready"/u,
+  );
   assert.match(generated, /type ErrorEnvelope struct/u);
   assert.match(generated, /type ServiceUnavailableError struct/u);
   assert.match(generated, /type StrictServerInterface interface/u);
@@ -68,6 +76,24 @@ test("sealed source produces one deterministic, reviewed Go artifact", () => {
     generated,
     /GetHealthLive\(context\.Context, GetHealthLiveRequestObject\) \(GetHealthLiveResponseObject, error\)/u,
   );
+  assert.match(
+    generated,
+    /GetHealthReady\(context\.Context, GetHealthReadyRequestObject\) \(GetHealthReadyResponseObject, error\)/u,
+  );
+  assert.equal([...generated.matchAll(/OperationID\s+= /gu)].length, 2);
+  assert.match(generated, /GetHealthLivePath\s+= "\/health\/live"/u);
+  assert.match(generated, /GetHealthReadyPath\s+= "\/health\/ready"/u);
+  for (const operation of ["Live", "Ready"]) {
+    for (const status of [200, 503]) {
+      assert.match(
+        generated,
+        new RegExp(
+          `func \\(GetHealth${operation}${status}JSONResponse\\) isGetHealth${operation}ResponseObject\\(\\) \\{\\}`,
+          "u",
+        ),
+      );
+    }
+  }
   assert.equal(
     [...generated.matchAll(/ErrorCode[A-Za-z]+\s+ErrorCode =/gu)].length,
     7,
@@ -91,6 +117,46 @@ test("all canonical one-mutation contract fixtures are rejected", () => {
       mutation.name,
     );
   }
+});
+
+test("operation fixture scopes retain exact inner and whole-source anchors", () => {
+  const source = canonicalSource.toString("utf8");
+  for (const operation of ["live", "ready"]) {
+    const mutation = scopeHealthMutation(
+      {
+        name: `fixture-${operation}`,
+        before: "    get:",
+        after: "    post:",
+      },
+      operation,
+    );
+    assert.equal(
+      applySingleMutation(source, mutation).split("    post:").length - 1,
+      1,
+    );
+    for (const before of ["", "absent", "          headers:"]) {
+      assert.throws(() =>
+        scopeHealthMutation(
+          {
+            name: `invalid-${operation}`,
+            before,
+            after: "changed",
+          },
+          operation,
+        ),
+      );
+    }
+  }
+  assert.throws(() =>
+    scopeHealthMutation(
+      {
+        name: "unexpected-operation",
+        before: "get",
+        after: "post",
+      },
+      "unexpected",
+    ),
+  );
 });
 
 test("generator-specific parser, reference and code-poison mutations reject", () => {

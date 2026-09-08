@@ -2,8 +2,13 @@ package main
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"log/slog"
+	"math/big"
 	"os"
 	"strings"
 	"sync/atomic"
@@ -41,7 +46,7 @@ func TestExecuteRequiresExactAPIProcessMode(t *testing.T) {
 	for _, arguments := range [][]string{nil, {"worker"}, {"api", "extra"}} {
 		output, file := temporaryErrorFile(t)
 		called := false
-		exitCode := execute(context.Background(), arguments, nil, file, func(context.Context, config.API, *slog.Logger) error {
+		exitCode := execute(context.Background(), arguments, nil, file, func(context.Context, config.API, config.Postgres, *slog.Logger) error {
 			called = true
 			return nil
 		})
@@ -63,10 +68,13 @@ func TestExecuteLoadsConfigAndReturnsRunnerStatusWithoutDetailLeak(t *testing.T)
 	exitCode := execute(
 		context.Background(),
 		[]string{"api"},
-		[]string{"HEDEFORA_API_RETRY_AFTER_SECONDS=7"},
+		append(syntheticDatabaseEnvironment(t), "HEDEFORA_API_RETRY_AFTER_SECONDS=7"),
 		file,
-		func(_ context.Context, value config.API, _ *slog.Logger) error {
+		func(_ context.Context, value config.API, database config.Postgres, _ *slog.Logger) error {
 			called = true
+			if database.Host != "localhost" || database.Database != "hedefora_dev" || database.User != "hedefora_app" {
+				t.Fatal("database configuration was not passed to runner")
+			}
 			if value.RetryAfterSeconds != 7 {
 				t.Fatalf("RetryAfterSeconds = %d", value.RetryAfterSeconds)
 			}
@@ -95,7 +103,7 @@ func TestExecuteRejectsInvalidConfigWithoutValueLeak(t *testing.T) {
 		[]string{"api"},
 		[]string{"HEDEFORA_API_LISTEN_ADDRESS=fixture-secret"},
 		file,
-		func(context.Context, config.API, *slog.Logger) error {
+		func(context.Context, config.API, config.Postgres, *slog.Logger) error {
 			t.Fatal("runner called")
 			return nil
 		},
@@ -117,9 +125,9 @@ func TestExecuteReturnsSuccess(t *testing.T) {
 	exitCode := execute(
 		context.Background(),
 		[]string{"api"},
-		nil,
+		syntheticDatabaseEnvironment(t),
 		file,
-		func(context.Context, config.API, *slog.Logger) error { return nil },
+		func(context.Context, config.API, config.Postgres, *slog.Logger) error { return nil },
 	)
 	_ = file.Close()
 	if exitCode != 0 {
@@ -143,4 +151,52 @@ func readFile(t *testing.T, path string) string {
 		t.Fatalf("ReadFile() error = %v", err)
 	}
 	return string(document)
+}
+
+func TestExecuteRequiresValidDatabaseConfigurationWithoutLeakingDetails(t *testing.T) {
+	t.Parallel()
+	for _, environ := range [][]string{
+		nil,
+		{"HEDEFORA_POSTGRES_HOST=fixture-database-secret"},
+		append(syntheticDatabaseEnvironment(t), "PGPASSWORD=fixture-ambient-secret"),
+	} {
+		path, file := temporaryErrorFile(t)
+		called := false
+		exit := execute(context.Background(), []string{"api"}, environ, file, func(context.Context, config.API, config.Postgres, *slog.Logger) error { called = true; return nil })
+		_ = file.Close()
+		if exit != 2 || called {
+			t.Fatalf("invalid database exit=%d called=%v", exit, called)
+		}
+		if content := readFile(t, path); content != "HedefOra API yapılandırması geçersiz.\n" {
+			t.Fatalf("unexpected or unsanitized stderr=%q", content)
+		}
+	}
+}
+
+func syntheticDatabaseEnvironment(t *testing.T) []string {
+	t.Helper()
+	public, private, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	template := &x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		NotBefore:             time.Now().Add(-time.Hour),
+		NotAfter:              time.Now().Add(time.Hour),
+		IsCA:                  true,
+		BasicConstraintsValid: true,
+		KeyUsage:              x509.KeyUsageCertSign,
+	}
+	certificate, err := x509.CreateCertificate(rand.Reader, template, template, public, private)
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certificate}))
+	return []string{
+		"HEDEFORA_POSTGRES_HOST=localhost",
+		"HEDEFORA_POSTGRES_DATABASE=hedefora_dev",
+		"HEDEFORA_POSTGRES_USER=hedefora_app",
+		"HEDEFORA_POSTGRES_PASSWORD=synthetic-only",
+		"HEDEFORA_POSTGRES_ROOT_CA_PEM=" + root,
+	}
 }

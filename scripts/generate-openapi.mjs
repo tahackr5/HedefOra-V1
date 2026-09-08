@@ -16,9 +16,9 @@ import { TextDecoder } from "node:util";
 export const canonicalContractRelativePath = "contracts/openapi/openapi.yaml";
 export const generatedArtifactRelativePath =
   "internal/generated/openapi/openapi.gen.go";
-export const expectedContractBytes = 5604;
+export const expectedContractBytes = 8383;
 export const expectedContractSha256 =
-  "5d157cd1d6627d781030212454ceaa075e994cdfa22a6f1f1929d26265af85ab";
+  "7781c1c2a11b65664bf53d8691c8b2b2602789c4e56f22d901df63763ca451ac";
 
 const maximumContractBytes = 64 * 1024;
 const maximumContractLines = 512;
@@ -37,6 +37,7 @@ const allowedInternalReferences = new Set([
   "#/components/schemas/ErrorCode",
   "#/components/schemas/ErrorEnvelope",
   "#/components/schemas/HealthLiveResponse",
+  "#/components/schemas/HealthReadyResponse",
   "#/components/schemas/RequestId",
   "#/components/schemas/ServiceUnavailableError",
 ]);
@@ -413,9 +414,12 @@ package openapi
 import "context"
 
 const (
-	GetHealthLiveOperationID = "getHealthLive"
-	GetHealthLiveMethod      = "GET"
-	GetHealthLivePath        = "/health/live"
+	GetHealthLiveOperationID  = "getHealthLive"
+	GetHealthLiveMethod       = "GET"
+	GetHealthLivePath         = "/health/live"
+	GetHealthReadyOperationID = "getHealthReady"
+	GetHealthReadyMethod      = "GET"
+	GetHealthReadyPath        = "/health/ready"
 )
 
 type RequestID string
@@ -426,6 +430,14 @@ const HealthLiveStatusLive HealthLiveStatus = "live"
 
 type HealthLiveResponse struct {
 	Status HealthLiveStatus \`json:"status"\`
+}
+
+type HealthReadyStatus string
+
+const HealthReadyStatusReady HealthReadyStatus = "ready"
+
+type HealthReadyResponse struct {
+	Status HealthReadyStatus \`json:"status"\`
 }
 
 type ErrorCode string
@@ -478,8 +490,27 @@ type GetHealthLive503JSONResponse struct {
 
 func (GetHealthLive503JSONResponse) isGetHealthLiveResponseObject() {}
 
+type GetHealthReadyRequestObject struct{}
+
+type GetHealthReadyResponseObject interface {
+	isGetHealthReadyResponseObject()
+}
+
+type GetHealthReady200JSONResponse struct {
+	Body HealthReadyResponse
+}
+
+func (GetHealthReady200JSONResponse) isGetHealthReadyResponseObject() {}
+
+type GetHealthReady503JSONResponse struct {
+	Body ServiceUnavailableError
+}
+
+func (GetHealthReady503JSONResponse) isGetHealthReadyResponseObject() {}
+
 type StrictServerInterface interface {
 	GetHealthLive(context.Context, GetHealthLiveRequestObject) (GetHealthLiveResponseObject, error)
+	GetHealthReady(context.Context, GetHealthReadyRequestObject) (GetHealthReadyResponseObject, error)
 }
 `;
 }

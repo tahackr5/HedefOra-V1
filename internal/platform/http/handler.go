@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"mime"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -16,9 +17,10 @@ import (
 )
 
 const (
-	maximumAcceptBytes   = 4 << 10
-	maximumAcceptParts   = 32
-	maximumAcceptMembers = 64
+	maximumAcceptBytes        = 4 << 10
+	maximumAcceptParts        = 32
+	maximumAcceptMembers      = 64
+	serviceUnavailableMessage = "Hizmet geçici olarak kullanılamıyor. Lütfen yeniden deneyin."
 )
 
 var (
@@ -41,10 +43,23 @@ func NewHandler(
 	requestIDs RequestIDSource,
 	logger *slog.Logger,
 ) (http.Handler, error) {
-	if server == nil || requestIDs == nil || logger == nil {
+	if nilDependency(server) || nilDependency(requestIDs) || logger == nil {
 		return nil, ErrInvalidHandlerDependency
 	}
 	return &handler{server: server, requestIDs: requestIDs, logger: logger}, nil
+}
+
+func nilDependency(dependency any) bool {
+	if dependency == nil {
+		return true
+	}
+	value := reflect.ValueOf(dependency)
+	switch value.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
+		return value.IsNil()
+	default:
+		return false
+	}
 }
 
 func (handler *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
@@ -70,13 +85,14 @@ func (handler *handler) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 		)
 	}()
 
-	if !isExactHealthPath(request) {
+	matchedOperation, matchedMethod := exactHealthOperation(request)
+	if matchedOperation == "" {
 		status, writeFailed = writeError(writer, http.StatusNotFound, openapi.ErrorCodeRouteNotFound, "İstenen kaynak bulunamadı.", requestID)
 		return
 	}
-	operation = openapi.GetHealthLiveOperationID
-	if request.Method != openapi.GetHealthLiveMethod {
-		writer.Header().Set("Allow", openapi.GetHealthLiveMethod)
+	operation = matchedOperation
+	if request.Method != matchedMethod {
+		writer.Header().Set("Allow", matchedMethod)
 		status, writeFailed = writeError(writer, http.StatusMethodNotAllowed, openapi.ErrorCodeMethodNotAllowed, "Bu istek yöntemi desteklenmiyor.", requestID)
 		return
 	}
@@ -96,23 +112,30 @@ func (handler *handler) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 	}
 
 	ctx := telemetry.ContextWithRequestID(request.Context(), requestID)
-	response, err := callStrictHandler(handler.server, ctx)
+	response, err := callStrictHandler(handler.server, ctx, operation)
 	if err != nil {
 		status, writeFailed = writeError(writer, http.StatusInternalServerError, openapi.ErrorCodeInternalError, "İstek işlenirken bir sorun oluştu.", requestID)
 		return
 	}
-	status, writeFailed = writeStrictResponse(writer, response, requestID)
+	status, writeFailed = writeStrictResponse(writer, response, requestID, operation)
 }
 
-func isExactHealthPath(request *http.Request) bool {
+func exactHealthOperation(request *http.Request) (string, string) {
 	if request == nil || request.URL == nil {
-		return false
+		return "", ""
 	}
-	if request.URL.RawPath != "" && request.URL.RawPath != openapi.GetHealthLivePath {
-		return false
+	path := request.URL.Path
+	if (request.URL.RawPath != "" && request.URL.RawPath != path) || request.URL.EscapedPath() != path {
+		return "", ""
 	}
-	return request.URL.Path == openapi.GetHealthLivePath &&
-		request.URL.EscapedPath() == openapi.GetHealthLivePath
+	switch path {
+	case openapi.GetHealthLivePath:
+		return openapi.GetHealthLiveOperationID, openapi.GetHealthLiveMethod
+	case openapi.GetHealthReadyPath:
+		return openapi.GetHealthReadyOperationID, openapi.GetHealthReadyMethod
+	default:
+		return "", ""
+	}
 }
 
 func requestHasBody(request *http.Request) bool {
@@ -273,39 +296,65 @@ func jsonSpecificity(mediaType string) int {
 func callStrictHandler(
 	server openapi.StrictServerInterface,
 	ctx context.Context,
-) (response openapi.GetHealthLiveResponseObject, err error) {
+	operation string,
+) (response any, err error) {
 	defer func() {
 		if recover() != nil {
 			response = nil
 			err = errStrictHandler
 		}
 	}()
-	response, err = server.GetHealthLive(ctx, openapi.GetHealthLiveRequestObject{})
-	return response, err
+	switch operation {
+	case openapi.GetHealthLiveOperationID:
+		return server.GetHealthLive(ctx, openapi.GetHealthLiveRequestObject{})
+	case openapi.GetHealthReadyOperationID:
+		return server.GetHealthReady(ctx, openapi.GetHealthReadyRequestObject{})
+	default:
+		return nil, errStrictHandler
+	}
 }
 
 func writeStrictResponse(
 	writer http.ResponseWriter,
-	response openapi.GetHealthLiveResponseObject,
+	response any,
 	requestID openapi.RequestID,
+	operation string,
 ) (int, bool) {
 	switch typed := response.(type) {
 	case openapi.GetHealthLive200JSONResponse:
-		if typed.Body.Status != openapi.HealthLiveStatusLive {
+		if operation != openapi.GetHealthLiveOperationID || typed.Body.Status != openapi.HealthLiveStatusLive {
 			break
 		}
 		return writeJSON(writer, http.StatusOK, requestID, typed.Body)
 	case *openapi.GetHealthLive200JSONResponse:
-		if typed != nil && typed.Body.Status == openapi.HealthLiveStatusLive {
+		if operation == openapi.GetHealthLiveOperationID && typed != nil && typed.Body.Status == openapi.HealthLiveStatusLive {
 			return writeJSON(writer, http.StatusOK, requestID, typed.Body)
 		}
 	case openapi.GetHealthLive503JSONResponse:
-		if validServiceUnavailable(typed.Body, requestID) {
+		if operation == openapi.GetHealthLiveOperationID && validServiceUnavailable(typed.Body, requestID) {
 			writer.Header().Set("Retry-After", strconv.Itoa(typed.Body.RetryAfterSeconds))
 			return writeJSON(writer, http.StatusServiceUnavailable, requestID, typed.Body)
 		}
 	case *openapi.GetHealthLive503JSONResponse:
-		if typed != nil && validServiceUnavailable(typed.Body, requestID) {
+		if operation == openapi.GetHealthLiveOperationID && typed != nil && validServiceUnavailable(typed.Body, requestID) {
+			writer.Header().Set("Retry-After", strconv.Itoa(typed.Body.RetryAfterSeconds))
+			return writeJSON(writer, http.StatusServiceUnavailable, requestID, typed.Body)
+		}
+	case openapi.GetHealthReady200JSONResponse:
+		if operation == openapi.GetHealthReadyOperationID && typed.Body.Status == openapi.HealthReadyStatusReady {
+			return writeJSON(writer, http.StatusOK, requestID, typed.Body)
+		}
+	case *openapi.GetHealthReady200JSONResponse:
+		if operation == openapi.GetHealthReadyOperationID && typed != nil && typed.Body.Status == openapi.HealthReadyStatusReady {
+			return writeJSON(writer, http.StatusOK, requestID, typed.Body)
+		}
+	case openapi.GetHealthReady503JSONResponse:
+		if operation == openapi.GetHealthReadyOperationID && validServiceUnavailable(typed.Body, requestID) {
+			writer.Header().Set("Retry-After", strconv.Itoa(typed.Body.RetryAfterSeconds))
+			return writeJSON(writer, http.StatusServiceUnavailable, requestID, typed.Body)
+		}
+	case *openapi.GetHealthReady503JSONResponse:
+		if operation == openapi.GetHealthReadyOperationID && typed != nil && validServiceUnavailable(typed.Body, requestID) {
 			writer.Header().Set("Retry-After", strconv.Itoa(typed.Body.RetryAfterSeconds))
 			return writeJSON(writer, http.StatusServiceUnavailable, requestID, typed.Body)
 		}
@@ -317,8 +366,7 @@ func validServiceUnavailable(body openapi.ServiceUnavailableError, requestID ope
 	return body.Code == openapi.ServiceUnavailableCodeValue &&
 		body.RequestID == requestID &&
 		body.Retryable &&
-		body.Message != "" &&
-		len(body.Message) <= 200 &&
+		body.Message == serviceUnavailableMessage &&
 		body.RetryAfterSeconds >= 1 &&
 		body.RetryAfterSeconds <= 60
 }

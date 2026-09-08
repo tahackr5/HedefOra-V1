@@ -13,7 +13,7 @@ import (
 	"github.com/tahackr5/HedefOra-V1/internal/platform/telemetry"
 )
 
-type apiRunner func(context.Context, config.API, *slog.Logger) error
+type apiRunner func(context.Context, config.API, config.Postgres, *slog.Logger) error
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -46,8 +46,13 @@ func execute(
 		_, _ = fmt.Fprintln(standardError, "HedefOra API yapılandırması geçersiz.")
 		return 2
 	}
+	database, err := config.LoadPostgres(environ)
+	if err != nil {
+		_, _ = fmt.Fprintln(standardError, "HedefOra API yapılandırması geçersiz.")
+		return 2
+	}
 	logger := telemetry.NewJSONLogger(standardError)
-	if err := runAPI(ctx, value, logger); err != nil {
+	if err := runAPI(ctx, value, database, logger); err != nil {
 		logger.Error(
 			"API process failed",
 			slog.String("event_code", "api_process_failed"),

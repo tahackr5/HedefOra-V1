@@ -117,6 +117,10 @@ Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERS
 
 ## W001-T04F — PostgreSQL 17 roles, migration ve readiness foundation
 
+### Phase B güncel sahiplik — 2026-09-06
+
+Owner-approved PR #6 exact `01017a25bf02f27924bf0361fd6b70abdc493ac0` merge'i `7a1e124e432b51694e7d60c0d3d1589867a8835f`, tree `ec6d12847c657adedbd84e44565598d234c7b928` local/hosted full-tree/R-016/CodeQL PASS sonrası ortak yeni immutable base'dir. Güncel disjoint task/path tablosu `state/W001-PHASE-B.md` içindedir; aşağıdaki cd81ee7/owner-pending anlatımı tarihsel Phase A kaydıdır. DQ-008 A, DQ-009 A ve DQ-010 B onaylıdır; runtime/engine admission kanıtı henüz PASS değildir. JSON ownership, `43a82ca → 01017a25` yalnız manifest seal'ini ve `01017a25 → 7a1e124` 26-path first-parent merge wrapper'ını ayrı kaydeder; content-identical endpoint diff boş olması gerçek wrapper delta'sını silmez.
+
 - Immutable task-phase base: `cd81ee7b36d5bc647bb297e8ede13b21a7f1c8f1`; tree `ce3cf10a186071f1f7c3fcb91347651fe0408b0d`. Branch/worktree: `codex/w001-t04f-postgres-foundation` / `C:\Users\ihsan\.codex\worktrees\HedefOra\W001\T04F`.
 - Orchestrator task-open/state owner: `delivery/TOOLCHAIN-LOCK.md`, `state/ACTIVE-WAVE.md`, `state/DECISION-QUEUE.md`, `state/RELEASE-LEDGER.md`, `state/RISK-REGISTER.md`, `state/W001-EVIDENCE.md`, `state/W001-OWNERSHIP.md`, `state/W001-OWNERSHIP.json`.
 - Dependency-free Phase A disjoint owners: architecture `contracts/database/**` + `db/migrations/**`; infra `infra/compose.dev.yml` + `infra/postgres/**`; quality `tests/integration/postgres/**`. Shared source-boundary ve default test-gate wiring yalnız orchestrator: `scripts/check-generated.mjs` + `scripts/check-generated.test.mjs` + `package.json`. Kök `infra/README.md`, inert Compose profiliyle bulunan documentation-parity çelişkisini kapatan exact `7a987f7` commit'inde orchestrator-owned shared documentation düzeltmesidir; bu kayıt gelecekte genel `infra/**` yazma yetkisi vermez.
@@ -157,7 +161,50 @@ Makine tarafından doğrulanan kesintisiz commit aralıkları `state/W001-OWNERS
 
 Squash/rebase/direct push kabul edilmez. Merge öncesi güvenli rollback W001 PR'ını merge etmemektir. Merge sonrasında repository public iken eski workflow tree'sine ham revert yasaktır: progression durdurulur, owner onayıyla repository private yapılır, exact ID/full-name/visibility ve hosted capability yeniden doğrulanır, ancak bundan sonra reviewed revert PR değerlendirilebilir; source boundary mümkünse korunur. Hosted CodeQL/Dependency Review kullanılabildiği sürece gerçek gate'tir; branch/ruleset enforcement doğrulanana kadar `BLOCKED_EXTERNAL` kalır. VPS/DNS rollback bu task için `NOT_APPLICABLE`, çünkü dış sistem mutation'ı yoktur.
 
+## Phase B continuation — PR #7 trusted control integration
+
+Owner-approved7459265 → aba3d13 ordered-parent/content-identical merge ve
+post-merge full-tree/R-016/hosted/cold PASS sonrasında yeni immutable task
+base aba3d13/treeed51da4'tür. Runtime02ef7cf first-parent zinciri yeniden
+yazılmaz. Root tek source writer olarak kontrol merge'ini ve shared
+governance'ı birleştirir; diğer ajanlar TEMP proposal-only/read-only.
+Protected kontrol dosyaları aba3d13 ile exact parity taşır. Controller'ın
+ayrı continuous ownership'i7459265 immutable commit'inde korunur; yaşayan
+manifest ortak7a1e124 → f19cca1 graph-reconciliation envelope'ını mühürler:
+24 reachable commit'in actual first-parent endpoint union'ında exact65 path.
+02ef7cf → f19cca1 dar task denemesi ikinci-parent ancestry nedeniyle exit1
+vermiştir; önceki birleşik shell exit0 ownership PASS değildir. Runtime02ef7cf
+ve control7459265 dar sealed manifestleri Git tarihinde korunur. Bu kapalı
+aralığın allowlist'i gelecekte yazma yetkisi değildir; validator değişmez.
+
 ## Secret ve artifact sınırı
+
+### W001-T04FB — DEC-031 isolated test fixture
+
+Başlangıç source checkpoint cf69d6a; trusted/task-phase base aba3d13 aynı.
+Yeni ayrı fixture-admission/run root, fixture-container/native/psql assigned
+runtime worker, fixture-build aynı worker'ın sonraki disjoint görevi;
+fixture-host-policy ayrı worker. Handoff sonrası root yalnız gereken
+entegrasyon düzeltmelerini yapar. Shared decision/ADR/DQ/index/package,
+check-generated allowlist ve state dosyaları yalnız orchestrator.
+Final manifest actual committed path union'u kapsar; immutable SQL,
+Go runtime consumer'ları ve protected R016 policy değişmez. Güvenlik/cold
+read-only, image/provenance araştırması TEMP-only. Ayrıntı ve acceptance:
+`state/W001-PG17-FIXTURE.md`; artifact secret-free, source yalnız public Git bytes.
+
+### W001-T04FB — Stage S / runner continuation
+
+Source baseline2ee64c1; task-phase/trusted base aba3d13 ve tarihsel wave start
+korunur. Root tek repository writer; proposal/review ajanları disjoint TEMP
+veya read-only. Yeni exact yollar: `scripts/postgres-image/apk-runtime/`
+sekiz dosya, `tests/integration/postgres/live/` altı dosya,
+`internal/platform/postgres/{pool_test,pool_integration_test}.go`,
+`internal/platform/app/api_integration_test.go`,
+`scripts/check-generated{,.test}.mjs`, `package.json`, `FILE-INDEX.md` ve
+orchestrator-owned ACTIVE-WAVE/PHASE-B/OWNERSHIP/EVIDENCE/RISK/RELEASE state.
+Final JSON seal actual closed range/first-parent union'u listeler; bu kayıt
+protected R-016, immutable SQL veya image execution authority yetkisi değildir.
+
 
 ### W001-T04FB-CONTROL — selected Go graph remediation
 

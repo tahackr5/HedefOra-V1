@@ -105,8 +105,9 @@
 - Security/privacy/cost/migration impact: A seçeneği unsupported concurrent-use panic hazard'ını adapter/test sınırına taşır ve 16-module closure üretir. B supply-chain yüzeyini küçültür fakat iki DB stack'i ve T04G migration maliyeti doğurabilir. Her iki yol secret/redaction, TLS, timeout/pool ve exact-head SBOM/R-016 ister.
 - Work that can continue safely: role/migration contract'ı, immutable SQL/checksum/advisory-lock tasarımı, exact PostgreSQL digest'li Compose/CLI harness, privilege-negative test matrisi ve source-boundary hazırlığı. `go.mod`, `go.sum` ve backend adapter writer'ı açılmaz.
 - Blocking wave/gate: T04F backend pool/readiness primitive'i ve T04F completion. Production/staging deploy ayrı owner gate'tir.
-- Owner decision: PENDING.
-- Closed commit: PENDING.
+- Owner decision: 2026-09-06 tarihinde owner A seçeneğini güvenlik eşikleri korunarak açıkça onayladı.
+- Resolution: DEC-028 / ADR-0018; güncel uygulama ve NOT_RUN admission kapıları `state/W001-PHASE-B.md` içindedir. Onay scanner/engine/review PASS yerine geçmez.
+- Closed commit: `7cbf26e6605b8129cbeb498cd60984550fd8afad`; continuous ownership seal `bb57a51bfe3cd0c3cae6d3197ef2b69462d38b17`.
 
 ### DQ-009 — `/health/ready` için ikinci-operation compiler admission
 
@@ -117,8 +118,9 @@
 - Security/privacy/cost/migration impact: Yeni compiler kapsamı TCB ve bakım yüzeyini büyütür; yanlış implementasyon generated code injection veya contract drift yaratabilir. Endpoint yalnız generic readiness döndürür, raw DB/DSN/SQL ayrıntısı sızdırmaz; veri migration etkisi yoktur.
 - Work that can continue safely: HTTP'den bağımsız readiness probe interface/test tasarımı ancak DQ-008 driver seçimi sonrasında; OpenAPI/generator/generated/runtime wiring değişmez.
 - Blocking wave/gate: T04F public `/health/ready` acceptance ve T04F completion.
-- Owner decision: PENDING.
-- Closed commit: PENDING.
+- Owner decision: 2026-09-06 tarihinde owner A seçeneğini güvenlik eşikleri korunarak açıkça onayladı.
+- Resolution: DEC-029 / ADR-0019; güncel uygulama ve NOT_RUN admission kapıları `state/W001-PHASE-B.md` içindedir. Onay scanner/engine/review PASS yerine geçmez.
+- Closed commit: `7cbf26e6605b8129cbeb498cd60984550fd8afad`; continuous ownership seal `bb57a51bfe3cd0c3cae6d3197ef2b69462d38b17`.
 
 ### DQ-010 — W001-T04F PostgreSQL image execution admission
 
@@ -129,8 +131,28 @@
 - Security/privacy/cost/migration impact: Supplemental registry scan'leri official varyantlarda critical/high OS-package bulguları gösterdi. A gecikme yaratır fakat en küçük bakım yüzeyidir. B ayrı image bakım/patch/SBOM yükü ve registry provenance gerektirir. C CI/host drift'i ve paket kaynağı bakım yükü doğurur. Hiçbir seçenek production/staging credential veya veri migration yetkisi vermez.
 - Work that can continue safely: Inert image metadata, immutable SQL/checksum/timeout sözleşmesi, rol/ACL contract'ı, Docker'sız statik parity/negative testleri, DQ-008/DQ-009 için read-only tasarım. Compose aktif service taşımaz; image pull/run/start yapılmaz.
 - Blocking wave/gate: T04F canlı empty/up/down/upgrade/privilege testi, PostgreSQL adapter/pool doğrulaması ve T04F completion. Production/staging deploy ayrıca owner gate'idir.
-- Owner decision: PENDING.
-- Closed commit: PENDING.
+- Owner decision: 2026-09-06 tarihinde owner B seçeneğini güvenlik eşikleri korunarak açıkça onayladı.
+- Resolution: DEC-030 / ADR-0020; güncel uygulama ve NOT_RUN admission kapıları `state/W001-PHASE-B.md` içindedir. Onay scanner/engine/review PASS yerine geçmez.
+- Closed commit: `7cbf26e6605b8129cbeb498cd60984550fd8afad`; continuous ownership seal `bb57a51bfe3cd0c3cae6d3197ef2b69462d38b17`.
+
+## Son owner kararı
+
+### DQ-011 — Test-time PG17 admission istisnası
+
+- Opened/owner decision: 2026-09-07; owner açıkça yalnız ağsız, cap-dropALL,
+  ephemeral local/CI test fixture execution onayı verdi.
+- Önceki çatışma: ADR-0020/DEC-030 tüm image execution'ında blocking advisory
+  reddeder; Phase B gerçek engine acceptance bu yüzden NOT_RUN idi.
+- Resolution: DEC-031/ADR-0021, ayrı exact-digest test-fixture profile ve
+  sonlu risk kabul kaydı; eski/global/production policy değişmez.
+- Sınır: owner risk acceptance scanner/review/engine PASS değildir. Testler
+  sonrası PR draft kaldırılabilir; main merge yeni exact-SHA onayı ister.
+- Implementation/evidence: `tests/integration/postgres/live/FIXTURE-CONTRACT.md`;
+  exactff09a6c A10 source/exception/tool/image/DB bindings, SQL170/Go6 ve
+  host isolation/cleanup PASS; state/W001-PG17-FIXTURE.md. Fresh finite
+  DB kaydı original ownerDate2026-09-07'yi korur; expiry2026-09-10T06:30:10Z.
+  Grype FAIL/EPSS artışları ve production exclusion değişmedi. Final metadata
+  seal'in yeni exact engine/full-tree/R016/hosted/review kapıları ayrı beklenir.
 
 ## Item template
 

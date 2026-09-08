@@ -6,22 +6,36 @@
 - Status: IN_PROGRESS
 - Historical wave start commit: `bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b`
 - Historical wave start tree: `7a2ae76ee31b6c85ec5b3839c78306cde2bd3f23`
-- Current task-phase base (W001-T04FB-CONTROL): `7a1e124e432b51694e7d60c0d3d1589867a8835f`
-- Current task-phase base tree (W001-T04FB-CONTROL): `ec6d12847c657adedbd84e44565598d234c7b928`
-- Trusted control base: `7a1e124e432b51694e7d60c0d3d1589867a8835f`
-- Trusted control base tree: `ec6d12847c657adedbd84e44565598d234c7b928`
-- Trusted control reviewed head: `01017a25bf02f27924bf0361fd6b70abdc493ac0` (PR #6; protected control bytes önceki reviewed control ile değişmedi)
-- Integration branch: `codex/w001-r016-go-graph`
-- Worktree: `C:\Users\ihsan\.codex\worktrees\HedefOra\W001\T04FB-CONTROL`
+- Current task-phase base (W001-T04F Phase B continuation): `aba3d13ed057bbe80a2e67486058180479c3c50e`
+- Current task-phase base tree: `ed51da48638d362ff52169658321604dedba442a`
+- Trusted control base: `aba3d13ed057bbe80a2e67486058180479c3c50e`
+- Trusted control base tree: `ed51da48638d362ff52169658321604dedba442a`
+- Trusted control reviewed head: `7459265b2f5744d7aa40feddfc85cb8fcabb8567` (PR #7)
+- Integration branch: `codex/w001-t04f-phase-b`
+- Worktree: `C:\Users\ihsan\.codex\worktrees\HedefOra\W001\T04FB`
 - Started at: `2026-08-28T21:50:57+03:00` (`2026-08-28T18:50:57Z`)
-- Last checkpoint: Owner-approved PR #6 two-parent/content-identical merge `7a1e124`; clean local pinned Go1.26.7/full-tree, CodeQL ve local/hosted R-016 PASS. Hosted CI `34033868818` execution SUCCESS fakat gerçek Go1.26.0 kullandığı sonradan doğrulandı: canonical hosted Go quality FAIL. Tarihsel success kaydı exact toolchain admission değildir; yeni control düzeltmesi ve owner merge sonrası main yeniden doğrulanmalıdır.
-- Current objective: PR #7 control-only selected-Go-graph düzeltmesine doğrulanmış hosted Go identity regresyonunu eklemek; exact20e91 cold FAIL korunur. Yeni exact head'te local/full-tree/R-016/security/cold/hosted kapıları yenilenerek owner merge paketi hazırlanır. Runtime bağımlılığı/PG image bu branch'te yoktur. Controller henüz trusted main'e katılmadı; eski base trusted parity reddi PASS olarak sunulmaz.
+- Last checkpoint: 2026-09-08 A11 gerçek engine 3a32a0ced2474285d586b29c79d275e9616b593b / tree c9e7052f8473ada96b185731a63bb3539a57c4ed üzerinde PASS: SQL170, Go6/race, host isolation/removal, source/tool posthash ve bağımsız replay/daemon absence. Hosted CI/trusted PR execution SUCCESS; CodeQL HIGH alert4 nedeniyle scanner gate FAIL. Sentetik test kaynağı statik olarak not_actionable değerlendirildi; scanner sonucu silinmez. A1-A9 FAIL ve A10 PASS kendi exact scope'unda korunur. Ayrıntı: state/W001-PG17-FIXTURE.md. Trusted main aba3d13 değişmedi.
+- Current objective: Sabit public test işaretleyicisinin adlandırma/açıklama düzeltmesini mühürleyip yeni exact SHA için engine/full-tree/local+hosted R016/CI/CodeQL ve fresh security/cold kapılarını tamamlamak; ardından PR8 DRAFT kaldırılarak yalnız exact-head owner gate'ine ulaşmak. Bu tracked kayıt final mühürden öncedir; sonraki exact sonuçlar hash-bağlı artifact'larda ve artifacts/PR8-PHASE-B-OWNER-GATE.md raporunda tutulur. DEC-031 expiry2026-09-10T06:30:10Z/run20min, EPSS artışları/Grype FAIL ve global/image/production eşikleri korunur. Main merge/production izni yoktur.
 
-## Historical task/gate record (PR #6 öncesi)
+## Historical task/gate record
 
-Aşağıdaki geçmiş tablolar kendi exact SHA kapsamını korur; güncel objective ve owner kararları üstte, control-only acceptance `state/W001-R016-GO-GRAPH.md` içindedir.
+Güncel devam kaydı (2026-09-08): `state/W001-PG17-FIXTURE.md`.
+cf69d6a exact checkpoint local/hosted/CodeQL/R016/cold PASS; önceki444 FAIL
+tarihseldir. Owner DEC-031 ile yalnız networknone/cap-dropALL/ephemeral
+test-time istisnasını onayladı. A1-A9 denemeleri ve başarısızlıkları ayrı
+artifact'larda korunur; yeni kaynak düzeltmeleri engine PASS yerine geçmez.
+PR8 DRAFT, production admission yok. Aşağıdaki eski checkpoint kayıtları
+tarihseldir; yeni exact gate yerine kullanılamaz.
+
+Aşağıdaki geçmiş tablolar yalnız kendi exact SHA kapsamındadır. Güncel Phase B kaydı `state/W001-PHASE-B.md`, tarihsel controller kanıtı `state/W001-R016-GO-GRAPH.md` içindedir. Eski hosted execution SUCCESS, canonical Go1.26.7 admission değildir.
 
 ## Active tasks
+
+### Güncel checkpoint — 2026-09-06
+
+Üstteki eski Phase A last-checkpoint/objective anlatımı tarihsel local-exit kaydıdır; güncel hedef Phase B'dir. PR #6 exact head `01017a25bf02f27924bf0361fd6b70abdc493ac0` owner onayıyla `7a1e124e432b51694e7d60c0d3d1589867a8835f` olarak birleştirildi. Ordered parents `cd81ee7b36d5bc647bb297e8ede13b21a7f1c8f1` + approved head; tree approved head ile birebir aynı. Local full-tree, hosted CI `34033868818`, CodeQL `34033868551` ve local/hosted R-016 PASS; ayrıntılar `state/W001-PHASE-B.md` içinde.
+
+DQ-008 A, DQ-009 A, DQ-010 B owner tarafından onaylandı; eski tablolardaki karar-bekliyor kayıtları tarihsel Phase A durumudur. Yeni image/adapter/live-integration admission henüz PASS değildir. Phase B'nin DAG/path sahipliği ve güncel gate'leri `state/W001-PHASE-B.md` source of truth'udur. Geliştirme/test/refactor/PR hazırlığı için ara onay beklenmez; güvenlik eşikleri, protected control-plane ayrımı ve deployment/irreversible/credential eşikleri korunur.
 
 | Task                                                  | Agent                                                             | Branch/worktree                                       | Owned paths                                                                                                                                                                                                            | Status      | Depends on                                                    |
 | ----------------------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------- |

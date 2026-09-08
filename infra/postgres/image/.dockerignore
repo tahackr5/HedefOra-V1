@@ -1,0 +1,13 @@
+**
+!Dockerfile
+!entrypoint.sh
+!inputs/
+!inputs/apk/
+!inputs/apk/build/
+!inputs/apk/build/*.apk
+!inputs/apk/build/SHA256SUMS
+!inputs/apk/runtime/
+!inputs/apk/runtime/*.apk
+!inputs/apk/runtime/SHA256SUMS
+!inputs/source/
+!inputs/source/postgresql-17.11.tar.bz2

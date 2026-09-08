@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "scope": "postgres-image-only",
+  "grype": {
+    "version": "0.118.0",
+    "commit": "756eb9a24f7beeafb6871a24e943e8a3ae210695",
+    "platforms": {
+      "windows/amd64": {
+        "url": "https://github.com/anchore/grype/releases/download/v0.118.0/grype_0.118.0_windows_amd64.zip",
+        "sha256": "82fb07f246e61526e8f2bf187fc6bb29ed23c7450cda6e9d1868a60fb942fc98",
+        "executableSha256": "565446b4bc9fd7cc4a72d1066468650eab6941b19ba804ca4649e504c2c2a024"
+      },
+      "linux/amd64": {
+        "url": "https://github.com/anchore/grype/releases/download/v0.118.0/grype_0.118.0_linux_amd64.tar.gz",
+        "sha256": "1d444c5e7360471815f7158f71935fcecc68a3c417d85c7344f770854300bba2",
+        "executableSha256": "91705979c6ccb736b87e3250831f5e1a35f13767fd2032ffa85c55b1e6f58f90"
+      }
+    }
+  },
+  "syft": {
+    "version": "1.51.1",
+    "schemaVersion": "16.1.10",
+    "generateCpes": true,
+    "commit": "91a0032987d91b7411b52f6f5c185c5e7f775495",
+    "platforms": {
+      "windows/amd64": {
+        "url": "https://github.com/anchore/syft/releases/download/v1.51.1/syft_1.51.1_windows_amd64.zip",
+        "sha256": "5e4bc3e6b6344b4625de0f7aa5351aaa72856d11d78462972de0a101ee2c1c8f",
+        "executableSha256": "5a95b689def43f26de1505ed43dc76306cded7923140b349619e21ddc2ac5ce4"
+      },
+      "linux/amd64": {
+        "url": "https://github.com/anchore/syft/releases/download/v1.51.1/syft_1.51.1_linux_amd64.tar.gz",
+        "sha256": "8fcb33017a0dc1058298c923c436d19dfa68ae93968e0b423248542e3afb9fc3",
+        "executableSha256": "abca2def61de9952fa06d3977bb1e064818facb9badfce502b450d3d6846a91f"
+      }
+    }
+  },
+  "database": {
+    "url": "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.9_2026-09-06T00:36:16Z_1788676055.tar.zst",
+    "schemaVersion": "v6.1.9",
+    "built": "2026-09-06T06:27:35Z",
+    "sha256": "3c93034d0475d25fc82addd47b2300f99564ea4f35fd9e0b957b701049a15020",
+    "size": 151928781,
+    "extractedSha256": "1d5c70fc2cf27f76fa62c2c9ccb8506383653a54f28e6fa7d5dbfba3fba4e9b0",
+    "maxAgeHours": 48,
+    "maxFutureMinutes": 10
+  },
+  "postgres": {
+    "version": "17.11",
+    "url": "https://ftp.postgresql.org/pub/source/v17.11/postgresql-17.11.tar.bz2",
+    "sha256": "dd27f2b3c59e73ed14aa3324901242bf69a032a6347805f274e6260322d42979",
+    "size": 21787224
+  },
+  "licenseReview": {
+    "status": "NOT_EVALUATED",
+    "scope": "All literal build/runtime APK and PostgreSQL source licenses require separate image-specific review. This lock grants no execution, distribution or R-016 exception."
+  }
+}

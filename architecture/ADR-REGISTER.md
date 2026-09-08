@@ -123,4 +123,91 @@ Bu karar additive API sözleşmesini değiştirmez; DB/event/job veya veri migra
 
 ## Yeni ADR şablonu
 
+## ADR-0018 — Bounded pgxpool ve security-only graph pinleri
+
+- Durum: `Accepted`; owner onayı: `2026-09-06`, DQ-008 A.
+- Üretici: exact Go module graph. Tüketiciler: PostgreSQL adapter, test, SBOM ve R-016.
+
+pgx `v5.10.0` ve `x/text v0.41.0`, `x/mod v0.40.0`, `goldmark v1.7.17` security override'ları değerlendirmeye alınır. Bu karar scanner PASS değildir. Pool paylaşılır; acquired connection dışarı verilmez ve aynı connection üzerinde eşzamanlı kullanım, `Conn.Raw`, COPY ve provider tracer exposure ilk dilimde yoktur. Adapter yalnız bounded readiness ve kapanış yüzeyi açar. Parse öncesi ambient PG/service/passfile/TLS girişleri reddedilir; TLS hostname/CA doğrulaması zorunludur, plaintext fallback yasaktır. Raw credential/DSN/provider hataları dışarı taşınmaz.
+
+Go tidy'nin kaldırdığı security-only graph pinleri sahte import ile tutulmaz. Deterministik checker disposable tidy sonrasında yalnız kabul edilmiş exact security pinlerini yeniden uygulayıp manifest/checksum parity'yi doğrular; seçili bütün transitif modüller R-016'da taranır. Risk: upstream documented connection-ownership ihlalinin panic hazard'ı sürer; intended-use stress/race ve misuse boundary testleri zorunludur. API wire/veri migration etkisi yoktur. Rollback adapter tüketicileriyle dependency manifestlerini birlikte geri almaktır. River ve yeni migration library admission'ı bu karara dahil değildir.
+
+## ADR-0019 — İki-operation health compiler ve readiness
+
+- Durum: `Accepted`; owner onayı: `2026-09-06`, DQ-009 A.
+
+DEC-027 tek-operation profili ayrı bir compiler task'ında tam iki operation'a taşınır. `/health/live` mevcut process/drain semantiğini korur ve DB'den bağımsızdır. `/health/ready`, drain yokken bounded DB probe başarılıysa `200 {"status":"ready"}`, aksi halde mevcut generic typed `503` verir. Readiness migration ledger'ını okumaz; app rolünün `hedefora_meta` erişim yasağı korunur. Strict interface'in yeni metodu bütün internal consumer/test double'larıyla atomik değiştirilir; yeni TypeScript consumer bu task'a dahil değildir.
+
+Kanonik OpenAPI → fixed literal renderer → tek generated Go artifact sırası korunur. Yeni parser/dependency, spec kaynaklı symbol/import/path interpolation, limit artışı veya elle generated edit yoktur. İkinci operation için independent semantic parity, negative corpus, exact source/output digest, Go/HTTP testleri ve fresh security/cold review gerekir. Kamu API değişikliği additive'dir; geçerli DB config'in API startup ön koşulu olması internal startup compatibility değişikliğidir. Geçici DB kesintisi liveness listener'ını engellemez. Rollback runtime/contract/compiler'ı birlikte geri almaktır; SQL değişmez.
+
+## ADR-0020 — Hardened kaynak-build PostgreSQL 17 image
+
+- Durum: `Accepted`; owner onayı: `2026-09-06`, DQ-010 B.
+
+Eski critical/high sinyalli PostgreSQL image'leri inert kalır. Yeni image; digest-pinned base, SHA-pinned PostgreSQL source ve tam paket closure'ından ağsız build aşamalarıyla üretilir. Builder/runtime OS envanteri ve kaynak-build PostgreSQL CPE'si ayrı SBOM/tarama kapsamıdır; kaynak sürümü paket DB'sinde görünmediği için sıfır coverage PASS olamaz. Scanner binary ve advisory DB byte kimliği, freshness, extraction/package parity, known-vulnerable canary, unknown severity ve process error negatifleri zorunludur. CVSS ≥7, High/Critical veya bilinmeyen severity fail-closed kalır; ignore/VEX/only-fixed ile eşik düşürülmez.
+
+Npm/Go R-016 policy dosyaları değiştirilmez. Image paket lisansları ve varsa dağıtım/source yükümlülükleri ayrı kayıt ve review ister; image üretim onayı dağıtım/lisans exception'ı değildir. Başlangıç hedefi yalnız disposable local/CI ortamıdır; registry yayınlama veya staging/production deployment yoktur. Kaynak/DB publisher compromise ve reproducible-build riskleri kanıtta açık tutulur. Execution admission, canonical scan ve bağımsız security kabulünden sonra açılır. Rollback inert Compose'u korumak ve yalnız bu task'ın disposable kaynaklarını temizlemektir; production/veri migration etkisi yoktur.
+
 `templates/ADR.md` kullanılır. Yeni karar burada yalnız tek satır özetle indekslenir.
+
+## ADR-0021 — Ağsız, geçici PG17 test-fixture risk kabulü
+
+- Durum: Accepted; owner onayı 2026-09-07, DEC-031 / DQ-011.
+- Kapsam: W001-T04F Phase B gerçek SQL/TLS/SCRAM/pool/readiness acceptance.
+
+Owner, bilinen zafiyetler için yalnız local/CI test-time execution istisnası
+vermiştir. ADR-0020 hardened-image ve production kuralları değişmez. Ayrı
+test profili, mevcut glibc test araçlarıyla uyumlu CNPG17.11 minimal Trixie
+adayının exact OCI manifest/config ve ham scanner/DB/sonlu bulgu kimliğine
+bağlanır. Vulnerability sonucu FAIL olarak saklanır; `not_affected`, ignore,
+only-fixed veya tüm image'lere yayılan bir PASS kullanılmaz. DB48saat
+freshness ve run20dakika bütçesi korunur. Lisans/provenance ayrıca
+değerlendirilir; bu onay bilinmeyen byte kaynağı veya dağıtım lisansı değildir.
+
+İki PostgreSQL process'i ve test istemcileri tek `--network none` container'ın
+loopback namespace'inde bulunur. Container explicit26:102 nonroot, read-only
+root, cap-dropALL/no-new-privileges/default seccomp, private PID/IPC,
+bounded memory/CPU/PID ve UID-owned ephemeral tmpfs kullanır. Publish port,
+host network/PID/IPC, ek capability/device, Docker socket, gerçek credential,
+production data, writable host bind veya kalıcı volume yoktur. Host create
+sonrası/start öncesi ve koşum boyunca actual inspect'i doğrular; receipt
+self-claim'i izolasyon authority'si değildir. Exact owned ID+etiket ile
+cleanup ve absence zorunlu; timeout/iptal/lost ACK hata olarak korunur.
+
+Go1.26.7 integration/race binary'leri, test2json ve TLS generator ayrı mevcut
+pinned Go tooling aşamasında derlenir; kaynak/tool/build provenance ve
+binary hash'leri bağlanır. Güvenilir readonly Node supervisor container'da
+native initdb/postgres/psql süreçlerini yönetir. Mevcut migration/role SQL,
+SQL acceptance ve iki Go v2 fixture consumer'ı korunur. Her SQL koşulu ve
+tam altı package-qualified Go testi gerçek engine üzerinde PASS, skip0 ve
+raw0 ister. Fixture testleri image/hardened-entrypoint/production kabulü
+değildir; PG/Node/Go aynı UID tek trust domain, hostile image'a karşı
+bağımsız attestation iddiası yoktur.
+
+Eski `postgres:live` ve APK authority null kalır; inert Compose değişmez.
+Test fixture imajı yayımlanmaz, dağıtım artifact'ına bağlanmaz. Rollback
+ayrı fixture profilini kapatmak/dar reviewed revert ve yalnız owned geçici
+resource'ları temizlemektir. API/DB veri migration etkisi yoktur. Başarılı
+engine/full-tree/hosted/security/cold sonrası yalnız PR #8 draft kaldırma
+yetkisi verilmiştir; main merge bu kararla yapılmaz.
+
+Docker Desktop Windows bind mount'ları Linux'ta0777 mode gösterebilir;
+bu profil için gerçek readonly mount sınırı esastır. Host exact path/RWfalse,
+container mountinfo ro/no nested mount ve her bind'de mevcut regular file'ı
+truncate etmeden write-open + benzersiz file-create girişimlerinin yalnız
+EROFS ile reddi zorunludur. Stat mode biti tek başına RO kanıtı değildir.
+Symlink/hardlink, canonical path, FD/fstat/inventory/hash kontrolleri korunur.
+Güvenilir host/daemon ve private snapshot üzerinde eşzamanlı writer yokluğu
+varsayılır; pre/post hash kötü niyetli ABA yarışını dışlayan bir kanıt değildir.
+Bağımsız security değerlendirmesi bu uygulama ayrıntısını uygun bulmuştur;
+benign pinned Go helper gerçek Docker29.7.2/Node24.20 üzerinde mode0777,
+RWfalse, ikiEROFS ve owned removal/absence PASS vermiştir (kanıt
+e7b4cdbf092375d12e8b801219318ab4ff20564f8a25c6da3c155a5603507a2b).
+
+0444/0555 DAC izni write-open'ı EROFS öncesi EACCES ile durdurabileceği
+için probe her bind'ın `.fixture-ro-probe/canary` alanında kalibre edilir.
+Bu tek deterministic public dosya ve dizini0777/0666 olarak hazırlanır;
+asıl source/tool/run izinleri ve private ancestor/ACL korunur. Container
+DAC-yazılabilirlik, canonical/nlink1/type/byte doğrulaması sonrası altı
+strict EROFS ister; EACCES muafiyeti yoktur. Reserved tracked path reddi,
+exact ek inventory ve pre/post hash zorunludur; prefix/glob ignore yoktur.

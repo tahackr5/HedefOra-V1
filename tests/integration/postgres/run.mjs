@@ -193,7 +193,7 @@ export function buildMigrationPlan(sqlFiles, checksumText) {
   return plan;
 }
 
-function collectMigrationPlan() {
+export function collectMigrationPlan() {
   const entries = readdirSync(migrationsDirectory, { withFileTypes: true });
   const sqlFiles = new Map();
   for (const entry of entries) {

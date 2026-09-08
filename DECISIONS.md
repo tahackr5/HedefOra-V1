@@ -34,6 +34,16 @@ Bu dosya yalnız kabul edilmiş, repository çapında etkili kararların kısa k
 
 ## Değiştirme kuralı
 
+### 2026-09-06 — Owner onaylı Phase B kararları
+
+- DEC-028 (ACCEPTED; ADR-0018): DQ-008 A ile pgx `v5.10.0`, exact security override'ları ve pgxpool-only adapter yolu kabul edildi. All-scope R-016/lisans, secret/TLS sınırı ve intended-use cancel/close stress/race kapıları korunur. Testcontainers/golang-migrate admission'ı verilmez.
+- DEC-029 (ACCEPTED; ADR-0019): DQ-009 A ile ayrı security-critical compiler task'ında yalnız `/health/live` ve `/health/ready` iki-operation profili kabul edildi. DEC-027'nin interpolation, dependency, filesystem ve deterministik üretim sınırları değişmez; genişleme fresh security review ister.
+- DEC-030 (ACCEPTED; ADR-0020): DQ-010 B ile repository-owned hardened PG17 image geliştirme/değerlendirmesi kabul edildi. Pinned source/base/package closure, SBOM/provenance, ayrı OS/source vulnerability ve lisans kanıtı olmadan execution admission yoktur; eski blocked image'ler çalıştırılmaz.
+- DEC-031 (ACCEPTED; ADR-0021; owner 2026-09-07): Yalnız W001 Phase B yerel/CI engine testi için ayrı, exact-digest PG17 fixture risk kabulü verildi. Ağsız `network=none`, nonroot, cap-drop ALL, read-only root, ephemeral tmpfs, bounded kaynak/ömür, host tarafından doğrulanmış izolasyon ve cleanup zorunludur. VEX `not_affected` veya genel vulnerability PASS üretilmez; finite bulgu/scan/DB/image/source/tool kimlikleri ve süre mühürlenir. Production/runtime dağıtımı, hardened-image admission ve mevcut R-016/image policy istisnaya dahil değildir. Testler/hosted/security/cold tamamlanmadan PR draft kaldırılmaz; merge ayrıca exact-head owner onayı ister.
+- DEC-026 uygulama kaydı: Owner-onaylı PR #6 head `01017a25bf02f27924bf0361fd6b70abdc493ac0`, content-identical merge `7a1e124e432b51694e7d60c0d3d1589867a8835f` ve local/hosted post-merge PASS sonrası Phase B'nin ortak immutable base'i bu merge'dir; historical wave start değişmez.
+
+- DEC-026 continuation kaydı: Owner-approved PR #7 exact `7459265b2f5744d7aa40feddfc85cb8fcabb8567` → two-parent/content-identical `aba3d13ed057bbe80a2e67486058180479c3c50e` / tree `ed51da48638d362ff52169658321604dedba442a`, gerçek local/hosted Go1.26.7 full-tree, R-016, CodeQL ve independent cold PASS sonrasında Phase B continuation'ın immutable/trusted control base'i aba3d13'tür. Historical wave start ve önceki runtime first-parent lineage korunur; kanıt `state/W001-PHASE-B.md` içindedir.
+
 Bir ACCEPTED karar yalnız:
 
 1. yeni ADR,

@@ -13,7 +13,7 @@ import (
 var ErrInvalidServerDependency = errors.New("invalid HTTP server dependency")
 
 func NewServer(value config.API, handler http.Handler, logger *slog.Logger) (*http.Server, error) {
-	if handler == nil || logger == nil || config.ValidateAPI(value) != nil {
+	if nilDependency(handler) || logger == nil || config.ValidateAPI(value) != nil {
 		return nil, ErrInvalidServerDependency
 	}
 	return &http.Server{

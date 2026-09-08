@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -29,7 +30,7 @@ func TestRunAPIOnListenerServesDrainsAndStops(t *testing.T) {
 	value.ShutdownTimeout = 2 * time.Second
 	var logs bytes.Buffer
 	logger := telemetry.NewJSONLogger(&logs)
-	runtime, err := buildAPIRuntime(value, logger, bytes.NewReader(bytes.Repeat([]byte{0x33}, 32)))
+	runtime, err := buildAPIRuntime(value, logger, bytes.NewReader(bytes.Repeat([]byte{0x33}, 32)), &poolStub{})
 	if err != nil {
 		t.Fatalf("buildAPIRuntime() error = %v", err)
 	}
@@ -113,20 +114,20 @@ func TestBuildAPIRuntimeAndRunAPIRejectStartupFailures(t *testing.T) {
 
 	value := config.DefaultAPI()
 	logger := telemetry.NewJSONLogger(new(bytes.Buffer))
-	if _, err := buildAPIRuntime(value, logger, bytes.NewReader(nil)); !errors.Is(err, ErrAPIStartup) {
+	if _, err := buildAPIRuntime(value, logger, bytes.NewReader(nil), &poolStub{}); !errors.Is(err, ErrAPIStartup) {
 		t.Fatalf("buildAPIRuntime(no entropy) error = %v", err)
 	}
 	invalid := value
 	invalid.RetryAfterSeconds = 0
-	if _, err := buildAPIRuntime(invalid, logger, bytes.NewReader(bytes.Repeat([]byte{1}, 32))); !errors.Is(err, ErrAPIStartup) {
+	if _, err := buildAPIRuntime(invalid, logger, bytes.NewReader(bytes.Repeat([]byte{1}, 32)), &poolStub{}); !errors.Is(err, ErrAPIStartup) {
 		t.Fatalf("buildAPIRuntime(invalid retry) error = %v", err)
 	}
 	cancelled, cancel := context.WithCancel(context.Background())
 	cancel()
-	if err := RunAPI(cancelled, value, logger); err != nil {
+	if err := runAPI(cancelled, value, config.Postgres{}, logger, testDependencies(&poolStub{})); err != nil {
 		t.Fatalf("RunAPI(cancelled) error = %v", err)
 	}
-	if err := RunAPI(nil, value, logger); !errors.Is(err, ErrAPIStartup) {
+	if err := RunAPI(nil, value, config.Postgres{}, logger); !errors.Is(err, ErrAPIStartup) {
 		t.Fatalf("RunAPI(nil) error = %v", err)
 	}
 }
@@ -141,7 +142,7 @@ func TestRunAPIReturnsListenFailureForOccupiedAddress(t *testing.T) {
 	t.Cleanup(func() { _ = listener.Close() })
 	value := config.DefaultAPI()
 	value.ListenAddress = listener.Addr().String()
-	if err := RunAPI(context.Background(), value, telemetry.NewJSONLogger(io.Discard)); !errors.Is(err, ErrAPIListen) {
+	if err := runAPI(context.Background(), value, config.Postgres{}, telemetry.NewJSONLogger(io.Discard), testDependencies(&poolStub{})); !errors.Is(err, ErrAPIListen) {
 		t.Fatalf("RunAPI(occupied address) error = %v", err)
 	}
 }
@@ -159,7 +160,7 @@ func TestRunAPIOnListenerReturnsServeFailure(t *testing.T) {
 	value := config.DefaultAPI()
 	value.ListenAddress = listener.Addr().String()
 	logger := telemetry.NewJSONLogger(io.Discard)
-	runtime, err := buildAPIRuntime(value, logger, bytes.NewReader(bytes.Repeat([]byte{0x44}, 32)))
+	runtime, err := buildAPIRuntime(value, logger, bytes.NewReader(bytes.Repeat([]byte{0x44}, 32)), &poolStub{})
 	if err != nil {
 		t.Fatalf("buildAPIRuntime() error = %v", err)
 	}
@@ -179,7 +180,7 @@ func TestRunAPIOnListenerForcesCloseAfterShutdownTimeout(t *testing.T) {
 	value.DrainDelay = 100 * time.Millisecond
 	value.ShutdownTimeout = time.Second
 	logger := telemetry.NewJSONLogger(io.Discard)
-	runtime, err := buildAPIRuntime(value, logger, bytes.NewReader(bytes.Repeat([]byte{0x55}, 32)))
+	runtime, err := buildAPIRuntime(value, logger, bytes.NewReader(bytes.Repeat([]byte{0x55}, 32)), &poolStub{})
 	if err != nil {
 		t.Fatalf("buildAPIRuntime() error = %v", err)
 	}
@@ -239,7 +240,7 @@ func TestRunAPIOnListenerWaitsForInflightRequestDuringGracefulShutdown(t *testin
 	value.DrainDelay = 100 * time.Millisecond
 	value.ShutdownTimeout = time.Second
 	logger := telemetry.NewJSONLogger(io.Discard)
-	runtime, err := buildAPIRuntime(value, logger, bytes.NewReader(bytes.Repeat([]byte{0x66}, 32)))
+	runtime, err := buildAPIRuntime(value, logger, bytes.NewReader(bytes.Repeat([]byte{0x66}, 32)), &poolStub{})
 	if err != nil {
 		t.Fatalf("buildAPIRuntime() error = %v", err)
 	}
@@ -384,5 +385,197 @@ func decodeNetworkJSON(t *testing.T, reader io.Reader, destination any) {
 	var trailing any
 	if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
 		t.Fatalf("Decode() trailing value error = %v", err)
+	}
+}
+
+type poolStub struct {
+	check      func(context.Context) error
+	close      func(context.Context) error
+	closeCalls atomic.Int32
+}
+
+func (pool *poolStub) Check(ctx context.Context) error {
+	if pool.check != nil {
+		return pool.check(ctx)
+	}
+	return nil
+}
+func (pool *poolStub) Close(ctx context.Context) error {
+	pool.closeCalls.Add(1)
+	if pool.close != nil {
+		return pool.close(ctx)
+	}
+	return nil
+}
+func testDependencies(pool *poolStub) apiDependencies {
+	return apiDependencies{
+		newPool: func(context.Context, config.Postgres) (databasePool, error) { return pool, nil },
+		listen:  net.Listen,
+		entropy: bytes.NewReader(bytes.Repeat([]byte{0x77}, 32)),
+	}
+}
+
+func TestRunAPICleansPoolOnBuildListenAndServeFailure(t *testing.T) {
+	t.Parallel()
+	const poison = "fixture-pool-provider-secret"
+	for _, phase := range []string{"build", "listen", "serve"} {
+		t.Run(phase, func(t *testing.T) {
+			t.Parallel()
+			pool := &poolStub{}
+			dependencies := testDependencies(pool)
+			expected := ErrAPIStartup
+			switch phase {
+			case "build":
+				dependencies.entropy = bytes.NewReader(nil)
+				dependencies.listen = func(string, string) (net.Listener, error) {
+					t.Error("listener called after build failure")
+					return nil, errors.New(poison)
+				}
+			case "listen":
+				expected = ErrAPIListen
+				dependencies.listen = func(string, string) (net.Listener, error) { return nil, errors.New(poison) }
+			case "serve":
+				expected = ErrAPIServe
+				dependencies.listen = func(string, string) (net.Listener, error) {
+					listener, err := net.Listen("tcp", "127.0.0.1:0")
+					if err != nil {
+						return nil, err
+					}
+					if err = listener.Close(); err != nil {
+						return nil, err
+					}
+					return listener, nil
+				}
+			}
+			pool.close = func(ctx context.Context) error {
+				deadline, ok := ctx.Deadline()
+				if !ok || ctx.Err() != nil || time.Until(deadline) > config.DefaultAPI().ShutdownTimeout {
+					t.Error("pool close has no fresh bounded context")
+				}
+				return nil
+			}
+			err := runAPI(context.Background(), config.DefaultAPI(), config.Postgres{}, telemetry.NewJSONLogger(io.Discard), dependencies)
+			if !errors.Is(err, expected) || pool.closeCalls.Load() != 1 {
+				t.Fatalf("runAPI(%s) error=%v, close calls=%d", phase, err, pool.closeCalls.Load())
+			}
+			if strings.Contains(err.Error(), poison) {
+				t.Fatal("provider error leaked")
+			}
+		})
+	}
+}
+
+func TestRunAPIPoolConstructionFailureDoesNotOpenListener(t *testing.T) {
+	t.Parallel()
+	const poison = "fixture-constructor-secret"
+	dependencies := testDependencies(&poolStub{})
+	dependencies.newPool = func(context.Context, config.Postgres) (databasePool, error) { return nil, errors.New(poison) }
+	dependencies.listen = func(string, string) (net.Listener, error) {
+		t.Error("listener opened after constructor failure")
+		return nil, errors.New(poison)
+	}
+	err := runAPI(context.Background(), config.DefaultAPI(), config.Postgres{}, telemetry.NewJSONLogger(io.Discard), dependencies)
+	if !errors.Is(err, ErrAPIStartup) || strings.Contains(err.Error(), poison) {
+		t.Fatalf("runAPI error=%v", err)
+	}
+	for _, pool := range []databasePool{nil, (*poolStub)(nil)} {
+		dependencies.newPool = func(context.Context, config.Postgres) (databasePool, error) { return pool, nil }
+		// poolStub.Close dereferences its receiver: reaching cleanup for the
+		// typed-nil case would panic, and must fail this regression test.
+		if err := runAPI(context.Background(), config.DefaultAPI(), config.Postgres{}, telemetry.NewJSONLogger(io.Discard), dependencies); !errors.Is(err, ErrAPIStartup) {
+			t.Fatalf("nil pool error=%v", err)
+		}
+	}
+}
+
+func TestRunAPICloseBudgetIsBoundedAndErrorsStayGeneric(t *testing.T) {
+	t.Parallel()
+	value := config.DefaultAPI()
+	value.ShutdownTimeout = time.Second
+	pool := &poolStub{close: func(ctx context.Context) error { <-ctx.Done(); return errors.New("fixture-close-secret") }}
+	dependencies := testDependencies(pool)
+	dependencies.listen = func(string, string) (net.Listener, error) { return nil, errors.New("fixture-listen-secret") }
+	started := time.Now()
+	err := runAPI(context.Background(), value, config.Postgres{}, telemetry.NewJSONLogger(io.Discard), dependencies)
+	if !errors.Is(err, ErrAPIListen) || !errors.Is(err, ErrAPIShutdown) || strings.Contains(err.Error(), "fixture-") {
+		t.Fatalf("runAPI error=%v", err)
+	}
+	if elapsed := time.Since(started); elapsed < time.Second || elapsed > 3*time.Second {
+		t.Fatalf("bounded pool close elapsed=%v", elapsed)
+	}
+	if pool.closeCalls.Load() != 1 {
+		t.Fatalf("close calls=%d", pool.closeCalls.Load())
+	}
+}
+
+func TestRunAPIWithUnavailableDatabaseServesLiveAndClosesAfterDrain(t *testing.T) {
+	t.Parallel()
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = listener.Close() })
+	value := config.DefaultAPI()
+	value.ListenAddress = listener.Addr().String()
+	value.DrainDelay = 300 * time.Millisecond
+	pool := &poolStub{check: func(context.Context) error { return errors.New("fixture-offline-database-secret") }}
+	dependencies := testDependencies(pool)
+	dependencies.listen = func(string, string) (net.Listener, error) { return listener, nil }
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	result := make(chan error, 1)
+	go func() {
+		result <- runAPI(ctx, value, config.Postgres{}, telemetry.NewJSONLogger(io.Discard), dependencies)
+	}()
+	client := &http.Client{Timeout: time.Second}
+	base := "http://" + listener.Addr().String()
+	for _, endpoint := range []struct {
+		path   string
+		status int
+	}{{"/health/live", 200}, {"/health/ready", 503}} {
+		response := awaitStatus(t, client, base+endpoint.path, endpoint.status, time.Second)
+		assertNetworkResponseHeaders(t, response, endpoint.status)
+		payload, readErr := io.ReadAll(response.Body)
+		_ = response.Body.Close()
+		if readErr != nil || strings.Contains(string(payload), "fixture-") {
+			t.Fatal("database probe leaked or response unreadable")
+		}
+	}
+	if pool.closeCalls.Load() != 0 {
+		t.Fatal("pool closed while listener was active")
+	}
+	cancel()
+	for _, path := range []string{"/health/live", "/health/ready"} {
+		response := awaitStatus(t, client, base+path, http.StatusServiceUnavailable, time.Second)
+		assertNetworkResponseHeaders(t, response, http.StatusServiceUnavailable)
+		_ = response.Body.Close()
+	}
+	select {
+	case err := <-result:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("runtime did not stop")
+	}
+	if pool.closeCalls.Load() != 1 {
+		t.Fatalf("close calls=%d", pool.closeCalls.Load())
+	}
+}
+
+func TestBuildAPIRuntimeRejectsNilReadinessAndLogger(t *testing.T) {
+	t.Parallel()
+	logger := telemetry.NewJSONLogger(io.Discard)
+	for _, build := range []func() (*apiRuntime, error){
+		func() (*apiRuntime, error) {
+			return buildAPIRuntime(config.DefaultAPI(), logger, bytes.NewReader(bytes.Repeat([]byte{1}, 32)), nil)
+		},
+		func() (*apiRuntime, error) {
+			return buildAPIRuntime(config.DefaultAPI(), nil, bytes.NewReader(bytes.Repeat([]byte{1}, 32)), &poolStub{})
+		},
+	} {
+		if _, err := build(); !errors.Is(err, ErrAPIStartup) {
+			t.Fatalf("build error=%v", err)
+		}
 	}
 }

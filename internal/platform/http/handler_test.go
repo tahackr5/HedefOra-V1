@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/tahackr5/HedefOra-V1/internal/generated/openapi"
 	"github.com/tahackr5/HedefOra-V1/internal/platform/health"
@@ -21,73 +22,85 @@ const handlerRequestID openapi.RequestID = "7d444840-9dc0-4bb4-9f1d-6a20c3ce090a
 
 func TestHandlerServesExactGeneratedLiveResponse(t *testing.T) {
 	t.Parallel()
+	for _, endpoint := range healthEndpoints {
+		t.Run(endpoint.name, func(t *testing.T) {
+			t.Parallel()
 
-	service, _ := health.NewService(5)
-	handler, logs := newTestHandler(t, service)
-	request := httptest.NewRequest(http.MethodGet, "http://example.test/health/live", nil)
-	const poison = "fixture-spoofed-request-secret"
-	request.Header.Set("X-Request-ID", poison)
-	request.Header.Set("Authorization", "Bearer "+poison)
-	request.Header.Set("Cookie", "session="+poison)
-	request.Header.Set("User-Agent", poison)
-	response := httptest.NewRecorder()
-	handler.ServeHTTP(response, request)
+			service, _ := health.NewService(5, healthyProbe{}, time.Second)
+			handler, logs := newTestHandler(t, service)
+			request := httptest.NewRequest(http.MethodGet, "http://example.test"+endpoint.path, nil)
+			const poison = "fixture-spoofed-request-secret"
+			request.Header.Set("X-Request-ID", poison)
+			request.Header.Set("Authorization", "Bearer "+poison)
+			request.Header.Set("Cookie", "session="+poison)
+			request.Header.Set("User-Agent", poison)
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, request)
 
-	assertResponseHeaders(t, response, http.StatusOK)
-	if response.Header().Get("X-Request-ID") != string(handlerRequestID) {
-		t.Fatalf("X-Request-ID = %q", response.Header().Get("X-Request-ID"))
+			assertResponseHeaders(t, response, http.StatusOK)
+			if response.Header().Get("X-Request-ID") != string(handlerRequestID) {
+				t.Fatalf("X-Request-ID = %q", response.Header().Get("X-Request-ID"))
+			}
+			var body struct {
+				Status string `json:"status"`
+			}
+			decodeJSON(t, response.Body.Bytes(), &body)
+			if body.Status != endpoint.name {
+				t.Fatalf("body = %#v", body)
+			}
+			if strings.Contains(logs.String(), poison) {
+				t.Fatalf("logs leaked inbound request metadata: %s", logs.String())
+			}
+			assertRequestLog(t, logs, http.StatusOK, "success", endpoint.operation, "get")
+		})
 	}
-	var body openapi.HealthLiveResponse
-	decodeJSON(t, response.Body.Bytes(), &body)
-	if body.Status != openapi.HealthLiveStatusLive {
-		t.Fatalf("body = %#v", body)
-	}
-	if strings.Contains(logs.String(), poison) {
-		t.Fatalf("logs leaked inbound request metadata: %s", logs.String())
-	}
-	assertRequestLog(t, logs, http.StatusOK, "success", openapi.GetHealthLiveOperationID, "get")
 }
 
 func TestHandlerRejectsMethodPathQueryAndBodyVariants(t *testing.T) {
 	t.Parallel()
-
-	tests := []struct {
-		name        string
-		method      string
-		target      string
-		body        io.Reader
-		status      int
-		code        openapi.ErrorCode
-		allowHeader string
-	}{
-		{name: "head", method: http.MethodHead, target: "/health/live", status: 405, code: openapi.ErrorCodeMethodNotAllowed, allowHeader: "GET"},
-		{name: "post", method: http.MethodPost, target: "/health/live", status: 405, code: openapi.ErrorCodeMethodNotAllowed, allowHeader: "GET"},
-		{name: "options", method: http.MethodOptions, target: "/health/live", status: 405, code: openapi.ErrorCodeMethodNotAllowed, allowHeader: "GET"},
-		{name: "trailing slash", method: http.MethodGet, target: "/health/live/", status: 404, code: openapi.ErrorCodeRouteNotFound},
-		{name: "case drift", method: http.MethodGet, target: "/Health/live", status: 404, code: openapi.ErrorCodeRouteNotFound},
-		{name: "double slash", method: http.MethodGet, target: "/health//live", status: 404, code: openapi.ErrorCodeRouteNotFound},
-		{name: "dot segment", method: http.MethodGet, target: "/health/./live", status: 404, code: openapi.ErrorCodeRouteNotFound},
-		{name: "encoded alias", method: http.MethodGet, target: "/health/%6cive", status: 404, code: openapi.ErrorCodeRouteNotFound},
-		{name: "backslash", method: http.MethodGet, target: "/health%5Clive", status: 404, code: openapi.ErrorCodeRouteNotFound},
-		{name: "suffix", method: http.MethodGet, target: "/health/live.json", status: 404, code: openapi.ErrorCodeRouteNotFound},
-		{name: "query", method: http.MethodGet, target: "/health/live?probe=1", status: 400, code: openapi.ErrorCodeInvalidRequest},
-		{name: "force query", method: http.MethodGet, target: "/health/live?", status: 400, code: openapi.ErrorCodeInvalidRequest},
-		{name: "body", method: http.MethodGet, target: "/health/live", body: strings.NewReader("fixture-body"), status: 400, code: openapi.ErrorCodeInvalidRequest},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, endpoint := range healthEndpoints {
+		t.Run(endpoint.name, func(t *testing.T) {
 			t.Parallel()
-			strict := &strictStub{response: liveResponse()}
-			handler, _ := newTestHandler(t, strict)
-			request := httptest.NewRequest(test.method, "http://example.test"+test.target, test.body)
-			response := httptest.NewRecorder()
-			handler.ServeHTTP(response, request)
-			assertErrorResponse(t, response, test.status, test.code)
-			if response.Header().Get("Allow") != test.allowHeader {
-				t.Fatalf("Allow = %q, want %q", response.Header().Get("Allow"), test.allowHeader)
+
+			tests := []struct {
+				name        string
+				method      string
+				target      string
+				body        io.Reader
+				status      int
+				code        openapi.ErrorCode
+				allowHeader string
+			}{
+				{name: "head", method: http.MethodHead, target: "/health/live", status: 405, code: openapi.ErrorCodeMethodNotAllowed, allowHeader: "GET"},
+				{name: "post", method: http.MethodPost, target: "/health/live", status: 405, code: openapi.ErrorCodeMethodNotAllowed, allowHeader: "GET"},
+				{name: "options", method: http.MethodOptions, target: "/health/live", status: 405, code: openapi.ErrorCodeMethodNotAllowed, allowHeader: "GET"},
+				{name: "trailing slash", method: http.MethodGet, target: "/health/live/", status: 404, code: openapi.ErrorCodeRouteNotFound},
+				{name: "case drift", method: http.MethodGet, target: "/Health/live", status: 404, code: openapi.ErrorCodeRouteNotFound},
+				{name: "double slash", method: http.MethodGet, target: "/health//live", status: 404, code: openapi.ErrorCodeRouteNotFound},
+				{name: "dot segment", method: http.MethodGet, target: "/health/./live", status: 404, code: openapi.ErrorCodeRouteNotFound},
+				{name: "encoded alias", method: http.MethodGet, target: "/health/%6cive", status: 404, code: openapi.ErrorCodeRouteNotFound},
+				{name: "backslash", method: http.MethodGet, target: "/health%5Clive", status: 404, code: openapi.ErrorCodeRouteNotFound},
+				{name: "suffix", method: http.MethodGet, target: "/health/live.json", status: 404, code: openapi.ErrorCodeRouteNotFound},
+				{name: "query", method: http.MethodGet, target: "/health/live?probe=1", status: 400, code: openapi.ErrorCodeInvalidRequest},
+				{name: "force query", method: http.MethodGet, target: "/health/live?", status: 400, code: openapi.ErrorCodeInvalidRequest},
+				{name: "body", method: http.MethodGet, target: "/health/live", body: strings.NewReader("fixture-body"), status: 400, code: openapi.ErrorCodeInvalidRequest},
 			}
-			if strict.calls.Load() != 0 {
-				t.Fatalf("strict calls = %d", strict.calls.Load())
+			for _, test := range tests {
+				t.Run(test.name, func(t *testing.T) {
+					t.Parallel()
+					strict := &strictStub{response: liveResponse(), readyResponse: readyResponse()}
+					handler, _ := newTestHandler(t, strict)
+					request := httptest.NewRequest(test.method, "http://example.test"+strings.ReplaceAll(strings.ReplaceAll(test.target, "live", endpoint.name), "%6cive", endpoint.encodedName), test.body)
+					response := httptest.NewRecorder()
+					handler.ServeHTTP(response, request)
+					assertErrorResponse(t, response, test.status, test.code)
+					if response.Header().Get("Allow") != test.allowHeader {
+						t.Fatalf("Allow = %q, want %q", response.Header().Get("Allow"), test.allowHeader)
+					}
+					if strict.calls.Load() != 0 {
+						t.Fatalf("strict calls = %d", strict.calls.Load())
+					}
+				})
 			}
 		})
 	}
@@ -95,53 +108,58 @@ func TestHandlerRejectsMethodPathQueryAndBodyVariants(t *testing.T) {
 
 func TestHandlerAcceptNegotiation(t *testing.T) {
 	t.Parallel()
-
-	tests := []struct {
-		name   string
-		accept *string
-		status int
-		code   openapi.ErrorCode
-	}{
-		{name: "absent", status: 200},
-		{name: "json", accept: text("application/json"), status: 200},
-		{name: "application wildcard", accept: text("application/*"), status: 200},
-		{name: "global wildcard", accept: text("*/*"), status: 200},
-		{name: "list", accept: text("text/plain, application/json;q=0.5"), status: 200},
-		{name: "quoted comma extension", accept: text(`text/plain; note="a,b", application/json`), status: 200},
-		{name: "bounded empty members", accept: text(", application/json,,"), status: 200},
-		{name: "horizontal tab OWS", accept: text("\tapplication/json\t"), status: 200},
-		{name: "specific veto", accept: text("application/json;q=0, */*;q=1"), status: 406, code: openapi.ErrorCodeNotAcceptable},
-		{name: "specific veto with extension", accept: text("application/json;q=0;foo=bar, */*;q=1"), status: 400, code: openapi.ErrorCodeInvalidRequest},
-		{name: "nonmatching", accept: text("application/problem+json"), status: 406, code: openapi.ErrorCodeNotAcceptable},
-		{name: "empty", accept: text(""), status: 400, code: openapi.ErrorCodeInvalidRequest},
-		{name: "bad q", accept: text("application/json;q=1.1"), status: 400, code: openapi.ErrorCodeInvalidRequest},
-		{name: "too precise q", accept: text("application/json;q=0.1234"), status: 400, code: openapi.ErrorCodeInvalidRequest},
-		{name: "duplicate q", accept: text("application/json;q=1;q=0"), status: 400, code: openapi.ErrorCodeInvalidRequest},
-		{name: "too many list members", accept: text(strings.Repeat(",", maximumAcceptMembers) + "application/json"), status: 400, code: openapi.ErrorCodeInvalidRequest},
-		{name: "unclosed quote", accept: text(`application/json; note="fixture`), status: 400, code: openapi.ErrorCodeInvalidRequest},
-		{name: "oversized", accept: text(strings.Repeat("a", maximumAcceptBytes+1)), status: 400, code: openapi.ErrorCodeInvalidRequest},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, endpoint := range healthEndpoints {
+		t.Run(endpoint.name, func(t *testing.T) {
 			t.Parallel()
-			strict := &strictStub{response: liveResponse()}
-			handler, _ := newTestHandler(t, strict)
-			request := httptest.NewRequest(http.MethodGet, "http://example.test/health/live", nil)
-			if test.accept != nil {
-				request.Header.Set("Accept", *test.accept)
+
+			tests := []struct {
+				name   string
+				accept *string
+				status int
+				code   openapi.ErrorCode
+			}{
+				{name: "absent", status: 200},
+				{name: "json", accept: text("application/json"), status: 200},
+				{name: "application wildcard", accept: text("application/*"), status: 200},
+				{name: "global wildcard", accept: text("*/*"), status: 200},
+				{name: "list", accept: text("text/plain, application/json;q=0.5"), status: 200},
+				{name: "quoted comma extension", accept: text(`text/plain; note="a,b", application/json`), status: 200},
+				{name: "bounded empty members", accept: text(", application/json,,"), status: 200},
+				{name: "horizontal tab OWS", accept: text("\tapplication/json\t"), status: 200},
+				{name: "specific veto", accept: text("application/json;q=0, */*;q=1"), status: 406, code: openapi.ErrorCodeNotAcceptable},
+				{name: "specific veto with extension", accept: text("application/json;q=0;foo=bar, */*;q=1"), status: 400, code: openapi.ErrorCodeInvalidRequest},
+				{name: "nonmatching", accept: text("application/problem+json"), status: 406, code: openapi.ErrorCodeNotAcceptable},
+				{name: "empty", accept: text(""), status: 400, code: openapi.ErrorCodeInvalidRequest},
+				{name: "bad q", accept: text("application/json;q=1.1"), status: 400, code: openapi.ErrorCodeInvalidRequest},
+				{name: "too precise q", accept: text("application/json;q=0.1234"), status: 400, code: openapi.ErrorCodeInvalidRequest},
+				{name: "duplicate q", accept: text("application/json;q=1;q=0"), status: 400, code: openapi.ErrorCodeInvalidRequest},
+				{name: "too many list members", accept: text(strings.Repeat(",", maximumAcceptMembers) + "application/json"), status: 400, code: openapi.ErrorCodeInvalidRequest},
+				{name: "unclosed quote", accept: text(`application/json; note="fixture`), status: 400, code: openapi.ErrorCodeInvalidRequest},
+				{name: "oversized", accept: text(strings.Repeat("a", maximumAcceptBytes+1)), status: 400, code: openapi.ErrorCodeInvalidRequest},
 			}
-			response := httptest.NewRecorder()
-			handler.ServeHTTP(response, request)
-			if test.status == http.StatusOK {
-				assertResponseHeaders(t, response, test.status)
-				if strict.calls.Load() != 1 {
-					t.Fatalf("strict calls = %d", strict.calls.Load())
-				}
-				return
-			}
-			assertErrorResponse(t, response, test.status, test.code)
-			if strict.calls.Load() != 0 {
-				t.Fatalf("strict calls = %d", strict.calls.Load())
+			for _, test := range tests {
+				t.Run(test.name, func(t *testing.T) {
+					t.Parallel()
+					strict := &strictStub{response: liveResponse(), readyResponse: readyResponse()}
+					handler, _ := newTestHandler(t, strict)
+					request := httptest.NewRequest(http.MethodGet, "http://example.test"+endpoint.path, nil)
+					if test.accept != nil {
+						request.Header.Set("Accept", *test.accept)
+					}
+					response := httptest.NewRecorder()
+					handler.ServeHTTP(response, request)
+					if test.status == http.StatusOK {
+						assertResponseHeaders(t, response, test.status)
+						if strict.calls.Load() != 1 {
+							t.Fatalf("strict calls = %d", strict.calls.Load())
+						}
+						return
+					}
+					assertErrorResponse(t, response, test.status, test.code)
+					if strict.calls.Load() != 0 {
+						t.Fatalf("strict calls = %d", strict.calls.Load())
+					}
+				})
 			}
 		})
 	}
@@ -149,81 +167,96 @@ func TestHandlerAcceptNegotiation(t *testing.T) {
 
 func TestHandlerServesExactDrainingResponse(t *testing.T) {
 	t.Parallel()
+	for _, endpoint := range healthEndpoints {
+		t.Run(endpoint.name, func(t *testing.T) {
+			t.Parallel()
 
-	service, _ := health.NewService(7)
-	service.BeginDrain()
-	handler, _ := newTestHandler(t, service)
-	request := httptest.NewRequest(http.MethodGet, "http://example.test/health/live", nil)
-	response := httptest.NewRecorder()
-	handler.ServeHTTP(response, request)
+			service, _ := health.NewService(7, healthyProbe{}, time.Second)
+			service.BeginDrain()
+			handler, _ := newTestHandler(t, service)
+			request := httptest.NewRequest(http.MethodGet, "http://example.test"+endpoint.path, nil)
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, request)
 
-	assertResponseHeaders(t, response, http.StatusServiceUnavailable)
-	if response.Header().Get("Retry-After") != "7" {
-		t.Fatalf("Retry-After = %q", response.Header().Get("Retry-After"))
-	}
-	var body openapi.ServiceUnavailableError
-	decodeJSON(t, response.Body.Bytes(), &body)
-	if body.Code != openapi.ServiceUnavailableCodeValue || !body.Retryable ||
-		body.RequestID != handlerRequestID || body.RetryAfterSeconds != 7 {
-		t.Fatalf("body = %#v", body)
+			assertResponseHeaders(t, response, http.StatusServiceUnavailable)
+			if response.Header().Get("Retry-After") != "7" {
+				t.Fatalf("Retry-After = %q", response.Header().Get("Retry-After"))
+			}
+			var body openapi.ServiceUnavailableError
+			decodeJSON(t, response.Body.Bytes(), &body)
+			if body.Code != openapi.ServiceUnavailableCodeValue || !body.Retryable ||
+				body.RequestID != handlerRequestID || body.RetryAfterSeconds != 7 {
+				t.Fatalf("body = %#v", body)
+			}
+		})
 	}
 }
 
 func TestHandlerLogsStructuredOutcomeClasses(t *testing.T) {
 	t.Parallel()
-
-	draining, _ := health.NewService(5)
-	draining.BeginDrain()
-	tests := []struct {
-		name        string
-		strict      openapi.StrictServerInterface
-		method      string
-		status      int
-		outcome     string
-		methodClass string
-	}{
-		{name: "success", strict: &strictStub{response: liveResponse()}, method: http.MethodGet, status: 200, outcome: "success", methodClass: "get"},
-		{name: "client error", strict: &strictStub{response: liveResponse()}, method: http.MethodPost, status: 405, outcome: "client_error", methodClass: "other"},
-		{name: "unavailable", strict: draining, method: http.MethodGet, status: 503, outcome: "unavailable", methodClass: "get"},
-		{name: "server error", strict: &strictStub{err: errors.New("fixture-safe")}, method: http.MethodGet, status: 500, outcome: "server_error", methodClass: "get"},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, endpoint := range healthEndpoints {
+		t.Run(endpoint.name, func(t *testing.T) {
 			t.Parallel()
-			handler, logs := newTestHandler(t, test.strict)
-			response := httptest.NewRecorder()
-			handler.ServeHTTP(response, httptest.NewRequest(test.method, "http://example.test/health/live", nil))
-			if response.Code != test.status {
-				t.Fatalf("status = %d, want %d", response.Code, test.status)
+
+			draining, _ := health.NewService(5, healthyProbe{}, time.Second)
+			draining.BeginDrain()
+			tests := []struct {
+				name        string
+				strict      openapi.StrictServerInterface
+				method      string
+				status      int
+				outcome     string
+				methodClass string
+			}{
+				{name: "success", strict: &strictStub{response: liveResponse(), readyResponse: readyResponse()}, method: http.MethodGet, status: 200, outcome: "success", methodClass: "get"},
+				{name: "client error", strict: &strictStub{response: liveResponse(), readyResponse: readyResponse()}, method: http.MethodPost, status: 405, outcome: "client_error", methodClass: "other"},
+				{name: "unavailable", strict: draining, method: http.MethodGet, status: 503, outcome: "unavailable", methodClass: "get"},
+				{name: "server error", strict: &strictStub{err: errors.New("fixture-safe")}, method: http.MethodGet, status: 500, outcome: "server_error", methodClass: "get"},
 			}
-			assertRequestLog(t, logs, test.status, test.outcome, openapi.GetHealthLiveOperationID, test.methodClass)
+			for _, test := range tests {
+				t.Run(test.name, func(t *testing.T) {
+					t.Parallel()
+					handler, logs := newTestHandler(t, test.strict)
+					response := httptest.NewRecorder()
+					handler.ServeHTTP(response, httptest.NewRequest(test.method, "http://example.test"+endpoint.path, nil))
+					if response.Code != test.status {
+						t.Fatalf("status = %d, want %d", response.Code, test.status)
+					}
+					assertRequestLog(t, logs, test.status, test.outcome, endpoint.operation, test.methodClass)
+				})
+			}
 		})
 	}
 }
 
 func TestHandlerMapsStrictFailuresWithoutLeakingDetails(t *testing.T) {
 	t.Parallel()
-
-	const poison = "fixture-internal-provider-secret"
-	tests := []struct {
-		name   string
-		strict *strictStub
-	}{
-		{name: "error", strict: &strictStub{err: errors.New(poison)}},
-		{name: "nil response", strict: &strictStub{}},
-		{name: "panic", strict: &strictStub{panicValue: poison}},
-		{name: "invalid 200", strict: &strictStub{response: openapi.GetHealthLive200JSONResponse{}}},
-		{name: "invalid 503", strict: &strictStub{response: openapi.GetHealthLive503JSONResponse{}}},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, endpoint := range healthEndpoints {
+		t.Run(endpoint.name, func(t *testing.T) {
 			t.Parallel()
-			handler, logs := newTestHandler(t, test.strict)
-			response := httptest.NewRecorder()
-			handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "http://example.test/health/live", nil))
-			assertErrorResponse(t, response, http.StatusInternalServerError, openapi.ErrorCodeInternalError)
-			if strings.Contains(response.Body.String(), poison) || strings.Contains(logs.String(), poison) {
-				t.Fatalf("strict detail leaked: response=%s log=%s", response.Body.String(), logs.String())
+
+			const poison = "fixture-internal-provider-secret"
+			tests := []struct {
+				name   string
+				strict *strictStub
+			}{
+				{name: "error", strict: &strictStub{err: errors.New(poison)}},
+				{name: "nil response", strict: &strictStub{}},
+				{name: "panic", strict: &strictStub{panicValue: poison}},
+				{name: "invalid 200", strict: &strictStub{response: openapi.GetHealthLive200JSONResponse{}, readyResponse: openapi.GetHealthReady200JSONResponse{}}},
+				{name: "invalid 503", strict: &strictStub{response: openapi.GetHealthLive503JSONResponse{}, readyResponse: openapi.GetHealthReady503JSONResponse{}}},
+			}
+			for _, test := range tests {
+				t.Run(test.name, func(t *testing.T) {
+					t.Parallel()
+					handler, logs := newTestHandler(t, test.strict)
+					response := httptest.NewRecorder()
+					handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "http://example.test"+endpoint.path, nil))
+					assertErrorResponse(t, response, http.StatusInternalServerError, openapi.ErrorCodeInternalError)
+					if strings.Contains(response.Body.String(), poison) || strings.Contains(logs.String(), poison) {
+						t.Fatalf("strict detail leaked: response=%s log=%s", response.Body.String(), logs.String())
+					}
+				})
 			}
 		})
 	}
@@ -231,37 +264,218 @@ func TestHandlerMapsStrictFailuresWithoutLeakingDetails(t *testing.T) {
 
 func TestHandlerRecordsSanitizedResponseWriteFailure(t *testing.T) {
 	t.Parallel()
+	for _, endpoint := range healthEndpoints {
+		t.Run(endpoint.name, func(t *testing.T) {
+			t.Parallel()
 
-	const poison = "fixture-response-writer-secret"
-	strict := &strictStub{response: liveResponse()}
-	handler, logs := newTestHandler(t, strict)
-	writer := &failingResponseWriter{writeError: errors.New(poison)}
-	handler.ServeHTTP(writer, httptest.NewRequest(http.MethodGet, "http://example.test/health/live", nil))
+			const poison = "fixture-response-writer-secret"
+			strict := &strictStub{response: liveResponse(), readyResponse: readyResponse()}
+			handler, logs := newTestHandler(t, strict)
+			writer := &failingResponseWriter{writeError: errors.New(poison)}
+			handler.ServeHTTP(writer, httptest.NewRequest(http.MethodGet, "http://example.test"+endpoint.path, nil))
 
-	if writer.status != http.StatusOK {
-		t.Fatalf("status = %d, want %d", writer.status, http.StatusOK)
+			if writer.status != http.StatusOK {
+				t.Fatalf("status = %d, want %d", writer.status, http.StatusOK)
+			}
+			if !strings.Contains(logs.String(), `"outcome":"write_error"`) {
+				t.Fatalf("logs missing write_error outcome: %s", logs.String())
+			}
+			if strings.Contains(logs.String(), poison) {
+				t.Fatalf("logs leaked response writer detail: %s", logs.String())
+			}
+			assertRequestLog(t, logs, http.StatusOK, "write_error", endpoint.operation, "get")
+		})
 	}
-	if !strings.Contains(logs.String(), `"outcome":"write_error"`) {
-		t.Fatalf("logs missing write_error outcome: %s", logs.String())
-	}
-	if strings.Contains(logs.String(), poison) {
-		t.Fatalf("logs leaked response writer detail: %s", logs.String())
-	}
-	assertRequestLog(t, logs, http.StatusOK, "write_error", openapi.GetHealthLiveOperationID, "get")
 }
 
 func TestNewHandlerRejectsMissingDependencies(t *testing.T) {
 	t.Parallel()
 
-	strict := &strictStub{response: liveResponse()}
+	strict := &strictStub{response: liveResponse(), readyResponse: readyResponse()}
 	logger := telemetry.NewJSONLogger(io.Discard)
 	for _, build := range []func() (http.Handler, error){
 		func() (http.Handler, error) { return NewHandler(nil, fixedRequestIDs{}, logger) },
+		func() (http.Handler, error) { return NewHandler((*strictStub)(nil), fixedRequestIDs{}, logger) },
 		func() (http.Handler, error) { return NewHandler(strict, nil, logger) },
+		func() (http.Handler, error) { return NewHandler(strict, (*fixedRequestIDs)(nil), logger) },
 		func() (http.Handler, error) { return NewHandler(strict, fixedRequestIDs{}, nil) },
 	} {
 		if _, err := build(); !errors.Is(err, ErrInvalidHandlerDependency) {
 			t.Fatalf("NewHandler() error = %v", err)
+		}
+	}
+}
+
+func TestHandlerRejectsInvalidResponseUnionsAndSanitizesServiceMessages(t *testing.T) {
+	t.Parallel()
+	const poison = "fixture-secret-dsn-host-sql"
+	for _, endpoint := range healthEndpoints {
+		t.Run(endpoint.name, func(t *testing.T) {
+			t.Parallel()
+			for _, mutation := range []struct {
+				name   string
+				change func(*openapi.ServiceUnavailableError)
+			}{
+				{name: "code", change: func(body *openapi.ServiceUnavailableError) { body.Code = openapi.ServiceUnavailableCode(poison) }},
+				{name: "message", change: func(body *openapi.ServiceUnavailableError) { body.Message = poison }},
+				{name: "request ID", change: func(body *openapi.ServiceUnavailableError) { body.RequestID = openapi.RequestID(poison) }},
+				{name: "retryability", change: func(body *openapi.ServiceUnavailableError) { body.Retryable = false }},
+				{name: "retry low", change: func(body *openapi.ServiceUnavailableError) { body.RetryAfterSeconds = 0 }},
+				{name: "retry high", change: func(body *openapi.ServiceUnavailableError) { body.RetryAfterSeconds = 61 }},
+			} {
+				t.Run(mutation.name, func(t *testing.T) {
+					body := validUnavailableBody()
+					mutation.change(&body)
+					for _, pointer := range []bool{false, true} {
+						stub := &strictStub{response: openapi.GetHealthLive503JSONResponse{Body: body}, readyResponse: openapi.GetHealthReady503JSONResponse{Body: body}}
+						if pointer {
+							stub.response = &openapi.GetHealthLive503JSONResponse{Body: body}
+							stub.readyResponse = &openapi.GetHealthReady503JSONResponse{Body: body}
+						}
+						assertStrictRejection(t, endpoint.path, stub, poison)
+					}
+				})
+			}
+			for _, stub := range []*strictStub{
+				{response: (*openapi.GetHealthLive200JSONResponse)(nil), readyResponse: (*openapi.GetHealthReady200JSONResponse)(nil)},
+				{response: (*openapi.GetHealthLive503JSONResponse)(nil), readyResponse: (*openapi.GetHealthReady503JSONResponse)(nil)},
+				{response: &openapi.GetHealthLive200JSONResponse{}, readyResponse: &openapi.GetHealthReady200JSONResponse{}},
+				{response: openapi.GetHealthLive200JSONResponse{Body: openapi.HealthLiveResponse{Status: openapi.HealthLiveStatus(poison)}}, readyResponse: openapi.GetHealthReady200JSONResponse{Body: openapi.HealthReadyResponse{Status: openapi.HealthReadyStatus(poison)}}},
+				{response: foreignLiveResponse{}, readyResponse: foreignReadyResponse{}},
+				{response: liveResponse(), readyResponse: readyResponse(), err: errors.New(poison)},
+			} {
+				assertStrictRejection(t, endpoint.path, stub, poison)
+			}
+		})
+	}
+}
+
+type foreignLiveResponse struct {
+	openapi.GetHealthLive200JSONResponse
+}
+type foreignReadyResponse struct {
+	openapi.GetHealthReady200JSONResponse
+}
+
+func validUnavailableBody() openapi.ServiceUnavailableError {
+	return openapi.ServiceUnavailableError{Code: openapi.ServiceUnavailableCodeValue, Message: serviceUnavailableMessage, RequestID: handlerRequestID, Retryable: true, RetryAfterSeconds: 5}
+}
+
+func assertStrictRejection(t *testing.T, path string, stub *strictStub, poison string) {
+	t.Helper()
+	handler, logs := newTestHandler(t, stub)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "http://example.test"+path, nil))
+	assertErrorResponse(t, response, http.StatusInternalServerError, openapi.ErrorCodeInternalError)
+	if response.Header().Get("Retry-After") != "" {
+		t.Fatal("invalid union retained Retry-After")
+	}
+	if strings.Contains(response.Body.String(), poison) || strings.Contains(logs.String(), poison) {
+		t.Fatal("strict response detail leaked")
+	}
+}
+
+func TestHandlerSupportsValidPointerResponsesForBothOperations(t *testing.T) {
+	t.Parallel()
+	for _, endpoint := range healthEndpoints {
+		for _, unavailable := range []bool{false, true} {
+			stub := &strictStub{response: &openapi.GetHealthLive200JSONResponse{Body: openapi.HealthLiveResponse{Status: openapi.HealthLiveStatusLive}}, readyResponse: &openapi.GetHealthReady200JSONResponse{Body: openapi.HealthReadyResponse{Status: openapi.HealthReadyStatusReady}}}
+			status := http.StatusOK
+			if unavailable {
+				status = http.StatusServiceUnavailable
+				stub.response = &openapi.GetHealthLive503JSONResponse{Body: validUnavailableBody()}
+				stub.readyResponse = &openapi.GetHealthReady503JSONResponse{Body: validUnavailableBody()}
+			}
+			handler, _ := newTestHandler(t, stub)
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "http://example.test"+endpoint.path, nil))
+			assertResponseHeaders(t, response, status)
+			if unavailable && response.Header().Get("Retry-After") != "5" {
+				t.Fatal("valid pointer response missing retry delay")
+			}
+		}
+	}
+}
+
+func TestHandlerReadinessFailureIsGenericAndLivenessStaysLive(t *testing.T) {
+	t.Parallel()
+	const poison = "fixture-postgres-password-host-query"
+	service, _ := health.NewService(5, failedProbe{err: errors.New(poison)}, time.Second)
+	for _, endpoint := range healthEndpoints {
+		handler, logs := newTestHandler(t, service)
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "http://example.test"+endpoint.path, nil))
+		status := http.StatusOK
+		if endpoint.name == "ready" {
+			status = http.StatusServiceUnavailable
+		}
+		assertResponseHeaders(t, response, status)
+		if endpoint.name == "ready" {
+			var body openapi.ServiceUnavailableError
+			decodeJSON(t, response.Body.Bytes(), &body)
+			if body != validUnavailableBody() {
+				t.Fatalf("body=%#v", body)
+			}
+		}
+		if strings.Contains(response.Body.String(), poison) || strings.Contains(logs.String(), poison) {
+			t.Fatal("probe error leaked")
+		}
+	}
+}
+
+type failedProbe struct{ err error }
+
+func (probe failedProbe) Check(context.Context) error { return probe.err }
+
+func TestStrictResponseCannotCrossOperationBoundary(t *testing.T) {
+	t.Parallel()
+	for _, test := range []struct {
+		operation string
+		response  any
+	}{
+		{openapi.GetHealthReadyOperationID, liveResponse()},
+		{openapi.GetHealthLiveOperationID, readyResponse()},
+		{"unknown", liveResponse()},
+	} {
+		response := httptest.NewRecorder()
+		status, failed := writeStrictResponse(response, test.response, handlerRequestID, test.operation)
+		if status != http.StatusInternalServerError || failed {
+			t.Fatalf("cross-operation status=%d, failed=%v", status, failed)
+		}
+		assertErrorResponse(t, response, http.StatusInternalServerError, openapi.ErrorCodeInternalError)
+	}
+	stub := &strictStub{response: liveResponse(), readyResponse: readyResponse()}
+	if response, err := callStrictHandler(stub, context.Background(), "unknown"); response != nil || !errors.Is(err, errStrictHandler) || stub.calls.Load() != 0 {
+		t.Fatalf("unknown operation response=%v, error=%v, calls=%d", response, err, stub.calls.Load())
+	}
+}
+
+func TestHandlerRejectsEncodedPathMetadataAndTransferBodiesForBothRoutes(t *testing.T) {
+	t.Parallel()
+	for _, endpoint := range healthEndpoints {
+		for _, variant := range []string{"raw path", "chunked body", "unknown body length"} {
+			t.Run(endpoint.name+"/"+variant, func(t *testing.T) {
+				t.Parallel()
+				stub := &strictStub{response: liveResponse(), readyResponse: readyResponse()}
+				handler, _ := newTestHandler(t, stub)
+				request := httptest.NewRequest(http.MethodGet, "http://example.test"+endpoint.path, nil)
+				status, code := http.StatusBadRequest, openapi.ErrorCodeInvalidRequest
+				switch variant {
+				case "raw path":
+					request.URL.RawPath = "/health/" + endpoint.encodedName
+					status, code = http.StatusNotFound, openapi.ErrorCodeRouteNotFound
+				case "chunked body":
+					request.TransferEncoding = []string{"chunked"}
+				case "unknown body length":
+					request.ContentLength = -1
+				}
+				response := httptest.NewRecorder()
+				handler.ServeHTTP(response, request)
+				assertErrorResponse(t, response, status, code)
+				if stub.calls.Load() != 0 {
+					t.Fatal("invalid request reached operation")
+				}
+			})
 		}
 	}
 }
@@ -368,10 +582,11 @@ func (fixedRequestIDs) Next() openapi.RequestID {
 }
 
 type strictStub struct {
-	calls      atomic.Int32
-	response   openapi.GetHealthLiveResponseObject
-	err        error
-	panicValue any
+	calls         atomic.Int32
+	response      openapi.GetHealthLiveResponseObject
+	readyResponse openapi.GetHealthReadyResponseObject
+	err           error
+	panicValue    any
 }
 
 type failingResponseWriter struct {
@@ -401,4 +616,25 @@ func (stub *strictStub) GetHealthLive(context.Context, openapi.GetHealthLiveRequ
 		panic(stub.panicValue)
 	}
 	return stub.response, stub.err
+}
+
+var healthEndpoints = []struct{ name, path, operation, encodedName string }{
+	{name: "live", path: openapi.GetHealthLivePath, operation: openapi.GetHealthLiveOperationID, encodedName: "%6cive"},
+	{name: "ready", path: openapi.GetHealthReadyPath, operation: openapi.GetHealthReadyOperationID, encodedName: "%72eady"},
+}
+
+type healthyProbe struct{}
+
+func (healthyProbe) Check(context.Context) error { return nil }
+
+func readyResponse() openapi.GetHealthReadyResponseObject {
+	return openapi.GetHealthReady200JSONResponse{Body: openapi.HealthReadyResponse{Status: openapi.HealthReadyStatusReady}}
+}
+
+func (stub *strictStub) GetHealthReady(context.Context, openapi.GetHealthReadyRequestObject) (openapi.GetHealthReadyResponseObject, error) {
+	stub.calls.Add(1)
+	if stub.panicValue != nil {
+		panic(stub.panicValue)
+	}
+	return stub.readyResponse, stub.err
 }

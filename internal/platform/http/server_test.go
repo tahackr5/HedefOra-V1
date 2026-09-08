@@ -48,6 +48,7 @@ func TestNewServerRejectsMissingOrInvalidDependencies(t *testing.T) {
 	logger := telemetry.NewJSONLogger(io.Discard)
 	for _, build := range []func() (*http.Server, error){
 		func() (*http.Server, error) { return NewServer(value, nil, logger) },
+		func() (*http.Server, error) { return NewServer(value, http.HandlerFunc(nil), logger) },
 		func() (*http.Server, error) { return NewServer(value, handler, nil) },
 		func() (*http.Server, error) {
 			invalid := value

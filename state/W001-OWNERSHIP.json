@@ -1,11 +1,63 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "35596914d829863ae52fef3ccd75d08ca86efb9c",
+  "verifiedThrough": "e8335c35f27f0bdf3a2470f65d73468e75791283",
   "trailingAllowedPaths": [
     "state/W001-OWNERSHIP.json"
   ],
   "tasks": {
+    "W001-T04FB-fixture-engine-checkpoint-seal": {
+      "base": "784049d411604b43bee1d5be24c22d2f8fda67b2",
+      "head": "3a32a0ced2474285d586b29c79d275e9616b593b",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-fixture-public-marker": {
+      "base": "3a32a0ced2474285d586b29c79d275e9616b593b",
+      "head": "e8335c35f27f0bdf3a2470f65d73468e75791283",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-PG17-FIXTURE.md",
+        "state/W001-PHASE-B.md",
+        "tests/integration/postgres/live/fixture-build.test.mjs"
+      ]
+    },
+    "W001-T04FB-fixture-fresh-admission-seal": {
+      "base": "90d7d151136c6aa1efa68deb6da8c7b027f9bed7",
+      "head": "ff09a6cfa95a30b1526e3144ed632afde1cd8203",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-fixture-engine-checkpoint": {
+      "base": "ff09a6cfa95a30b1526e3144ed632afde1cd8203",
+      "head": "784049d411604b43bee1d5be24c22d2f8fda67b2",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-PG17-FIXTURE.md",
+        "state/W001-PHASE-B.md"
+      ]
+    },
+    "W001-T04FB-fixture-host-signals-seal": {
+      "base": "acc427b9d6cf1fb907e57004cedae715eedbcd32",
+      "head": "02a1df04f315b2c0e823f834888df2110acb454f",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-fixture-fresh-admission": {
+      "base": "02a1df04f315b2c0e823f834888df2110acb454f",
+      "head": "90d7d151136c6aa1efa68deb6da8c7b027f9bed7",
+      "allowedPaths": [
+        "security/postgres-test-fixture-admission.json",
+        "state/ACTIVE-WAVE.md",
+        "state/W001-PG17-FIXTURE.md",
+        "tests/integration/postgres/live/FIXTURE-CONTRACT.md",
+        "tests/integration/postgres/live/fixture-admission.mjs",
+        "tests/integration/postgres/live/fixture-admission.test.mjs"
+      ]
+    },
     "W001-T00-wave-open": {
       "base": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
       "head": "c9fcb16b8556115b2df5fe971e3c1090f093a312",
@@ -666,30 +718,31 @@
         "state/W001-OWNERSHIP.md"
       ]
     },
-    "W001-T04F-approved-head-seal": {
+    "W001-T04F-phase-a-local-exit-seal": {
       "base": "43a82caffe7dba5a3b1305dbb79f0e52c24151ea",
+      "head": "01017a25bf02f27924bf0361fd6b70abdc493ac0",
       "allowedPaths": [
         "state/W001-OWNERSHIP.json"
-      ],
-      "head": "01017a25bf02f27924bf0361fd6b70abdc493ac0"
+      ]
     },
     "W001-T04F-phase-a-owner-merge": {
       "base": "01017a25bf02f27924bf0361fd6b70abdc493ac0",
+      "head": "7a1e124e432b51694e7d60c0d3d1589867a8835f",
       "allowedPaths": [
+        "DECISIONS.md",
+        "FILE-INDEX.md",
         "architecture/ADR-REGISTER.md",
-        "contracts/database/migrations.yaml",
         "contracts/database/README.md",
+        "contracts/database/migrations.yaml",
         "contracts/database/roles.yaml",
         "db/migrations/000001_database_foundation.down.sql",
         "db/migrations/000001_database_foundation.up.sql",
         "db/migrations/SHA256SUMS",
-        "DECISIONS.md",
         "delivery/TOOLCHAIN-LOCK.md",
-        "FILE-INDEX.md",
-        "infra/compose.dev.yml",
-        "infra/postgres/initdb/010_roles.sql",
-        "infra/postgres/README.md",
         "infra/README.md",
+        "infra/compose.dev.yml",
+        "infra/postgres/README.md",
+        "infra/postgres/initdb/010_roles.sql",
         "package.json",
         "scripts/check-generated.mjs",
         "scripts/check-generated.test.mjs",
@@ -702,72 +755,402 @@
         "state/W001-OWNERSHIP.md",
         "tests/integration/postgres/run.mjs",
         "tests/integration/postgres/run.test.mjs"
-      ],
-      "head": "7a1e124e432b51694e7d60c0d3d1589867a8835f"
+      ]
     },
-    "W001-T04FB-control-task-open": {
+    "W001-T04FB-pr7-runtime-graph-reconciliation": {
       "base": "7a1e124e432b51694e7d60c0d3d1589867a8835f",
+      "head": "f19cca198e7236e15f2ac7d764c12f8312b0f348",
       "allowedPaths": [
-        "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
+        ".github/workflows/ci.yml",
+        ".spectral.yaml",
+        "DECISIONS.md",
         "FILE-INDEX.md",
-        "state/ACTIVE-WAVE.md",
-        "state/RELEASE-LEDGER.md",
-        "state/W001-EVIDENCE.md",
-        "state/W001-OWNERSHIP.md",
-        "state/W001-R016-GO-GRAPH.md"
-      ],
-      "head": "77c8a2c374a92fabb8642a1731d3011ca6208a84"
-    },
-    "W001-T04FB-control-graph-remediation": {
-      "base": "77c8a2c374a92fabb8642a1731d3011ca6208a84",
-      "allowedPaths": [
+        "architecture/ADR-REGISTER.md",
+        "cmd/hedefora/main.go",
+        "cmd/hedefora/main_test.go",
+        "contracts/README.md",
+        "contracts/openapi/openapi.yaml",
+        "delivery/DEPENDENCY-AND-SUPPLY-CHAIN.md",
+        "delivery/TOOLCHAIN-LOCK.md",
+        "go.mod",
+        "go.sum",
+        "infra/README.md",
+        "infra/postgres/README.md",
+        "infra/postgres/image/.dockerignore",
+        "infra/postgres/image/Dockerfile",
+        "infra/postgres/image/README.md",
+        "infra/postgres/image/entrypoint.sh",
+        "infra/postgres/image/inputs.lock.json",
+        "infra/postgres/image/package-sources.lock.json",
+        "internal/generated/openapi/openapi.gen.go",
+        "internal/platform/app/api.go",
+        "internal/platform/app/api_test.go",
+        "internal/platform/config/api.go",
+        "internal/platform/config/api_test.go",
+        "internal/platform/config/postgres.go",
+        "internal/platform/config/postgres_test.go",
+        "internal/platform/health/service.go",
+        "internal/platform/health/service_test.go",
+        "internal/platform/http/handler.go",
+        "internal/platform/http/handler_test.go",
+        "internal/platform/http/server.go",
+        "internal/platform/http/server_test.go",
+        "internal/platform/postgres/pool.go",
+        "internal/platform/postgres/pool_test.go",
+        "package.json",
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "scripts/check-go-mod.mjs",
+        "scripts/check-go-mod.test.mjs",
+        "scripts/fixtures/openapi-generator-negative-mutations.mjs",
+        "scripts/fixtures/openapi-negative-mutations.mjs",
         "scripts/fixtures/supply-chain/transitive-go.mod.txt",
         "scripts/fixtures/supply-chain/transitive-go.sum.txt",
+        "scripts/generate-openapi.mjs",
+        "scripts/generate-openapi.test.mjs",
+        "scripts/postgres-image/README.md",
+        "scripts/postgres-image/policy.mjs",
+        "scripts/postgres-image/policy.test.mjs",
         "scripts/supply-chain/contracts.mjs",
         "scripts/supply-chain/contracts.test.mjs",
         "scripts/supply-chain/run.mjs",
         "scripts/supply-chain/run.test.mjs",
-        "security/r016-evidence.schema.json"
-      ],
-      "head": "4972c06e9432e6072ce5799cc751fca8be9db2eb"
-    },
-    "W001-T04FB-control-implementation-seal": {
-      "base": "4972c06e9432e6072ce5799cc751fca8be9db2eb",
-      "head": "5b9dd0b514d5165bb91202ad6113421c0c9d2cd6",
-      "allowedPaths": [
-        "state/W001-OWNERSHIP.json"
-      ]
-    },
-    "W001-T04FB-control-local-evidence": {
-      "base": "5b9dd0b514d5165bb91202ad6113421c0c9d2cd6",
-      "head": "3a16a3452e3be8bef3df7c47bb6af9cbbc4060ce",
-      "allowedPaths": [
+        "security/postgres-image-scanners.lock.json",
+        "security/r016-evidence.schema.json",
         "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
         "state/RELEASE-LEDGER.md",
+        "state/RISK-REGISTER.md",
         "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.json",
+        "state/W001-OWNERSHIP.md",
+        "state/W001-PHASE-B.md",
         "state/W001-R016-GO-GRAPH.md"
       ]
     },
-    "W001-T04FB-control-local-evidence-seal": {
+    "W001-T04FB-trusted-integration-seal": {
+      "base": "f19cca198e7236e15f2ac7d764c12f8312b0f348",
+      "head": "a3c0b9197386e093bb80b922b0bacc91f5763a6f",
       "allowedPaths": [
         "state/W001-OWNERSHIP.json"
-      ],
-      "head": "20e91e0e6d367015058eaae4b82db25b56693e1a",
-      "base": "3a16a3452e3be8bef3df7c47bb6af9cbbc4060ce"
+      ]
     },
-    "W001-T04FB-control-exact-go-identity-fix": {
+    "W001-T04FB-trusted-runtime-scan-evidence": {
+      "base": "a3c0b9197386e093bb80b922b0bacc91f5763a6f",
+      "head": "a70d5c522b0c37f4bba254bfbab84c281a801fd8",
       "allowedPaths": [
-        ".github/workflows/ci.yml",
-        "scripts/supply-chain/run.test.mjs",
+        "state/W001-PHASE-B.md"
+      ]
+    },
+    "W001-T04FB-engine-test-preparation": {
+      "base": "a70d5c522b0c37f4bba254bfbab84c281a801fd8",
+      "head": "aa4469d815df62e94a13be84abeedb5c5ac65c5c",
+      "allowedPaths": [
+        "internal/platform/app/api_integration_test.go",
+        "internal/platform/postgres/pool_integration_test.go",
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "state/W001-PHASE-B.md",
+        "tests/integration/postgres/cmd/tlsfixture/main.go",
+        "tests/integration/postgres/cmd/tlsfixture/main_linux_test.go"
+      ]
+    },
+    "W001-T04FB-engine-test-preparation-seal": {
+      "base": "aa4469d815df62e94a13be84abeedb5c5ac65c5c",
+      "head": "5e8e5995265878cd38e819f5312aa7921414338f",
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
+    },
+    "W001-T04FB-ownership-evidence-correction": {
+      "base": "5e8e5995265878cd38e819f5312aa7921414338f",
+      "head": "b4dd51a64609cf5956b46b66fc67efba43303ca4",
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.md",
+        "state/W001-PHASE-B.md"
+      ]
+    },
+    "W001-T04FB-graph-reconciliation-seal": {
+      "base": "b4dd51a64609cf5956b46b66fc67efba43303ca4",
+      "head": "27a7e9fbe97935eb7aca5f1e5202c1c49ae9e891",
+      "allowedPaths": [
+        "state/W001-OWNERSHIP.json"
+      ]
+    },
+    "W001-T04FB-live-sql-acceptance": {
+      "base": "27a7e9fbe97935eb7aca5f1e5202c1c49ae9e891",
+      "head": "1aa996bc249103786d11dd9fd4d178381ea30c11",
+      "allowedPaths": [
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "state/W001-PHASE-B.md",
+        "tests/integration/postgres/live-sql.mjs",
+        "tests/integration/postgres/live-sql.test.mjs",
+        "tests/integration/postgres/run.mjs"
+      ]
+    },
+    "W001-T04FB-live-sql-seal": {
+      "base": "1aa996bc249103786d11dd9fd4d178381ea30c11",
+      "head": "2ee64c140b0812e6b0eae63c6a7f187a0440a7f9",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-closed-runner-byte-inspector": {
+      "base": "2ee64c140b0812e6b0eae63c6a7f187a0440a7f9",
+      "head": "8f349e03e5dee82404a2cd90be1c5d3f119fb6a1",
+      "allowedPaths": [
+        "FILE-INDEX.md",
+        "internal/platform/app/api_integration_test.go",
+        "internal/platform/postgres/pool_integration_test.go",
+        "internal/platform/postgres/pool_test.go",
+        "package.json",
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "scripts/postgres-image/apk-runtime/apk-byte-replay.mjs",
+        "scripts/postgres-image/apk-runtime/apk-cpe-templates.mjs",
+        "scripts/postgres-image/apk-runtime/apk-cpe-templates.test.mjs",
+        "scripts/postgres-image/apk-runtime/archive-data.mjs",
+        "scripts/postgres-image/apk-runtime/fixed-authority.mjs",
+        "scripts/postgres-image/apk-runtime/inspector-cli.mjs",
+        "scripts/postgres-image/apk-runtime/sealed-io.mjs",
+        "scripts/postgres-image/apk-runtime/strict-replay.test.mjs",
+        "state/W001-OWNERSHIP.md",
+        "state/W001-PHASE-B.md",
+        "tests/integration/postgres/live/RUNNER-CONTRACT.md",
+        "tests/integration/postgres/live/live-runtime.mjs",
+        "tests/integration/postgres/live/process.mjs",
+        "tests/integration/postgres/live/psql.mjs",
+        "tests/integration/postgres/live/run-live.mjs",
+        "tests/integration/postgres/live/runner.test.mjs"
+      ]
+    },
+    "W001-T04FB-closed-runner-seal": {
+      "base": "8f349e03e5dee82404a2cd90be1c5d3f119fb6a1",
+      "head": "410a17e12cafbfe67897e1e717c3ca77bf4f4bfd",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-direct-hardlink-target": {
+      "base": "410a17e12cafbfe67897e1e717c3ca77bf4f4bfd",
+      "head": "af918cca39ace82967d718f72318d5c47400a523",
+      "allowedPaths": [
+        "scripts/postgres-image/apk-runtime/archive-data.mjs",
+        "scripts/postgres-image/apk-runtime/strict-replay.test.mjs",
+        "state/W001-PHASE-B.md"
+      ]
+    },
+    "W001-T04FB-checkpoint-evidence-promotion": {
+      "base": "af918cca39ace82967d718f72318d5c47400a523",
+      "head": "73ce81a3b6e2db766cc415693d7edea8874d772f",
+      "allowedPaths": [
         "state/ACTIVE-WAVE.md",
         "state/RELEASE-LEDGER.md",
         "state/RISK-REGISTER.md",
         "state/W001-EVIDENCE.md",
+        "state/W001-PHASE-B.md"
+      ]
+    },
+    "W001-T04FB-checkpoint-evidence-seal": {
+      "base": "73ce81a3b6e2db766cc415693d7edea8874d772f",
+      "head": "4446c8f0733a10c5e2191f8c769394ce0e0ad1b3",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-hosted-cleanup-numeric-proof": {
+      "base": "4446c8f0733a10c5e2191f8c769394ce0e0ad1b3",
+      "head": "d8d7f0c9b2876ad6f6d8ed68226bac75b2f0348c",
+      "allowedPaths": [
+        "internal/platform/config/postgres.go",
+        "internal/platform/config/postgres_test.go",
+        "scripts/check-go-mod.mjs",
+        "scripts/check-go-mod.test.mjs",
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-PHASE-B.md"
+      ]
+    },
+    "W001-T04FB-hosted-remediation-seal": {
+      "base": "d8d7f0c9b2876ad6f6d8ed68226bac75b2f0348c",
+      "head": "cf69d6a129bd1bc95af9ef90dd8b06b7edecb34d",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-isolated-test-fixture": {
+      "base": "cf69d6a129bd1bc95af9ef90dd8b06b7edecb34d",
+      "head": "ac2b9d9bcf073a77917f411ce23f6dbb208d85ec",
+      "allowedPaths": [
+        "DECISIONS.md",
+        "FILE-INDEX.md",
+        "architecture/ADR-REGISTER.md",
+        "package.json",
+        "scripts/check-generated.mjs",
+        "scripts/check-generated.test.mjs",
+        "security/postgres-test-fixture-admission.json",
+        "state/ACTIVE-WAVE.md",
+        "state/DECISION-QUEUE.md",
         "state/W001-OWNERSHIP.md",
-        "state/W001-R016-GO-GRAPH.md"
-      ],
-      "head": "35596914d829863ae52fef3ccd75d08ca86efb9c",
-      "base": "20e91e0e6d367015058eaae4b82db25b56693e1a"
+        "state/W001-PG17-FIXTURE.md",
+        "tests/integration/postgres/live/FIXTURE-CONTRACT.md",
+        "tests/integration/postgres/live/fixture-admission.mjs",
+        "tests/integration/postgres/live/fixture-admission.test.mjs",
+        "tests/integration/postgres/live/fixture-build.mjs",
+        "tests/integration/postgres/live/fixture-build.test.mjs",
+        "tests/integration/postgres/live/fixture-container.mjs",
+        "tests/integration/postgres/live/fixture-container.test.mjs",
+        "tests/integration/postgres/live/fixture-host-policy.mjs",
+        "tests/integration/postgres/live/fixture-host-policy.test.mjs",
+        "tests/integration/postgres/live/fixture-native-psql.mjs",
+        "tests/integration/postgres/live/fixture-run.mjs",
+        "tests/integration/postgres/live/fixture-run.test.mjs",
+        "tests/integration/postgres/live/psql.mjs"
+      ]
+    },
+    "W001-T04FB-isolated-fixture-seal": {
+      "base": "ac2b9d9bcf073a77917f411ce23f6dbb208d85ec",
+      "head": "57caff3f6405e6ef8bc3ff9dcb64109cb5954666",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-fixture-boundary-format": {
+      "base": "57caff3f6405e6ef8bc3ff9dcb64109cb5954666",
+      "head": "35e621d511443f2562c9e463b6b920d4abecbf7e",
+      "allowedPaths": ["scripts/check-generated.test.mjs"]
+    },
+    "W001-T04FB-fixture-format-seal": {
+      "base": "35e621d511443f2562c9e463b6b920d4abecbf7e",
+      "head": "43e26cb5d11439104198be621dfc1eca8a0f3337",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-fixture-inspect-omitempty": {
+      "base": "43e26cb5d11439104198be621dfc1eca8a0f3337",
+      "head": "8fbc4558a3ea687e15f6ded5a1df8f8495f1d4d1",
+      "allowedPaths": [
+        "state/W001-PG17-FIXTURE.md",
+        "tests/integration/postgres/live/fixture-host-policy.mjs",
+        "tests/integration/postgres/live/fixture-host-policy.test.mjs"
+      ]
+    },
+    "W001-T04FB-fixture-inspect-seal": {
+      "base": "8fbc4558a3ea687e15f6ded5a1df8f8495f1d4d1",
+      "head": "638952fd4518ae17cdfd2bcd0287acb0adbf475d",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-fixture-calibrated-ro-probes": {
+      "base": "638952fd4518ae17cdfd2bcd0287acb0adbf475d",
+      "head": "dce7df72d16c5ebc3a89f80ff63702c77a9ed958",
+      "allowedPaths": [
+        "architecture/ADR-REGISTER.md",
+        "state/W001-PG17-FIXTURE.md",
+        "tests/integration/postgres/live/FIXTURE-CONTRACT.md",
+        "tests/integration/postgres/live/fixture-admission.test.mjs",
+        "tests/integration/postgres/live/fixture-build.mjs",
+        "tests/integration/postgres/live/fixture-build.test.mjs",
+        "tests/integration/postgres/live/fixture-container.mjs",
+        "tests/integration/postgres/live/fixture-container.test.mjs",
+        "tests/integration/postgres/live/fixture-run.mjs",
+        "tests/integration/postgres/live/fixture-run.test.mjs"
+      ]
+    },
+    "W001-T04FB-fixture-calibrated-ro-seal": {
+      "base": "dce7df72d16c5ebc3a89f80ff63702c77a9ed958",
+      "head": "f8552b17ff42ef46e63b9b7e88e48c08bf4dacb6",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-fixture-readiness-start": {
+      "base": "f8552b17ff42ef46e63b9b7e88e48c08bf4dacb6",
+      "head": "b93f4e171732d6a4b233cee387120dd5f70cb735",
+      "allowedPaths": [
+        "state/W001-PG17-FIXTURE.md",
+        "tests/integration/postgres/live/FIXTURE-CONTRACT.md",
+        "tests/integration/postgres/live/fixture-container.mjs",
+        "tests/integration/postgres/live/fixture-container.test.mjs",
+        "tests/integration/postgres/live/fixture-native-psql.mjs"
+      ]
+    },
+    "W001-T04FB-fixture-readiness-start-seal": {
+      "base": "b93f4e171732d6a4b233cee387120dd5f70cb735",
+      "head": "4ab16b9718dd20781f656f6951543091854ebeae",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-fixture-tls-authority": {
+      "base": "4ab16b9718dd20781f656f6951543091854ebeae",
+      "head": "2d164c2a1fa79716f7fad33f80881f9dd1515bb6",
+      "allowedPaths": [
+        "state/W001-PG17-FIXTURE.md",
+        "tests/integration/postgres/live/FIXTURE-CONTRACT.md",
+        "tests/integration/postgres/cmd/tlsfixture/main.go",
+        "tests/integration/postgres/cmd/tlsfixture/main_linux_test.go"
+      ]
+    },
+    "W001-T04FB-fixture-tls-authority-seal": {
+      "base": "2d164c2a1fa79716f7fad33f80881f9dd1515bb6",
+      "head": "4609b92eefc57ed37be90728d83a77c5193efb05",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-fixture-startup-auth": {
+      "base": "4609b92eefc57ed37be90728d83a77c5193efb05",
+      "head": "1ef7c3ac1461f33e48bd54c9b1e5917b9b708b31",
+      "allowedPaths": [
+        "state/W001-PG17-FIXTURE.md",
+        "tests/integration/postgres/live/FIXTURE-CONTRACT.md",
+        "tests/integration/postgres/live/fixture-container.mjs",
+        "tests/integration/postgres/live/fixture-container.test.mjs",
+        "tests/integration/postgres/live/fixture-native-psql.mjs",
+        "tests/integration/postgres/live/runner.test.mjs"
+      ]
+    },
+    "W001-T04FB-fixture-startup-auth-seal": {
+      "base": "1ef7c3ac1461f33e48bd54c9b1e5917b9b708b31",
+      "head": "b0265440def08b10f0815941864e50a0ab00716c",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-fixture-startup-identity-seal": {
+      "base": "32ca6ee3257f2cf3fff09fb750c2a466f962b49b",
+      "head": "0e9046948c770c7574cb5a563fc046cc05607530",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-fixture-go-diagnostics-seal": {
+      "base": "42b8494670281cdb69a33e2dfb35a44315405e8b",
+      "head": "a4dde45f2c2a14438a16d9a257caaf922e9cfb33",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-fixture-release-oracle": {
+      "base": "a4dde45f2c2a14438a16d9a257caaf922e9cfb33",
+      "head": "980adac7d5a21939ed655f8e98673a6e8d576af4",
+      "allowedPaths": [
+        "internal/platform/postgres/pool_test.go",
+        "internal/platform/postgres/pool_integration_test.go",
+        "state/W001-PG17-FIXTURE.md",
+        "tests/integration/postgres/live/FIXTURE-CONTRACT.md"
+      ]
+    },
+    "W001-T04FB-fixture-host-signals": {
+      "base": "980adac7d5a21939ed655f8e98673a6e8d576af4",
+      "head": "acc427b9d6cf1fb907e57004cedae715eedbcd32",
+      "allowedPaths": [
+        "tests/integration/postgres/live/fixture-build.mjs",
+        "tests/integration/postgres/live/fixture-build.test.mjs",
+        "tests/integration/postgres/live/fixture-run.mjs",
+        "tests/integration/postgres/live/fixture-run.test.mjs"
+      ]
+    },
+    "W001-T04FB-fixture-go-diagnostics": {
+      "base": "0e9046948c770c7574cb5a563fc046cc05607530",
+      "head": "42b8494670281cdb69a33e2dfb35a44315405e8b",
+      "allowedPaths": [
+        "state/W001-PG17-FIXTURE.md",
+        "tests/integration/postgres/live/FIXTURE-CONTRACT.md",
+        "tests/integration/postgres/live/fixture-container.mjs",
+        "tests/integration/postgres/live/fixture-container.test.mjs"
+      ]
+    },
+    "W001-T04FB-fixture-startup-identity": {
+      "base": "b0265440def08b10f0815941864e50a0ab00716c",
+      "head": "32ca6ee3257f2cf3fff09fb750c2a466f962b49b",
+      "allowedPaths": [
+        "state/W001-PG17-FIXTURE.md",
+        "tests/integration/postgres/live/FIXTURE-CONTRACT.md",
+        "tests/integration/postgres/live/fixture-container.mjs",
+        "tests/integration/postgres/live/fixture-container.test.mjs",
+        "tests/integration/postgres/live/fixture-native-psql.mjs",
+        "tests/integration/postgres/live/runner.test.mjs"
+      ]
     }
   }
 }

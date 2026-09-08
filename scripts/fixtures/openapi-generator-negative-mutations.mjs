@@ -1,5 +1,7 @@
 // Each case changes one unique anchor in the exact canonical source.
-export const generatorNegativeMutations = [
+import { scopeHealthMutation } from "./openapi-negative-mutations.mjs";
+
+const baseGeneratorNegativeMutations = [
   {
     name: "reject-duplicate-root-key",
     code: "SOURCE_SEAL_MISMATCH",
@@ -125,5 +127,53 @@ export const generatorNegativeMutations = [
     code: "SOURCE_SEAL_MISMATCH",
     before: "paths:\n  /health/live:",
     after: "fixture: rejected\npaths:\n  /health/live:",
+  },
+];
+
+export const generatorNegativeMutations = [
+  ...baseGeneratorNegativeMutations.map((mutation) =>
+    mutation.name === "reject-unknown-vendor-extension"
+      ? scopeHealthMutation(mutation, "live")
+      : mutation,
+  ),
+  scopeHealthMutation(
+    {
+      name: "reject-ready-operation-id-code-poison",
+      code: "SOURCE_SEAL_MISMATCH",
+      before: "      operationId: getHealthReady",
+      after: "      operationId: getHealthReady;init",
+    },
+    "ready",
+  ),
+  scopeHealthMutation(
+    {
+      name: "reject-ready-go-extension",
+      code: "SOURCE_GO_EXTENSION_FORBIDDEN",
+      before: "      responses:",
+      after: "      x-go-type: unsafe.Pointer\n      responses:",
+    },
+    "ready",
+  ),
+  scopeHealthMutation(
+    {
+      name: "reject-ready-external-reference",
+      code: "SOURCE_REFERENCE_FORBIDDEN",
+      before:
+        '                $ref: "#/components/schemas/HealthReadyResponse"',
+      after: '                $ref: "https://example.invalid/ready.yaml"',
+    },
+    "ready",
+  ),
+  {
+    name: "reject-ready-schema-code-poison",
+    code: "SOURCE_SEAL_MISMATCH",
+    before: "    HealthReadyResponse:\n      type: object",
+    after: '    "HealthReadyResponse; init()":\n      type: object',
+  },
+  {
+    name: "reject-ready-enum-code-poison",
+    code: "SOURCE_SEAL_MISMATCH",
+    before: "            - ready",
+    after: "            - ready;init",
   },
 ];
