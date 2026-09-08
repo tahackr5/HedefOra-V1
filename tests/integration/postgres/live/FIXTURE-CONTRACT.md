@@ -15,6 +15,14 @@ ayrı test risk kabulü başka image, değişen tuple, stale DB veya production
 scope'u kabul etmez. CSPRNG runId/private secrets, source/tree/toolbundle
 hash'leri ve20dakikalık lease zorunlu. Global R016/image policies değişmez.
 
+DB yenilemesi eski capability'nin süresini uzatmaz. Aynı immutable image ve
+izolasyon kapsamında bağımsız risk-delta değerlendirmesinden sonra yeni ham
+scan/DB/bulgu byte'ları ayrı sonlu kayıtla mühürlenir. Owner onay tarihi
+yeniden verilmiş gibi değiştirilmez; DB üretiminden önceki zaman, DB48saat
+sonu ve admission expiry reddedilir. Günlük EPSS artışı gizlenmez; yeni
+erişilebilir teknik etki veya kapsam genişlemesi bu veri yenileme yorumu
+altında kabul edilemez. Eski FAIL/expired kayıt geçmişte korunur.
+
 Windows Docker Desktop sentetik0777 mode için ADR-0021 effective-RO
 clarification uygulanır: start öncesi host RWfalse, içeride mountinfo ro ve
 alt mount yokluğu; her mount'ta no-truncate existing write-open ve benzersiz

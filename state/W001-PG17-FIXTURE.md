@@ -1,6 +1,7 @@
 # W001 Phase B — owner test-fixture admission
 
-Güncel durum: IMPLEMENTING; ENGINE NOT_RUN; PR #8 DRAFT. DEC-031/DQ-011,
+Güncel durum: IMPLEMENTING; son engine A9 FAIL, düzeltme sonrası yeni engine
+bekleniyor; PR #8 DRAFT. Güncel 2026-09-08 kaydı dosya sonundadır. DEC-031/DQ-011,
 owner 2026-09-07. Task-phase/trusted base aba3d13 ve historical wave start
 bde560f değişmez. Başlangıç checkpoint cf69d6a129bd1bc95af9ef90dd8b06b7edecb34d,
 tree0c1c34c5784a55c3f43c4b5f43633ba0c0fa5c85; branch codex/w001-t04f-phase-b.
@@ -16,7 +17,7 @@ Phase B exit BLOCKED_EVIDENCE idi. Tarihsel4446c8f FAIL geriye dönük değişme
 Ignored local owner gate raporu artifacts/PR8-CF69D6A-OWNER-GATE.md hash
 21ea0a68743b3b0fd56ee51b6f5bdabd98d4532262b0c98c0571f24af7bd6876.
 
-## Yeni dar profil / acceptance
+## İlk dar profil / acceptance — tarihsel 2026-09-07 kaydı
 
 Eski postgres:live authority ve inert Compose kapalı kalır. Yeni
 postgres:fixture yalnız exact CNPG17.11 minimal Trixie manifest74bd767…,
@@ -327,3 +328,91 @@ owned removal/absence PASS; 16public module closure değişmedi. Windows127/127
 aynı çocuk vakalarında IPC process-event kullanır, OS signal iddiası yoktur.
 Yeni clean exact seal sonrasında ayrı B gerçek prepareFixtureTools derleme
 iptali ve Docker owned absence kanıtı gerekir; ardından tam PG engine rerun.
+
+## 2026-09-08 — exact seal, B cleanup ve tazelik yenileme hazırlığı
+
+Go oracle980adac7d5a21939ed655f8e98673a6e8d576af4 ve host-signal
+acc427b9d6cf1fb907e57004cedae715eedbcd32, JSON-only
+02a1df04f315b2c0e823f834888df2110acb454f /
+treeb26f4e00aefdd906d3a92bffb6c36d0dc29108bd ile mühürlendi.
+2026-09-08 W001repolint continuous ownership exit0; independent scoped
+source review Go7+Node16=23 hash eşleşmesi/mismatch0 doğruladı. Eski A9
+engine FAIL korunur; yeni source PASS engine/full-tree/hosted PASS değildir.
+
+B gerçek prepareFixtureTools derleme iptal kanıtı SHA256
+c0b305008d45beb062101466c4e23f8dbc7cd2feaea69b3e8a080c1dd0e8c720,
+exact02a1df/treeb26f. İlk gerçek go test -c PID1771 ve compile2034/PPID1771
+gözlendikten sonra IPC→AbortController iptali yapıldı. Child raw1/observed
+close, FIXTURE_COMMAND_ABORTED; bu kasıtlı build FAIL'dir. Builder kendi
+finally cleanup'ı ile399d0f5626057cf35847690849f821fa2562899d66934c36c2f76a7f3ddf64b0
+ID'sini kaldırdı; exact ID/name/iki-label list boş, inspect NoSuchContainer
+raw1. Dış harness removal0, bundle yok, source before/after aynı. B cleanup
+PASS; gerçek OS signal iddiası yoktur. A gerçek OS signal/simulated-daemon
+kanıtından ayrıdır; birleşik OS-signal+real-daemon yürütmesi iddia edilmez.
+
+2026-09-08T16:08:32Z devam kontrolünde admission'ın DB+48h süresi
+2026-09-08T06:27:35Z'de dolmuştu. Gerçek validator
+FIXTURE_APPROVAL_EXPIRED verdi (beklenen ret/raw0), PostgreSQL başlatılmadı.
+Yeni exact archive üzerinde native fresh scan/delta hazırlanır; eski FAIL,
+DB/scan hash ve süre kaydı korunur. Veri yenilemesi bağımsız risk-delta ve
+yetki değerlendirmesi ister; fresh scan tek başına admission vermez. Yeni
+veya şiddetlenen teknik etki ya da kapsam/provenance değişimi mevcut veri
+yenileme yorumuyla kabul edilemez. Mevcut expired capability uzatılmaz.
+Yeni admission/engine/full-tree/hosted/R016 kapıları tamamlanmadan PR8 DRAFT
+kalır; production/runtime dağıtımı ve main merge onayı yoktur.
+
+### Güncel tarama ve sonlu veri yenileme değerlendirmesi
+
+Bağımsız DATA_REFRESH_REVIEW_PASS: owner 2026-09-07 kapsamı takvim bitiş
+tarihi vermedi; teknik DB48h sınırı ve run20min korunarak yeni sonlu kayıt
+hazırlanabilir. Bu sonuç execution admission/engine PASS değildir. Yeni
+DB built2026-09-08T06:30:10Z, hydrated SHA256
+39521d3581ed9987843264ca6a458d8b73389ea3ed9aaaa4edf1189f119a6408;
+before/after eşit. Yeni expiry2026-09-10T06:30:10Z, eski kayıt18cc09d…
+ve eski expiry geçmişte korunur. Owner approvalDate değişmez.
+
+Grype0.118.0 FAIL/raw2,357match/184blocking/0ignored. Yeni full blocking
+multiset SHA256b1fc51a9f5f1536e2cce28c5f8ac4ccd006905f34db0f5a4088fe32561e66953.
+151/151 catalog exact aynı; tüm357 package/match/vulnerability kimliği aynı,
+eklenen/çıkarılan0; severity/CVSS/fix/knownExploited değişimi0. Blocking168
+satırın metadata'sı değişti; risk/EPSS23 satırda değişti (22artış/1azalış).
+Tüm357 satırda36risk değişimi ve9primary description eklemesi var; dokuz
+açıklamanın tamamı eski related-vulnerability alanında birebir mevcuttu.
+Bu nedenle yeni teknik etki açıklaması gösterilmedi; risk aynı/azaldı veya
+not_affected iddiası yoktur. EPSS günlük genel exploitation sinyalidir;
+bu izole fixture için yeni erişilebilir saldırı yolu tek başına kanıtlamaz.
+Kanonik DEC-031/ADR-0021 ayrı EPSS hareket eşiği tanımlamaz. Aynı image,
+scope ve izolasyon için sonlu data refresh mevcut owner mandate içinde
+değerlendirildi; yeni image/KEV/teknik etki/provenance/kapsam için genellenmez.
+
+Data-only proof9a59d07eec0785c5bd1b6d8457fcdfeeb0e7d0e1ebc32389c44b860f33578ebb;
+delta replay4fe0e45767b0f5fc2fb061775afeeee5ef61eb9ca2ef7a17baa5109edbaf907a;
+risk summary621ff79ef691a2c19c59d4895abeecff544750c6845659986aa235231cca18ae.
+Security12raw stdout/stderr hash/size replay ve eski/yeni DB/archive hash
+mismatch0. Registry signer/reproducibility ve distribution residual'ları
+değişmez; yeni pinler, negatif test, ownership ve exact security sonrası
+engine çalıştırılır. DB üretiminden önceki now değeri ayrıca fail-closed
+reddedilir; bu ek kontrol freshness eşiğini gevşetmez.
+
+Exact02a1df/treeb26f yerel full-tree27gate+11içGo gate PASS; Linuxnonroot
+817/817skip0, Windows815PASS+2tarihsel platformskip, Linuxboundary14/14,
+web3/3coverage100. Quality proofdb17cc4a96e25ae38efdfde4ae923f59d4908667a280a335695ca615aeab37a0;
+final replaye106746b425d67cb1a354275bd93b0b2d903d06e639a8bd85a541351a84dc609,
+27gate+8clone+1nonroot raw mismatch0. Test başlamadan göreli harness path
+çağrısı raw1 verdi; invocation-history içinde korunur, gerçek absolute
+gate raw0. Bu sonuç yalnız02a1df exact source; yeni admission/state SHA'sına
+taşınmaz. R016/hosted/engine yeni exact kapıları henüz NOT_RUN.
+
+Yeni admission byte SHA2564722d2c788f4873558f7926d6d577b4ddbc0a13435d4018619535e6a08af4623,
+46exact evidence file ve aynı notice/OCI closure'a bağlanır. Consumer düzenine
+taşıma yeni scanner koşumu değildir; scan/catalog projection gerçek raw
+receipt alanlarından türetildi. Adapter proof24eb954065dae94ab53f8a94d5c49ea153e7e201c38c3ae808ca06e09b938075;
+data-only compatibility786ed9ed1cc01ec61a549b514c2dfd3279110c4dfe3bdf8585470bf3ae6a0092.
+Kaynak raw/delta byte'ları ayrıca kayda bağlı, kopyalar nlink1; engine için
+gerçek admission capability kontrolü ayrı zorunludur.
+
+Node24.20 --test --test-reporter=spec admission/run/build/host-policy dört
+test dosyası170/170PASS, fail/cancel/skip/todo0, gerçek process exit0.
+ExactlyDBbuilt ve expiry-1ms kabul; built-1ms/expiry/eski zaman/NaN/Infinity
+ret, DBhash/DBtime/age ve önceki pin/scope mutasyonları ret. Bu odaklı kaynak
+kanıtı full-tree/engine veya yeni exact security sonucu değildir.

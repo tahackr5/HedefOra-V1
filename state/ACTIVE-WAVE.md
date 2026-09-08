@@ -14,17 +14,18 @@
 - Integration branch: `codex/w001-t04f-phase-b`
 - Worktree: `C:\Users\ihsan\.codex\worktrees\HedefOra\W001\T04FB`
 - Started at: `2026-08-28T21:50:57+03:00` (`2026-08-28T18:50:57Z`)
-- Last checkpoint: PR #8 OPEN/DRAFT exact4446c8f; local full-tree/R016 ve hosted push/trustedR016 PASS, fakat hosted CI34066149544 Go cache cleanup EACCES ve CodeQL high/open2/3 nedeniyle cold FAIL. Dar cleanup/static-proof düzeltmeleri ve odaklı nonrootLinux reproducer/configrace PASS; yeni exact seal/full-tree/hosted/cold beklenir. Trusted PR #7 aba3d13 post-merge PASS ve tarihsel FAIL kayıtları korunur; image BLOCKED_SECURITY, gerçek engine NOT_RUN.
-- Current objective: Yeni trusted control base'i mevcut Phase B pool/TLS/readiness runtime lineage'ına entegre etmek; PG17 güvenli alternatif/runtime closure ve gerçek SQL/TLS/pool/readiness engine kapılarını tamamlayıp yeni exact PR owner gate'ine ilerlemek. Sourcebuilder2Critical+7High ve taranan alternatiflerin FAIL sonuçları korunur; eşik/ignore/VEX gevşetilmez. Image execution ve Phase B completion henüz NOT_RUN.
+- Last checkpoint: PR #8 OPEN/DRAFT remote cf69d6a; local 02a1df04f315b2c0e823f834888df2110acb454f / tree b26f4e00aefdd906d3a92bffb6c36d0dc29108bd, ownership/scoped source review ve27local quality gate PASS. A9 gerçek engine FAIL sonrası oracle/host-signal düzeltmeleri ve A/B cleanup kanıtları mühürlendi; yeni admission/source exact engine/full-tree/hosted/R016 henüz PASS değildir. Güncel ayrıntı: state/W001-PG17-FIXTURE.md. Trusted main aba3d13 değişmedi.
+- Current objective: DEC-031 kapsamında yalnız ağsız/cap-dropALL/ephemeral test fixture ile gerçek PG17 SQL/TLS/SCRAM/pool/readiness matrisini tamamlamak ve PR8 owner gate'ine ulaşmak. 2026-09-08 devamında eski DB48h admission süresi doldu; aynı image/izolasyon için bağımsız DATA_REFRESH_REVIEW_PASS sonrası yeni finite scan/DB/risk kaydı hazırlanır. Yeni expiry en geç2026-09-10T06:30:10Z; exact pin/test/seal/security tamamlanmadan PG çalıştırılmaz. EPSS artışları/Grype FAIL korunur; global/image/production güvenlik eşikleri ve main exact-head owner gate değişmez.
 
 ## Historical task/gate record
 
-Güncel devam kaydı (2026-09-07): `state/W001-PG17-FIXTURE.md`.
+Güncel devam kaydı (2026-09-08): `state/W001-PG17-FIXTURE.md`.
 cf69d6a exact checkpoint local/hosted/CodeQL/R016/cold PASS; önceki444 FAIL
 tarihseldir. Owner DEC-031 ile yalnız networknone/cap-dropALL/ephemeral
-test-time istisnasını onayladı. Yeni fixture profili uygulanıyor; engine
-NOT_RUN, PR8 DRAFT, production admission yok. Üstteki last-checkpoint,
-istisna öncesi tarihsel durumdur; yeni exact gate yerine kullanılamaz.
+test-time istisnasını onayladı. A1-A9 denemeleri ve başarısızlıkları ayrı
+artifact'larda korunur; yeni kaynak düzeltmeleri engine PASS yerine geçmez.
+PR8 DRAFT, production admission yok. Aşağıdaki eski checkpoint kayıtları
+tarihseldir; yeni exact gate yerine kullanılamaz.
 
 Aşağıdaki geçmiş tablolar yalnız kendi exact SHA kapsamındadır. Güncel Phase B kaydı `state/W001-PHASE-B.md`, tarihsel controller kanıtı `state/W001-R016-GO-GRAPH.md` içindedir. Eski hosted execution SUCCESS, canonical Go1.26.7 admission değildir.
 

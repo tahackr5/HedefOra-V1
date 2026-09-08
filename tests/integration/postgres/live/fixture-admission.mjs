@@ -13,7 +13,7 @@ import { requireLive } from "./process.mjs";
 import { FIXTURE_IMAGE, validateFixtureRun } from "./fixture-container.mjs";
 
 export const FIXTURE_APPROVAL_SHA256 =
-  "18cc09d312ae47637ec4290e60af88d712f06f05433cc3670e2d867738a829f6";
+  "4722d2c788f4873558f7926d6d577b4ddbc0a13435d4018619535e6a08af4623";
 const records = new WeakMap();
 const canonical = (value) =>
   JSON.stringify(value, (_, x) =>
@@ -66,6 +66,7 @@ export function validateFixtureApproval(bytes, now = Date.now()) {
   requireLive(
     Number.isFinite(now) &&
       now >= Date.parse(value.approvalDate) &&
+      now >= Date.parse(value.vulnerabilities.databaseBuilt) &&
       now < Date.parse(value.expiresAt) &&
       now - Date.parse(value.vulnerabilities.databaseBuilt) <=
         value.vulnerabilities.databaseMaxAgeMs,

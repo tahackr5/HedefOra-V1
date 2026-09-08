@@ -15,18 +15,45 @@ const approval = await readFile(
     import.meta.url,
   ),
 );
-const now = Date.parse("2026-09-07T01:00:00Z");
+const now = Date.parse("2026-09-08T17:00:00Z");
 test("fixture approval permits only exact current finite test risk record", () => {
   const value = validateFixtureApproval(approval, now);
   assert.equal(value.productionAdmission, false);
   assert.equal(value.vexNotAffectedClaim, false);
   assert.equal(value.vulnerabilities.scanStatus, "FAIL");
+  assert.equal(value.vulnerabilities.rawExit, 2);
+  assert.equal(value.vulnerabilities.ignoredMatches, 0);
+  assert.equal(value.vulnerabilities.databaseMaxAgeMs, 48 * 60 * 60 * 1000);
+  assert.equal(value.isolation.leaseMaxMs, 20 * 60 * 1000);
+  assert.equal(
+    Date.parse(value.expiresAt),
+    Date.parse(value.vulnerabilities.databaseBuilt) +
+      value.vulnerabilities.databaseMaxAgeMs,
+  );
 });
+for (const time of [
+  Date.parse("2026-09-08T06:30:10Z"),
+  Date.parse("2026-09-10T06:30:10Z") - 1,
+])
+  test(`fixture approval accepts finite time boundary ${time}`, () =>
+    assert.equal(
+      validateFixtureApproval(approval, time).productionAdmission,
+      false,
+    ));
 for (const [label, mutate] of [
   ["production", (v) => (v.productionAdmission = true)],
   ["scope", (v) => (v.scope = "production")],
   ["expiry", (v) => (v.expiresAt = "2099-01-01T00:00:00.000Z")],
   ["image", (v) => (v.image.config = "sha256:" + "0".repeat(64))],
+  ["database age", (v) => (v.vulnerabilities.databaseMaxAgeMs *= 2)],
+  [
+    "database identity",
+    (v) => (v.vulnerabilities.databaseSha256 = "0".repeat(64)),
+  ],
+  [
+    "database time",
+    (v) => (v.vulnerabilities.databaseBuilt = "2026-09-06T06:27:35Z"),
+  ],
   [
     "same count alternate findings",
     (v) => (v.vulnerabilities.blockingMultisetSha256 = "0".repeat(64)),
@@ -46,7 +73,10 @@ for (const time of [
   NaN,
   Infinity,
   Date.parse("2026-09-06T23:59:59Z"),
+  Date.parse("2026-09-07T01:00:00Z"),
   Date.parse("2026-09-08T06:27:35Z"),
+  Date.parse("2026-09-08T06:30:10Z") - 1,
+  Date.parse("2026-09-10T06:30:10Z"),
   Date.parse("2030-01-01"),
 ])
   test(`fixture approval rejects time ${time}`, () =>
