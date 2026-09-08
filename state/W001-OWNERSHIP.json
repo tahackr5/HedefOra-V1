@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "ac23d98e287d44f62e76fd415653e558646f8d57",
+  "verifiedThrough": "e3f755b88b8e5bdb26cf973726130365cbecaec7",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T04FB-fixture-engine-checkpoint-seal": {
@@ -1231,6 +1231,20 @@
         "state/W001-OWNERSHIP.md",
         "state/W001-PG17-FIXTURE.md",
         "state/W001-PHASE-B.md"
+      ]
+    },
+    "W001-T04FB-terminal-evidence-seal": {
+      "base": "ac23d98e287d44f62e76fd415653e558646f8d57",
+      "head": "804c877958f8e1825d6cfa8b9387a22a580d818a",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-postseal-marker-evidence": {
+      "base": "804c877958f8e1825d6cfa8b9387a22a580d818a",
+      "head": "e3f755b88b8e5bdb26cf973726130365cbecaec7",
+      "allowedPaths": [
+        "state/RELEASE-LEDGER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md"
       ]
     }
   }
