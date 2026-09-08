@@ -269,11 +269,12 @@ test("blob binding rejects changed and oversized bytes and committed private key
     () => verifyGitBlob(Buffer.alloc(16777217), sourceObject),
     /FIXTURE_BUILD_BLOB_BOUND/,
   );
-  const secret = Buffer.from(
+  // This fixed, invalid PEM-shaped marker is public test data, never a key.
+  const markerBytes = Buffer.from(
     "-----BEGIN " + "PRIVATE KEY-----\nsynthetic-only\n",
   );
   assert.throws(
-    () => verifyGitBlob(secret, oid(secret)),
+    () => verifyGitBlob(markerBytes, oid(markerBytes)),
     /FIXTURE_BUILD_PRIVATE_BYTES/,
   );
 });

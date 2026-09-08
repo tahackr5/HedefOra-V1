@@ -9,6 +9,14 @@
 
 ## Güncel runtime engine checkpoint — 2026-09-08
 
+A11 exact3a32a0/treec9e705 gerçek SQL170/Go6/race ve bağımsız replay/current
+absence PASS. Hosted CI/trusted execution SUCCESS, fakat CodeQL HIGH/open4
+nedeniyle aynı checkpoint scanner FAIL ve PR8 DRAFT. Sabit public negatif
+test işaretleyicisinin adlandırma/açıklama değişikliği yeni exact seal ve tüm
+kapıların tekrarını gerektirir; scanner dismissal veya runtime güvenlik
+düzeltmesi iddiası yok. Ayrıntı: state/W001-PG17-FIXTURE.md A11/CodeQL4.
+Aşağıdaki A10 kanıtı yalnız tarihsel exact source kapsamındadır.
+
 DEC-031/DQ-011 ayrı test-time profili ile exactff09a6cfa95a30b1526e3144ed632afde1cd8203
 /treee1c7a6b95e886473e8d0917984af4d92c5b31f80 A10 actual engine PASS:
 SQL170, Go6/race, TLS/SCRAM/pool ve /health/ready startup/outage/recovery/drain.

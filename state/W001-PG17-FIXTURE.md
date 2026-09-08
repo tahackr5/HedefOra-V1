@@ -1,7 +1,8 @@
 # W001 Phase B — owner test-fixture admission
 
-Güncel mühür-öncesi checkpoint: gerçek A10 engine PASS; final exact
-checkpoint kapıları bekleniyor. PR #8 draft kaldırma koşulu dosya sonundadır. DEC-031/DQ-011,
+Güncel mühür-öncesi checkpoint: gerçek A11 engine PASS; exact3a32 CodeQL4
+FAIL ve dar test adlandırması sonrası yeni exact kapılar bekleniyor.
+PR #8 draft kaldırma koşulu aşağıdaki final protokoldedir. DEC-031/DQ-011,
 owner 2026-09-07. Task-phase/trusted base aba3d13 ve historical wave start
 bde560f değişmez. Başlangıç checkpoint cf69d6a129bd1bc95af9ef90dd8b06b7edecb34d,
 tree0c1c34c5784a55c3f43c4b5f43633ba0c0fa5c85; branch codex/w001-t04f-phase-b.
@@ -483,3 +484,62 @@ full-tree/CI/R016 sonraki yetkili adımdır. R026 production/hardened-image
 BLOCKED_EXTERNAL, R014 server enforcement ve CodeRabbit/Sonar boşlukları
 PASS sayılmaz. Rollback reviewed dar revert veya yeni profili kullanmama;
 production/SSH/DNS/secret/gerçek veri mutation yoktur.
+
+## A11 ve CodeQL4 — exact sonuçların ayrılması, 2026-09-08
+
+Source3a32a0ced2474285d586b29c79d275e9616b593b /
+treec9e7052f8473ada96b185731a63bb3539a57c4ed, canonical fixture CLI gerçek
+exit0 (root session49176, terminalf67798): SQL170/Go6/race, üç inspect,
+owned cleanup ve posthash PASS. Final-result96aec7eb47d14833f42a501db7f635cf385295af543263027b4e95885e3d3723;
+receiptf6379f0178b3e63de4b7cc8b454651ee57e6a8f4fa3cc0c5cc119dc5aad1c865.
+Bağımsız değişmemiş verifier replay/current daemon absence PASS:
+proof25caac8c25b724856258a855392d27e417ff203f6c142b9cf2dcc9bdfecdb03f.
+258public source/5tool/9artifact/8bilinen event hash doğrulandı; exact
+ID/name/iki owner label yokluğu ve daemon identity eşleşti. Saklanmayan
+raw inspect stream byte'ları replay edilmiş sayılmaz. A10 ve önceki
+başarısızlıklar değişmedi; production admission yoktur.
+
+Aynı SHA'da push CI34254340723 ve trusted PR34254341395 execution SUCCESS;
+CodeQL34254340955 execution SUCCESS olmasına rağmen JS analysis1742604671
+result1 ve HIGH/open alert4 nedeniyle CodeQL gate FAIL. Actions/Go/Python
+result0; eski alert2/3 fixed. R016 artifact metadata push10067306117 /
+trusted10067317428 toplandı; bu checkpoint ZIP/raw bağımsız replay edilmedi.
+Windows frozen install/ci:check exit0, repository823PASS+2tarihsel skip
+(825toplam), web3/3 ve coverage100; yeni Linux/Go/localR016 full-tree
+koşulmamış sonuçlar PASS sayılmaz. Kaynak güvenlik incelemesi scoped PASS
+olması bu hosted bulguyu veya eksik gate'leri kapatmaz.
+
+Actual SARIF alert4 akışı fixture-build.test.mjs:276 içindeki `secret`
+değişkeninden verifyGitBlob parametresi ve SHA-1 update'e gider. Değer sabit,
+public, geçersiz PEM-biçimli `synthetic-only` işaretleyicisidir; gerçek
+anahtar okunmaz/üretilmez. Doğru Git blob OID verilmesi negatif testin hash
+uyuşmazlığı yerine FIXTURE_BUILD_PRIVATE_BYTES reddine ulaşmasını sağlar.
+SHA-1 burada mevcut Git object-format kimlik eşlemesidir; password/secret
+koruma algoritması değildir. Dosya/tool/bundle manifest bütünlüğü SHA-256
+olarak kalır; bu değerlendirme genel Git SHA-1 collision güvenliği iddiası
+değildir. [Git object format](https://git-scm.com/book/en/v2/Git-Internals-Git-Objects.html)
+ve [CodeQL kuralı](https://codeql.github.com/codeql-query-help/javascript/js-weak-cryptographic-algorithm/)
+ayrı anlamları doğrulamak için incelendi.
+
+Inline static triage: not_actionable/high confidence, supported sensitive
+boundary crossed=false. Uygulanabilir SECURITY.md resolver sonucu yok;
+AGENTS/DEC-031/ADR-0021 trusted-host/public-source sınırı kullanıldı.
+Triage JSON SHA256d02dfe51f81ea6a8129d0e55c2a2849878b66f8ff76286bc234c740734457b44.
+Bağımsız read-only inceleme aynı dar kaynak yorumunu doğruladı. Güvenlik
+düzeltmesi sonucu no_change; normal CI fixture açıklaması yalnız `secret`
+adını `markerBytes` yapar ve sabit/geçersiz/public yorumu ekler. Literal
+byte'lar, oid hesabı, çağrı, assertion ve runtime kaynak byte'ları korunur.
+CodeQL kuralı/config/dismissal/suppression/threshold değişikliği yapılmaz.
+Yeni exact hosted scan sonucu görülmeden alert fixed veya gate PASS denmez.
+
+Odaklı canonical Node24.20 fixture-build testleri107/107, fail/skip/todo0,
+exit0. Yorum ve değişken adı geri normalize edildiğinde önceki test
+dosyası birebir aynı; fixture-build.mjs implementation değişmemiştir.
+Bağımsız fresh read-only aday bypass/regression incelemesi scoped PASS;
+bu sonuç taramanın otomatik kapanışını veya yeni exact full-tree PASS'ını
+öngörmez. Eski marker reddi ve Git OID uyumluluğu aynen korunur.
+
+Sonraki source/seal için A12 engine, clean-clone full-tree/R016, hosted
+push+trusted ve fresh security/cold ayrı artifact'larla doğrulanır. A11
+PASS yeni SHA'ya taşınmaz. PR8 DRAFT bu kapılar bitmeden kaldırılmaz; owner
+exact-head merge ve post-merge full-tree hâlâ sonraki yetki eşiğidir.

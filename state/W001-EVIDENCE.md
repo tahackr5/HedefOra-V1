@@ -374,3 +374,14 @@ promotion'ının yeni exact engine/full-tree/local+hostedR016/CI/CodeQL ve
 fresh review'leri ayrı artifact'larda tamamlanır; final owner raporu
 artifacts/PR8-PHASE-B-OWNER-GATE.md. R016 istisnası/production admission
 üretilmez; raw inspect stream'in saklanmayan byte'ları replay edilmiş sayılmaz.
+
+### A11 / CodeQL4 ayrımı
+
+Exact3a32a0ced2474285d586b29c79d275e9616b593b A11 engine ve bağımsız
+replay/currentabsence PASS; proof25caac8c25b724856258a855392d27e417ff203f6c142b9cf2dcc9bdfecdb03f.
+Hosted CI34254340723/trusted34254341395 SUCCESS, fakat CodeQL34254340955
+HIGH/open4 nedeniyle gate FAIL. R016 ZIP/raw replay bu checkpoint için
+NOT_RUN. Dar public test marker adlandırma/açıklama değişikliği scanner
+sonucunu geriye dönük değiştirmez; yeni exact tüm gate'ler ayrı koşulacaktır.
+Actual SARIF ve static not_actionable triage kanıtı state/W001-PG17-FIXTURE.md
+içindedir. PR8 DRAFT; main/production mutation yoktur.
