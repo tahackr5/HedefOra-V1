@@ -4,7 +4,7 @@
 - Initial Phase B immutable base: `7a1e124e432b51694e7d60c0d3d1589867a8835f`; tree `ec6d12847c657adedbd84e44565598d234c7b928`.
 - Current continuation checkpoint: `aba3d13ed057bbe80a2e67486058180479c3c50e`; tree `ed51da48638d362ff52169658321604dedba442a`. PR #7 owner merge ve aşağıdaki post-merge admission sonrasında ilerletildi; mevcut runtime lineage yeniden yazılmadı.
 - Merged candidate: `df67eb1d2c59009552602a666f352605494587ce`; tree `c04ce8c0adb6fa9a8ebcb30b3a750f23c6af1857`. Remote `main` olsa da post-merge CodeQL alert #5 nedeniyle `UNTRUSTED`; current continuation checkpoint değildir.
-- Remediation checkpoint: `4d62c24c7ebf6a9e5cdfd9a5dca26b751d1caf86`; tree `cf89b55096ad84a23aa23ca7dfb94ce2e09cbd25`. Bu kaynak düzeltmesi henüz final seal/hosted/review/owner gate'i geçmedi.
+- Remediation checkpoint: `393e32b9082040aa654a4abe0c97eec89b50bb7a`; tree `1133bf59f7da0dc81cf000a8a7b1656995850b65`. S1 security/cold, S2 ise temporal pre-seal review'da reddedildi; bu yeni source head henüz final seal ve yeni exact gates'i geçmedi.
 - Historical W001 base değişmez: `bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b`.
 - Orchestrator branch/worktree: `codex/w001-t04f-postmerge-codeql5`, `C:\Users\ihsan\.codex\worktrees\HedefOra\W001\T04F-CODEQL5`.
 - Etkin model/effort tool kanıtında doğrulanmadı: UNKNOWN/UNKNOWN; repository config değiştirilmedi, alt ajanlara override gönderilmedi.
@@ -54,17 +54,17 @@ Bu sonuç Phase A checkpoint doğrulamasıdır; canlı PostgreSQL, Phase B compl
 
 Tüm writer worktree'leri yukarıdaki aynı immutable base'ten açılır. Shared dosyaları orchestrator birleştirir. Diğer writer'ın değişikliği geri alınmaz.
 
-| Task | Tek writer / branch suffix | Yollar ve acceptance | Sıra |
-|---|---|---|---|
-| T04FB-00 | orchestrator / phase-b | root governance, `state/**`, `FILE-INDEX.md`, delivery/architecture; DQ onayı ve post-merge kanıtı | önce |
-| T04FB-01 | orchestrator / phase-b | `go.mod`, `go.sum`, exact graph pin/tidy checker; all-scope R-016 admission | adapter öncesi |
-| T04FB-02 | orchestrator; bağımsız structured compiler proposal | OpenAPI/Spectral, generator/fixtures/tests, contracts README, generated Go yalnız generator ile | DQ-009 A |
-| T04FB-03 | backend / pool | yalnız `internal/platform/config/postgres{,_test}.go`, `internal/platform/postgres/pool{,_test}.go`; structured config, verify-full TLS, bounded pool/cancel/close, secret redaction | T04FB-01 PASS |
-| T04FB-04 | backend / readiness | `cmd/hedefora/**`, mevcut `config/api{,_test}.go`, `health/**`, `http/**`, `app/**`; iki-operation transport/probe/drain ve failure matrisi | T04FB-02/03 contract |
-| T04FB-05 | infra / hardened-image | yalnız `infra/postgres/image/**`; exact source/base/package image tasarımı, inputs/build/entrypoint ve doküman | DQ-010 B |
-| T04FB-06 | orchestrator; quality proposal | `scripts/postgres-image/**`, image-specific policy/lock; canonical OS/source-CPE/SBOM/freshness/canary/error gate | image execution öncesi |
-| T04FB-07 | orchestrator; quality proposal | `tests/integration/postgres/**`, `infra/compose.dev.yml`, infra/database README; admitted disposable engine empty/up/down/upgrade/privilege/TLS/pool | image security PASS |
-| T04FB-08 | orchestrator + read-only fresh reviewers | exact boundary/default gate wiring, ownership seal, ledger/artifacts, full-tree/local+hosted R-016/CI/CodeQL/PR | bütün acceptance |
+| Task     | Tek writer / branch suffix                          | Yollar ve acceptance                                                                                                                                                                 | Sıra                   |
+| -------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------- |
+| T04FB-00 | orchestrator / phase-b                              | root governance, `state/**`, `FILE-INDEX.md`, delivery/architecture; DQ onayı ve post-merge kanıtı                                                                                   | önce                   |
+| T04FB-01 | orchestrator / phase-b                              | `go.mod`, `go.sum`, exact graph pin/tidy checker; all-scope R-016 admission                                                                                                          | adapter öncesi         |
+| T04FB-02 | orchestrator; bağımsız structured compiler proposal | OpenAPI/Spectral, generator/fixtures/tests, contracts README, generated Go yalnız generator ile                                                                                      | DQ-009 A               |
+| T04FB-03 | backend / pool                                      | yalnız `internal/platform/config/postgres{,_test}.go`, `internal/platform/postgres/pool{,_test}.go`; structured config, verify-full TLS, bounded pool/cancel/close, secret redaction | T04FB-01 PASS          |
+| T04FB-04 | backend / readiness                                 | `cmd/hedefora/**`, mevcut `config/api{,_test}.go`, `health/**`, `http/**`, `app/**`; iki-operation transport/probe/drain ve failure matrisi                                          | T04FB-02/03 contract   |
+| T04FB-05 | infra / hardened-image                              | yalnız `infra/postgres/image/**`; exact source/base/package image tasarımı, inputs/build/entrypoint ve doküman                                                                       | DQ-010 B               |
+| T04FB-06 | orchestrator; quality proposal                      | `scripts/postgres-image/**`, image-specific policy/lock; canonical OS/source-CPE/SBOM/freshness/canary/error gate                                                                    | image execution öncesi |
+| T04FB-07 | orchestrator; quality proposal                      | `tests/integration/postgres/**`, `infra/compose.dev.yml`, infra/database README; admitted disposable engine empty/up/down/upgrade/privilege/TLS/pool                                 | image security PASS    |
+| T04FB-08 | orchestrator + read-only fresh reviewers            | exact boundary/default gate wiring, ownership seal, ledger/artifacts, full-tree/local+hosted R-016/CI/CodeQL/PR                                                                      | bütün acceptance       |
 
 Worktree kökü `C:\Users\ihsan\.codex\worktrees\HedefOra\W001`: `T04FB`, `T04FB-POOL`, `T04FB-READY`, `T04FB-IMAGE`. Branch'ler sırasıyla `codex/w001-t04f-phase-b`, `codex/w001-t04f-pool`, `codex/w001-t04f-readiness`, `codex/w001-t04f-hardened-image`.
 
@@ -315,9 +315,9 @@ Bu Node gate'i yeni exact Linux Go veya hosted gate'in yerine geçmez.
 İki public hazır aday exact manifest/config/layer/diff-ID/SBOM kimliğiyle,
 pinli Syft1.51.1/Grype0.118.0 ve fresh DB üzerinden çalıştırılmadan tarandı:
 
-| Aday linux/amd64 manifest | Gerçek sonuç |
-|---|---|
-| Official17.11-alpine3.24 `sha256:7456ef82e5f5bc43d997f4781bbd7c0d6389bff397564649a356e206ba473aee` | raw2;5Critical/41High/3Unknown; related CVSS dahil49blocking; ignored0 |
+| Aday linux/amd64 manifest                                                                          | Gerçek sonuç                                                               |
+| -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Official17.11-alpine3.24 `sha256:7456ef82e5f5bc43d997f4781bbd7c0d6389bff397564649a356e206ba473aee` | raw2;5Critical/41High/3Unknown; related CVSS dahil49blocking; ignored0     |
 | CNPG17.11-minimal-trixie `sha256:74bd7677a9d9bde0258dc3593106539a1fd5a0b23fecb4ee97dfb67589f8b6f2` | raw2;27Critical/107High/16Unknown; related CVSS dahil184blocking; ignored0 |
 
 Chainguard public exact17 HTTP404; DHI17 HTTP401, credential alınmadı.
@@ -776,3 +776,80 @@ generated/go-mod/license/audit PASS. Final ownership seal, exact local R-016,
 fresh security/cold, hosted CI/trusted R-016/Dependency Review/CodeQL ve yeni
 exact-head owner merge gate'i henüz NOT_RUN. PR #8 onayı bu yeni merge'i
 kapsamaz; production/deployment/SSH/DNS/secret mutation yoktur.
+
+## 2026-09-09 — PR #9 S1 hosted PASS, security/cold FAIL ve S2 remediation
+
+İlk sealed checkpoint S1 `7545583cf1d88a6e7604ce23b431f7ea4145b09f`
+üzerinde hosted CI `34287282561` ve trusted PR `34287323088` SUCCESS oldu;
+trusted koşumdaki Dependency Review de PASS'tir. CodeQL `34287321357` exact
+`refs/pull/9/head` üzerinde Actions, Go, JavaScript/TypeScript ve Python için
+`results_count=0`; PR/head ve branch ref açık alert listeleri boştur. Main'deki
+alert #5 merge'e kadar tarihsel `df67eb1` ref'inde açık kalır; dismissal veya
+suppression yapılmadı.
+
+Push R-016 artifact `10080010444`, 248802 byte, API/indirilen ZIP SHA-256
+`d269f19e47f1913a26b76cd68a8565c0129bc7e6f8a92ab04723cf2ed7084624`;
+evidence SHA-256
+`16d43242d2b635ee1c45828e110cca8c25580c60b4b73439f018ba5243b98c98`, DB
+seal `21e89d877179c1a54b5ffb9e2fe562119ee5f8488279019b574dcf547f27af25`.
+Trusted artifact `10080032714`, 279361 byte, API/indirilen ZIP SHA-256
+`cbc61f5f07064ec1e417e4fc119499cdc39e975728e3662b580bb9df9d45aacd`;
+evidence SHA-256
+`e602a8bb4b4d13d7389ba6806629dba21d4f4fd285cc8ed844d61866892e5776`, DB
+seal `b5c089b606ee91cb431e47424d116ab42788c4629a3c31a0373aa4851819e2a4`.
+İki ZIP'te path/link/collision/file-set/hash/size/process/terminal ve DB-seal
+strict replay mismatch `0`; sırasıyla 486 ve 516 raw artifact doğrulandı.
+
+S1 local pinned `ci:check` exit `0`: repository 824 PASS/iki mevcut Windows
+skip, web 3/3, coverage %100, generated/build/Go-mod/license/audit PASS.
+Pinned Go 1.26.7 gofmt/mod/list/build/vet/test PASS; native race Windows cgo
+gereksinimi nedeniyle koşmadı, hosted Linux race PASS'tir. Local R-016'nin
+ilk iki denemesi yanlış repository full-name ile acquisition öncesi
+fail-closed kaldı. Doğru identity ile üçüncü koşum 394 raw artifact sonrası,
+S1 review FAIL geldiği için bilinçli durduruldu; `evidence.json`/final sonuç
+yoktur ve PASS değildir.
+
+Fresh security ve cold reviewer, `FIXTURE-CONTRACT.md` verbose prefix/body
+SQLSTATE equality şartına rağmen ordinary native korelatörün yalnız prefix'i
+güvenilir saydığını doğruladı. Doğru app/user/database prefix'li `42501`
+satırında eksik body state veya body `28P01` olsa da `42501/origin=postgres`
+üretilebildiği için F-01 MEDIUM, HIGH-confidence, CWE-20 ve release-blocking
+olarak kaydedildi. Bu test-evidence integrity açığı `df67eb1` tabanında da
+vardı; production runtime etkisi doğrulanmadı. S1 merge adayı değildir.
+
+S2 `758b86ba38db0c3172dafb2540f6d7c33f74df76`, tree
+`97b86c17c43a2711fefe16d47a27cb62be320efc`, yalnız
+`tests/integration/postgres/live/{process.mjs,runner.test.mjs,fixture-container.test.mjs}`
+yollarını değiştirir. Target-app `ERROR/FATAL/PANIC` kanıtında exact verbose
+body state zorunludur ve prefix ile eşit olmalıdır; missing/mismatch veya
+valid+malformed birleşimi `null/origin=channel` ile fail-closed olur. Unrelated
+app ve `NOTICE/WARNING` kanıt yetkisi kazanmaz; farklı iki geçerli state'in
+ambiguity hatası korunur. Exact Node 24.20.0 iki-file suite `322/322`, focused
+regression `9/9`, Prettier ve `git diff --check` PASS. Yeni evidence commit,
+manifest-only seal, full-tree, local R-016, gerçek PG engine, hosted kapılar
+ve fresh final review'ler henüz NOT_RUN; önceki sonuçlar S2 adına taşınmaz.
+PR #8 onayı PR #9'u kapsamaz; production/deployment yetkisi yoktur ve T04G
+PENDING kalır.
+
+### S2 temporal pre-seal FAIL ve terminal remediation
+
+S2 `758b86ba38db0c3172dafb2540f6d7c33f74df76` pre-seal read-only review,
+native 500 ms polling sırasında malformed target line'ın sonraki snapshot'ta
+kaybolması halinde taint'in korunmadığını buldu. Exact Node24.20 probe,
+başlangıçta prefix `42501`/body `28P01`, 40 ms sonra yalnız valid
+`42501/42501` satırı verildiğinde yanlış `{origin:"postgres",
+sqlState:"42501"}` döndürdü. S2 aynı-snapshot düzeltmesine rağmen temporal
+fail-closed acceptance'ı karşılamaz ve merge adayı değildir.
+
+Commit `393e32b9082040aa654a4abe0c97eec89b50bb7a`, tree
+`1133bf59f7da0dc81cf000a8a7b1656995850b65`, parent S2; yalnız
+`tests/integration/postgres/live/{process.mjs,runner.test.mjs}`, +43/-31.
+Canonical olmayan, prefix/body state'i uyuşmayan veya `00000` taşıyan target
+`ERROR/FATAL/PANIC` artık typed `SQLSTATE_INVALID` ile terminal olur; yalnız
+eligible kanıt bulunmaması `null` kalır. Psql core bu hatayı public
+`origin=channel/sqlState=null` sonucuna kapatır. Unrelated application ve
+`NOTICE/WARNING` ayrımı, partial-tail retry ve distinct-valid ambiguity
+korunur. Malformed satır kalsa da kaybolsa da missing/mismatch + valid
+matrisi eklendi. Exact Node24.20 iki-file suite `326/326`, Prettier ve diff
+check PASS. Yeni state/ownership seal ile bütün exact local/engine/hosted ve
+fresh review kapıları NOT_RUN; eski S1/S2 sonucu bu head'e taşınmaz.

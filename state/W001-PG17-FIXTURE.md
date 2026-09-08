@@ -581,3 +581,44 @@ suppression, production/image/PG mutation yoktur. Dar source remediation
 `4d62c24c7ebf6a9e5cdfd9a5dca26b751d1caf86` yeni exact seal/hosted/review ve
 owner gate'i bekler. DEC-031 expiry `2026-09-10T06:30:10Z`, max20m/run,
 Grype FAIL ve R-026 production block korunur; T04G PENDING.
+
+## PR #9 S1 evidence-integrity FAIL ve S2 — 2026-09-09
+
+CodeQL #5 için ilk final seal S1
+`7545583cf1d88a6e7604ce23b431f7ea4145b09f` hosted CI/trusted/Dependency
+Review ve dört dilli CodeQL kapılarını geçti; iki hosted R-016 artifact'ının
+strict replay'i de PASS oldu. Buna rağmen fresh security ve cold review,
+ordinary native log korelatörünün verbose body SQLSTATE'i prefix ile
+eşleştirmediğini doğruladı. Eksik veya çelişkili body state'in
+`origin=postgres` kanıtı üretebilmesi fixture acceptance oracle'ında false
+PASS riski yarattığı için S1 overall FAIL ve merge edilemezdir. Local R-016
+iki yanlış repository identity girişinde acquisition öncesi fail-closed;
+doğru üçüncü giriş review FAIL sonrası finalization'dan önce durduruldu ve
+PASS değildir.
+
+S2 `758b86ba38db0c3172dafb2540f6d7c33f74df76`, tree
+`97b86c17c43a2711fefe16d47a27cb62be320efc`, yalnız common correlator ve iki
+test dosyasında exact verbose prefix/body equality zorunluluğu ile
+missing/mismatch/valid+malformed fail-closed regresyonlarını ekler. Exact Node
+24.20.0 `runner.test.mjs + fixture-container.test.mjs` `322/322`, focused
+regression `9/9`, Prettier/diff check PASS. Gerçek PG17 engine dahil tüm final
+exact-head kapıları yeni ownership seal sonrasında yeniden koşacaktır; A12,
+A13-A15 veya S1 kanıtı S2 adına etiketlenmez. DEC-031 expiry
+`2026-09-10T06:30:10Z`, max 20 dakika/run, Grype FAIL, R-026 production block
+ve no-deployment sınırı değişmez.
+
+### S2 temporal review FAIL ve `393e32b` source head
+
+S2 pre-seal exact probe, native polling'in malformed missing/mismatched body
+state'i yalnız o snapshot için `null` yaptığını; satır kaybolup valid satır
+geldiğinde `origin=postgres/42501` kabul edebildiğini gösterdi. Bu nedenle S2
+temporal fail-closed şartında FAIL ve merge adayı değildir.
+
+`393e32b9082040aa654a4abe0c97eec89b50bb7a`, tree
+`1133bf59f7da0dc81cf000a8a7b1656995850b65`, common korelatörde malformed,
+prefix/body mismatch ve `00000` target severe kanıtını typed terminal error
+yapar; psql core dışarı yalnız channel/null verir. Disappearing missing/
+mismatch matrisini içeren exact Node24.20 iki-file suite `326/326`, format ve
+diff check PASS. Yeni seal, gerçek engine ve tüm exact gate'ler yeniden
+koşulmadan fixture admission PASS değildir; DEC-031/R-026/Grype ve
+no-deployment sınırları değişmez.

@@ -457,3 +457,77 @@ ownership seal, exact local R-016, fresh security/cold, hosted CI/trusted
 R-016/Dependency Review/CodeQL ve yeni exact-head owner merge gate'i NOT_RUN.
 PR #8 owner onayı bu remediation merge'ini kapsamaz. Production/deployment/
 SSH/DNS/secret mutation yoktur; trusted/task-phase base hâlâ `aba3d13`.
+
+## 2026-09-09 — PR #9 S1 hosted evidence, review FAIL ve S2
+
+S1 `7545583cf1d88a6e7604ce23b431f7ea4145b09f` hosted CI
+`34287282561` ve trusted PR `34287323088` SUCCESS; Dependency Review ve
+hosted Linux Go race PASS. CodeQL `34287321357`, exact
+`refs/pull/9/head`: Actions/Go/JavaScript-TypeScript/Python
+`results_count=0`, PR/head ve branch ref açık alert `0`. Main alert #5 yalnız
+`df67eb1` ref'inde merge'e kadar açık; dismissal/suppression yoktur.
+
+Push R-016 artifact `10080010444`, 248802 byte, ZIP SHA-256
+`d269f19e47f1913a26b76cd68a8565c0129bc7e6f8a92ab04723cf2ed7084624`,
+evidence SHA-256
+`16d43242d2b635ee1c45828e110cca8c25580c60b4b73439f018ba5243b98c98`, DB
+seal `21e89d877179c1a54b5ffb9e2fe562119ee5f8488279019b574dcf547f27af25`,
+486 raw. Trusted artifact `10080032714`, 279361 byte, ZIP SHA-256
+`cbc61f5f07064ec1e417e4fc119499cdc39e975728e3662b580bb9df9d45aacd`,
+evidence SHA-256
+`e602a8bb4b4d13d7389ba6806629dba21d4f4fd285cc8ed844d61866892e5776`, DB
+seal `b5c089b606ee91cb431e47424d116ab42788c4629a3c31a0373aa4851819e2a4`,
+516 raw. Bounded ZIP safety, exact file set, SHA-256/size, process linkage,
+terminal PASS, policy verdict ve DB seal bağımsız replay mismatch `0`.
+
+S1 local pinned Node24.20/pnpm11.24/Go1.26.7 `ci:check` exit0:826 toplam,
+824PASS/iki mevcut Windows skip; web3/3/coverage100 ve build/generated/
+go-mod/license/audit PASS. Native Go gofmt/mod/list/build/vet/test PASS;
+Windows cgo gereksinimli race yerine hosted Linux race kanıtı ayrı tutulur.
+Local R-016 `20260908T224431206Z-32448-7841339c` ve
+`20260908T224459723Z-37708-cf25506a` yanlış repository full-name nedeniyle
+acquisition öncesi fail-closed. Doğru-env
+`20260908T224527112Z-35472-ff232ce7`, 394 raw sonrası S1 review FAIL üzerine
+bilinçli durduruldu; evidence/finalization yok, PASS değildir ve orphan
+container/process kalmadı.
+
+Fresh security ile cold review ortak F-01 verdi: target application'ın
+`ERROR/FATAL/PANIC` satırında verbose body SQLSTATE bulunması ve prefix state
+ile eşitliği sözleşmesel zorunlulukken common korelatör yalnız prefix'i kabul
+ediyordu. Missing body veya prefix `42501`/body `28P01` probe'u yanlış
+`42501/origin=postgres` üretti. MEDIUM, HIGH-confidence, CWE-20; production
+runtime etkisi değil, PG acceptance oracle false-PASS riskidir. Açık
+`df67eb1` tabanında pre-existing olduğundan S1 CodeQL5 düzeltmesini geri
+almaz, fakat S1 overall/release verdict'ini FAIL yapar.
+
+S2 `758b86ba38db0c3172dafb2540f6d7c33f74df76`, tree
+`97b86c17c43a2711fefe16d47a27cb62be320efc`, parent S1; yalnız
+`process.mjs`, `runner.test.mjs`, `fixture-container.test.mjs`, +86/-19.
+Exact verbose body state prefix ile eşit değilse/missing ise veya geçerli
+kanıta malformed target severe satır eşlik ederse sonuç fail-closed olur;
+unrelated app ile NOTICE/WARNING ayrımı ve gerçek ambiguity korunur. Exact
+Node24.20 iki-file suite322/322, focused9/9, Prettier ve diff check exit0.
+Yeni state/ownership seal ve S2'ye bağlı full-tree/local R-016/PG engine/
+hosted/fresh reviews NOT_RUN. PR #8 onayı yeni PR #9 head'ini kapsamaz;
+trusted base `aba3d13`, T04G PENDING ve production/deployment yetkisi yoktur.
+
+### S2 temporal pre-seal finding ve `393e32b` remediation
+
+Read-only pre-seal review exact S2 `758b86ba38db0c3172dafb2540f6d7c33f74df76`
+üzerinde ek F-01 varyantı buldu. Native log polling yalnız normalizer
+exception'ını sticky taint yapıyordu; `correlatedSqlState` missing/mismatch
+için `null` döndürdüğünden malformed line sonraki snapshot'ta kaybolup valid
+line geldiğinde kanıt kabul edilebiliyordu. Exact Node24.20 reproduction:
+prefix `42501`/body `28P01`, 40 ms sonra valid `42501/42501`; actual sonuç
+`origin=postgres`, `sqlState=42501`. S2 FAIL ve merge adayı değildir.
+
+Source commit `393e32b9082040aa654a4abe0c97eec89b50bb7a`, tree
+`1133bf59f7da0dc81cf000a8a7b1656995850b65`, parent S2; yalnız
+`process.mjs` ve `runner.test.mjs`, +43/-31. Malformed canonical syntax,
+prefix/body inequality veya severe `00000` artık `SQLSTATE_INVALID` typed
+terminal error'dır; no-evidence `null`, unrelated/non-severe ignore,
+partial-tail retry ve ambiguity korunur. Native missing/mismatch + valid
+satırın hem kaldığı hem kaybolduğu regression matrisi public channel/null
+sonucunu doğrular. Exact Node24.20.0 iki-file suite `326/326`, fail/skip/todo
+`0`, Prettier ve diff check exit `0`. State promotion/seal ve bütün exact
+local/engine/hosted/security/cold kapıları henüz NOT_RUN'dır.
