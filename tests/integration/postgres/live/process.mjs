@@ -159,7 +159,8 @@ export async function command(options) {
 }
 
 // Match only a unique application name in the owned server's exact log prefix.
-// NOTICE/WARNING/detail lines cannot supply error evidence. No guessed SQLSTATE.
+// ERROR/FATAL/PANIC require the matching verbose body SQLSTATE. NOTICE/WARNING
+// and unrelated applications cannot supply or invalidate error evidence.
 export function correlatedSqlState(logs, applicationName) {
   requireLive(
     /^ho_[a-f0-9]{16}_[0-9]{1,7}$/.test(applicationName),
@@ -171,9 +172,16 @@ export function correlatedSqlState(logs, applicationName) {
   );
   const states = new Set();
   for (const line of logs.split("\n")) {
-    const match = /^([^ ]+) ([0-9A-Z]{5}) (ERROR|FATAL|PANIC):/.exec(line);
-    if (match?.[1] === applicationName && match[2] !== "00000")
-      states.add(match[2]);
+    if (!line.startsWith(`${applicationName} `)) continue;
+    const remainder = line.slice(applicationName.length + 1);
+    const severe = /^(?:\S+\s+)?(?:ERROR|FATAL|PANIC)\s*:/.test(remainder);
+    if (!severe) continue;
+    const match =
+      /^([0-9A-Z]{5}) (ERROR|FATAL|PANIC):  ([0-9A-Z]{5}):(?: |$)/.exec(
+        remainder,
+      );
+    if (!match || match[1] !== match[3]) return null;
+    if (match[1] !== "00000") states.add(match[1]);
   }
   requireLive(states.size <= 1, "SQLSTATE_AMBIGUOUS");
   return states.size === 1 ? [...states][0] : null;

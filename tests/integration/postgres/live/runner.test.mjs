@@ -498,32 +498,67 @@ test("shell disabled and ambient environment excluded at spawn seam", async () =
   assert.equal(result.stderr, "");
   assert.equal(result.connectionClosed, false);
 });
-test("SQLSTATE requires exact app, severity and one unambiguous server code", () => {
-  const app = `ho_${runId.slice(0, 16)}_1`;
+const sqlStateApplication = `ho_${runId.slice(0, 16)}_1`;
+const verboseErrorLog = (
+  state,
+  severity,
+  bodyState = state,
+  message = "synthetic",
+) => `${sqlStateApplication} ${state} ${severity}:  ${bodyState}: ${message}`;
+test("SQLSTATE accepts an exact matching verbose body for every error severity", () => {
+  for (const [state, severity] of [
+    ["42501", "ERROR"],
+    ["28P01", "FATAL"],
+    ["XX000", "PANIC"],
+  ])
+    assert.equal(
+      correlatedSqlState(
+        `${verboseErrorLog(state, severity)}\nother 42501 ERROR: ignored\n`,
+        sqlStateApplication,
+      ),
+      state,
+    );
+});
+test("SQLSTATE rejects missing, mismatched, or malformed target verbose state", () => {
+  const valid = verboseErrorLog("42501", "ERROR");
+  for (const logs of [
+    `${sqlStateApplication} 42501 ERROR: synthetic`,
+    verboseErrorLog("42501", "ERROR", "28P01"),
+    `${sqlStateApplication} ??? ERROR:  42501: synthetic`,
+    `${valid}\n${sqlStateApplication} 42501 ERROR: synthetic`,
+    `${verboseErrorLog("42501", "ERROR", "28P01")}\n${valid}`,
+  ])
+    assert.equal(correlatedSqlState(logs, sqlStateApplication), null);
+});
+test("SQLSTATE ignores non-error and unrelated lines but keeps ambiguity closed", () => {
+  const valid = verboseErrorLog("42501", "ERROR");
   assert.equal(
     correlatedSqlState(
-      `${app} 28P01 FATAL: synthetic\nother 42501 ERROR: ignored\n`,
-      app,
+      `${sqlStateApplication} 28P01 NOTICE: not an error\n${sqlStateApplication} 28P01 WARNING:  42501: not evidence\n${valid}`,
+      sqlStateApplication,
     ),
-    "28P01",
+    "42501",
   );
   assert.equal(
     correlatedSqlState(
-      `${app} 42501 NOTICE: not an error\n${app} 00000 ERROR: not a state`,
-      app,
+      `${sqlStateApplication} 00000 ERROR:  00000: not a state`,
+      sqlStateApplication,
     ),
     null,
   );
   assert.throws(
     () =>
       correlatedSqlState(
-        `${app} 28P01 FATAL: one\n${app} 42501 ERROR: two`,
-        app,
+        `${verboseErrorLog("28P01", "FATAL")}\n${valid}`,
+        sqlStateApplication,
       ),
     /SQLSTATE_AMBIGUOUS/,
   );
   assert.equal(
-    correlatedSqlState("unrelated 28P01 FATAL: not this session", app),
+    correlatedSqlState(
+      "unrelated 28P01 FATAL: not this session",
+      sqlStateApplication,
+    ),
     null,
   );
 });
@@ -553,7 +588,7 @@ function fakeExecutor({
     },
     async readLogs() {
       const app = calls.at(-1).options.env.PGAPPNAME;
-      return state ? `${app} ${state} FATAL: synthetic-only` : "";
+      return state ? `${app} ${state} FATAL:  ${state}: synthetic-only` : "";
     },
     docker(args, options) {
       calls.push({ args, options });
