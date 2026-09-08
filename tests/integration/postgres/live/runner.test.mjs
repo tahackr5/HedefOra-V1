@@ -1641,6 +1641,11 @@ const logIdentity = Object.freeze({
   database: "hedefora_dev",
 });
 const normalIdentityError = `${logIdentity.application} 42501 [fixture:hedefora_app:hedefora_dev] ERROR:  42501: synthetic-private\n`;
+const removeFixtureIdentityClosingBracketForTest = (text) => {
+  const identityClose = text.indexOf("] ERROR:");
+  assert.notEqual(identityClose, -1);
+  return text.slice(0, identityClose) + text.slice(identityClose + 1);
+};
 test("native normalizer removes only exact launch-bound identity for the target application", () => {
   const normalized = normalizeNativeLogs(
     `other 42501 ERROR: ignored\n${normalIdentityError}`,
@@ -1662,7 +1667,7 @@ for (const [name, mutate] of [
   ],
   ["wrong-role", (text) => text.replace("hedefora_app:", "hedefora_worker:")],
   ["wrong-database", (text) => text.replace(":hedefora_dev]", ":postgres]")],
-  ["missing-close-bracket", (text) => text.replace("]", "")],
+  ["missing-close-bracket", removeFixtureIdentityClosingBracketForTest],
   [
     "duplicate-field",
     (text) =>
@@ -1684,6 +1689,13 @@ for (const [name, mutate] of [
       /SQL_NATIVE_LOG_/,
     );
   });
+test("native missing-close-bracket fixture preserves brackets outside the identity delimiter", () => {
+  const withBodyBracket = `${logIdentity.application} 42501 [fixture:hedefora_app:hedefora_dev] ERROR:  42501: synthetic ] body\n`;
+  assert.equal(
+    removeFixtureIdentityClosingBracketForTest(withBodyBracket),
+    `${logIdentity.application} 42501 [fixture:hedefora_app:hedefora_dev ERROR:  42501: synthetic ] body\n`,
+  );
+});
 for (const split of [
   7,
   normalIdentityError.indexOf("[fixture") + 5,
