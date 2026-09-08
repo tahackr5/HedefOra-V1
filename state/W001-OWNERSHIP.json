@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "12c596395a7bbd0cbcf6b87e6d39111c5f982d3a",
+  "verifiedThrough": "ac23d98e287d44f62e76fd415653e558646f8d57",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T04FB-fixture-engine-checkpoint-seal": {
@@ -1190,6 +1190,40 @@
     "W001-T04FB-postmerge-evidence-promotion": {
       "base": "4d62c24c7ebf6a9e5cdfd9a5dca26b751d1caf86",
       "head": "12c596395a7bbd0cbcf6b87e6d39111c5f982d3a",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md",
+        "state/W001-PG17-FIXTURE.md",
+        "state/W001-PHASE-B.md"
+      ]
+    },
+    "W001-T04FB-postmerge-evidence-seal": {
+      "base": "12c596395a7bbd0cbcf6b87e6d39111c5f982d3a",
+      "head": "7545583cf1d88a6e7604ce23b431f7ea4145b09f",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-sqlstate-evidence-remediation": {
+      "base": "7545583cf1d88a6e7604ce23b431f7ea4145b09f",
+      "head": "758b86ba38db0c3172dafb2540f6d7c33f74df76",
+      "allowedPaths": [
+        "tests/integration/postgres/live/fixture-container.test.mjs",
+        "tests/integration/postgres/live/process.mjs",
+        "tests/integration/postgres/live/runner.test.mjs"
+      ]
+    },
+    "W001-T04FB-sqlstate-temporal-remediation": {
+      "base": "758b86ba38db0c3172dafb2540f6d7c33f74df76",
+      "head": "393e32b9082040aa654a4abe0c97eec89b50bb7a",
+      "allowedPaths": [
+        "tests/integration/postgres/live/process.mjs",
+        "tests/integration/postgres/live/runner.test.mjs"
+      ]
+    },
+    "W001-T04FB-terminal-evidence-promotion": {
+      "base": "393e32b9082040aa654a4abe0c97eec89b50bb7a",
+      "head": "ac23d98e287d44f62e76fd415653e558646f8d57",
       "allowedPaths": [
         "state/ACTIVE-WAVE.md",
         "state/RELEASE-LEDGER.md",
