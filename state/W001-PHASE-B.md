@@ -3,11 +3,13 @@
 - Status: IN_PROGRESS; güncel checkpoint tarihi: 2026-09-08.
 - Initial Phase B immutable base: `7a1e124e432b51694e7d60c0d3d1589867a8835f`; tree `ec6d12847c657adedbd84e44565598d234c7b928`.
 - Current continuation checkpoint: `aba3d13ed057bbe80a2e67486058180479c3c50e`; tree `ed51da48638d362ff52169658321604dedba442a`. PR #7 owner merge ve aşağıdaki post-merge admission sonrasında ilerletildi; mevcut runtime lineage yeniden yazılmadı.
+- Merged candidate: `df67eb1d2c59009552602a666f352605494587ce`; tree `c04ce8c0adb6fa9a8ebcb30b3a750f23c6af1857`. Remote `main` olsa da post-merge CodeQL alert #5 nedeniyle `UNTRUSTED`; current continuation checkpoint değildir.
+- Remediation checkpoint: `4d62c24c7ebf6a9e5cdfd9a5dca26b751d1caf86`; tree `cf89b55096ad84a23aa23ca7dfb94ce2e09cbd25`. Bu kaynak düzeltmesi henüz final seal/hosted/review/owner gate'i geçmedi.
 - Historical W001 base değişmez: `bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b`.
-- Orchestrator branch/worktree: `codex/w001-t04f-phase-b`, `C:\Users\ihsan\.codex\worktrees\HedefOra\W001\T04FB`.
+- Orchestrator branch/worktree: `codex/w001-t04f-postmerge-codeql5`, `C:\Users\ihsan\.codex\worktrees\HedefOra\W001\T04F-CODEQL5`.
 - Etkin model/effort tool kanıtında doğrulanmadı: UNKNOWN/UNKNOWN; repository config değiştirilmedi, alt ajanlara override gönderilmedi.
 
-## Güncel runtime engine checkpoint — 2026-09-08
+## Tarihsel pre-merge runtime engine checkpoint — 2026-09-08
 
 A11 exact3a32a0/treec9e705 gerçek SQL170/Go6/race ve bağımsız replay/current
 absence PASS. Hosted CI/trusted execution SUCCESS, fakat CodeQL HIGH/open4
@@ -710,3 +712,67 @@ hash'lerini başlangıç/kapanışta aynı doğruladı; kendi Node24.19 test15/1
 exit0 yalnız supplemental kanıttır, canonical/hosted PASS değildir. Root'un
 yukarıdaki pinned Node24.20/nonrootLinuxGo kanıtları ayrı kalır. İnceleme
 Go yürütmedi ve source review'u engine/CodeQL kapanışı olarak sunmadı.
+
+## 2026-09-08 — PR #8 owner merge ve post-merge remediation ayrımı
+
+Owner'ın exact `799630bdad8cde8c784bc3a797731d9186bd96e0` onayı yalnız PR #8
+head'ini kapsadı. Owner-gate report SHA-256
+`cc24192acda6522bc8b6f1a93884c954c04ab821dc07fba70f69f8cead3f904c`.
+PR #8, base `aba3d13ed057bbe80a2e67486058180479c3c50e` ve approved head ordered
+parents'ıyla `df67eb1d2c59009552602a666f352605494587ce` olarak birleşti. Merge ve
+head tree'si exact `c04ce8c0adb6fa9a8ebcb30b3a750f23c6af1857`; endpoint diff boş.
+Squash/rebase/admin/auto/delete kullanılmadı, remote `main` exact merge'dir.
+
+Hosted CI `34277066786` exact `main/df67eb1` için source boundary, quality ve
+R-016 job'larında SUCCESS verdi. Artifact `10076195679`, 248782 byte, API ve
+indirilen ZIP SHA-256
+`cb97b0c065f494a1037b3a357cb5447bda7740ebe2843d20a9004bbdc4f5688c`.
+486 raw artifact, 243 process, 19 terminal, 99 source + 32 control Git blob,
+546 pnpm package ve 16 selected Go module strict replay mismatch `0`.
+Evidence SHA-256
+`4f23d503dd619c1fb4741552623e7ccd62a100f2e55397769e8ec9370aaf4c93`;
+DB seal `9970ee6ba9520611379478e412b76a31ad3552b939d0617061b112c7022fc6a1`.
+Bu hosted R-016 alt kapısı PASS'tir.
+
+CodeQL `34277063233` workflow execution SUCCESS olsa da exact merge üzerinde
+`js/incomplete-sanitization` HIGH/open alert #5 açtı. Akış yalnız testteki
+malformed identity üreticisidir ve independent triage `NOT_ACTIONABLE/high`
+verdi; bu sınıflandırma scanner dismissal veya gate PASS değildir. Overall
+post-merge security FAIL, `df67eb1` untrusted ve T04G PENDING kalır.
+
+Post-merge local pinned Node24.20/pnpm11.24 `ci:check` PASS: repository
+823/825, iki mevcut Windows skip; web3/3, coverage100, build/generated/tidy/
+license/audit0. İlk PATH denemesi Node24.19 olduğu için girişte FAIL olarak
+korunur. Native pinned Go list/build/vet0; `go test` yalnız Windows Application
+Control'ün temporary test executable'ını engellemesiyle FAIL. Ayrı isolated
+Linux attempt-01 awk harness hatasıyla raw2 ve gate NOT_STARTED. Attempt-02
+exact identity/tree/parents, isolation, Go1.26.7, gofmt29 ve mod-verify PASS;
+`go list ./...` sırasında 1201.21s hard timeout, kalan build/vet/test/race/
+repolint/integration NOT_RUN. Receipt SHA-256
+`ccfac8eea2939098d29b3a7106856757264d3524e8f4e194b264782843b54cda`;
+owned container absence ve fresh clone cleanliness PASS. Bu çevresel sonuç
+hosted Linux quality PASS'ını veya eksik local kapıları yeniden adlandırmaz.
+
+Canonical engine post-merge A13 `FIXTURE_BUILD_DOCKER_COMMAND`, A14 cleanup
+failure ve A15 exact `/source` verifier 30s timeout ile ayrı immutable FAIL.
+Public snapshot Windows bind-mount okuması 45–61s ölçüldü; A16 kesin NOT_RUN.
+Eski pre-merge A12/`799630` engine sonucu `df67eb1` adına taşınmaz. Docker
+Desktop settings deneme sonrasında original SHA-256
+`df5418998cadef7eab0a0c89e67a54954b2968437e8ad0367c282731f77c6bc0` byte'ına
+geri döndü; container yokluğu doğrulandı. Silinmeyen stale runtime klasörleri
+recoverable host diagnostics'tir. DEC-031 expiry
+`2026-09-10T06:30:10Z`, run budget 20 dakika ve Grype FAIL değişmez.
+
+Dar forward-fix `4d62c24c7ebf6a9e5cdfd9a5dca26b751d1caf86` yalnız
+`tests/integration/postgres/live/runner.test.mjs` değiştirir. Test helper'ı
+exact `"] ERROR:"` structural delimiter'ını bulup yalnız kapanış `]` byte'ını
+slice eder; message body içindeki başka `]` byte'ının korunduğu regresyon
+eklenmiştir. Focused Node24.20 test132/132 PASS. Full gate'in ilk denemesi
+canonical Go PATH eksikliği, sonraki iki denemesi yanlış Node24.19 lifecycle
+seçimi nedeniyle FAIL olarak korunur. Exact shim ile Node24.20.0,
+pnpm11.24.0 ve Go1.26.7 doğrulandıktan sonra `pnpm ci:check` exit0:
+826 toplam,824PASS/iki mevcut Windows skip; web3/3/coverage100 ve build/
+generated/go-mod/license/audit PASS. Final ownership seal, exact local R-016,
+fresh security/cold, hosted CI/trusted R-016/Dependency Review/CodeQL ve yeni
+exact-head owner merge gate'i henüz NOT_RUN. PR #8 onayı bu yeni merge'i
+kapsamaz; production/deployment/SSH/DNS/secret mutation yoktur.

@@ -543,3 +543,41 @@ Sonraki source/seal için A12 engine, clean-clone full-tree/R016, hosted
 push+trusted ve fresh security/cold ayrı artifact'larla doğrulanır. A11
 PASS yeni SHA'ya taşınmaz. PR8 DRAFT bu kapılar bitmeden kaldırılmaz; owner
 exact-head merge ve post-merge full-tree hâlâ sonraki yetki eşiğidir.
+
+## PR #8 merge sonrası A13–A16 ayrımı — 2026-09-08
+
+Pre-merge exact approved head `799630bdad8cde8c784bc3a797731d9186bd96e0`
+owner gate'inden sonra PR #8, `df67eb1d2c59009552602a666f352605494587ce`
+olarak ordered two-parent/content-identical birleşti. Merge tree exact
+`c04ce8c0adb6fa9a8ebcb30b3a750f23c6af1857`. Yeni SHA için eski A12 engine
+PASS yeniden etiketlenmedi; canonical post-merge koşumlar ayrı tutuldu.
+
+- A13, `FIXTURE_BUILD_DOCKER_COMMAND` aşamasında container oluşmadan FAIL.
+- A14, `FIXTURE_BUILD_CLEANUP_COMMAND` aşamasında FAIL; owned leftover yok.
+- A15 builder create/start ve Node version sonrasında exact `/source`
+  verifier 30 saniyeyi aştı; builder kill/remove edildi ve absence doğrulandı.
+- A16 config hazırlanmış olsa da kesinlikle çalıştırılmadı: `NOT_RUN`.
+
+Aynı public 259-file/2,756,510-byte snapshot'ın Windows Docker bind-mount
+okuması bağımsız olarak 45–61 saniye sürdü; engine'in immutable 30 saniye
+source-verifier bütçesi aşılır. Eşik veya verifier değiştirilmedi ve yeni
+otomatik retry yapılmadı. WSL integration diagnostic'i sonrası Docker Desktop
+settings original SHA-256
+`df5418998cadef7eab0a0c89e67a54954b2968437e8ad0367c282731f77c6bc0`
+byte'ına döndü. Recovery sırasında silme yapılmadı; şu host diagnostics
+recoverable olarak korundu:
+
+- `C:\Users\ihsan\AppData\Local\Docker\run.stale-20260908T214436Z`
+- `C:\Users\ihsan\AppData\Local\docker-secrets-engine.stale-20260908T215027Z`
+- `C:\Users\ihsan\AppData\Local\Docker\run.stale-20260908T215233Z`
+- `C:\Users\ihsan\AppData\Local\docker-secrets-engine.stale-20260908T215233Z`
+
+Docker 29.7.2 Linux/amd64 yeniden çalışır durumda, running container0 ve
+mevcut iki stopped container korunmuştur. Bu platform diagnostic'i A13-A15'i
+PASS yapmaz; A16 NOT_RUN değişmez. Hosted CI/R-016 PASS olsa da exact merge
+CodeQL HIGH/open alert #5 nedeniyle overall security FAIL ve `df67eb1`
+untrusted kaldı. Test-only triage scanner sonucunu değiştirmez; dismissal,
+suppression, production/image/PG mutation yoktur. Dar source remediation
+`4d62c24c7ebf6a9e5cdfd9a5dca26b751d1caf86` yeni exact seal/hosted/review ve
+owner gate'i bekler. DEC-031 expiry `2026-09-10T06:30:10Z`, max20m/run,
+Grype FAIL ve R-026 production block korunur; T04G PENDING.
