@@ -180,8 +180,11 @@ export function correlatedSqlState(logs, applicationName) {
       /^([0-9A-Z]{5}) (ERROR|FATAL|PANIC):  ([0-9A-Z]{5}):(?: |$)/.exec(
         remainder,
       );
-    if (!match || match[1] !== match[3]) return null;
-    if (match[1] !== "00000") states.add(match[1]);
+    requireLive(
+      match && match[1] === match[3] && match[1] !== "00000",
+      "SQLSTATE_INVALID",
+    );
+    states.add(match[1]);
   }
   requireLive(states.size <= 1, "SQLSTATE_AMBIGUOUS");
   return states.size === 1 ? [...states][0] : null;

@@ -525,10 +525,14 @@ test("SQLSTATE rejects missing, mismatched, or malformed target verbose state", 
     `${sqlStateApplication} 42501 ERROR: synthetic`,
     verboseErrorLog("42501", "ERROR", "28P01"),
     `${sqlStateApplication} ??? ERROR:  42501: synthetic`,
+    `${sqlStateApplication} 00000 ERROR:  00000: not a state`,
     `${valid}\n${sqlStateApplication} 42501 ERROR: synthetic`,
     `${verboseErrorLog("42501", "ERROR", "28P01")}\n${valid}`,
   ])
-    assert.equal(correlatedSqlState(logs, sqlStateApplication), null);
+    assert.throws(
+      () => correlatedSqlState(logs, sqlStateApplication),
+      /SQLSTATE_INVALID/,
+    );
 });
 test("SQLSTATE ignores non-error and unrelated lines but keeps ambiguity closed", () => {
   const valid = verboseErrorLog("42501", "ERROR");
@@ -538,13 +542,6 @@ test("SQLSTATE ignores non-error and unrelated lines but keeps ambiguity closed"
       sqlStateApplication,
     ),
     "42501",
-  );
-  assert.equal(
-    correlatedSqlState(
-      `${sqlStateApplication} 00000 ERROR:  00000: not a state`,
-      sqlStateApplication,
-    ),
-    null,
   );
   assert.throws(
     () =>
@@ -1753,27 +1750,39 @@ for (const split of [
       clearTimeout(timer);
     }
   });
-for (const disappears of [false, true])
-  test(`native ordinary error rejects malformed plus valid target lines even if malformed line ${disappears ? "later disappears" : "remains"}`, async () => {
-    const h = nativeStartupHarness({ automatic: false });
-    const pending = h.executor.psql(request);
-    h.current.text =
-      normalIdentityError.replace("hedefora_app:", "hedefora_worker:") +
-      normalIdentityError;
-    h.children[0].finish({ rawExit: 2 });
-    const timer = disappears
-      ? setTimeout(() => {
-          h.current.text = normalIdentityError;
-        }, 40)
-      : null;
-    try {
-      const result = await pending;
-      assert.equal(result.origin, "channel");
-      assert.equal(result.sqlState, null);
-    } finally {
-      if (timer) clearTimeout(timer);
-    }
-  });
+for (const [malformation, mutate] of [
+  [
+    "identity mismatch",
+    (text) => text.replace("hedefora_app:", "hedefora_worker:"),
+  ],
+  [
+    "missing verbose body state",
+    (text) => text.replace("ERROR:  42501:", "ERROR:"),
+  ],
+  [
+    "mismatched verbose body state",
+    (text) => text.replace("ERROR:  42501:", "ERROR:  28P01:"),
+  ],
+])
+  for (const disappears of [false, true])
+    test(`native ordinary error rejects ${malformation} plus a valid target line even if the malformed line ${disappears ? "later disappears" : "remains"}`, async () => {
+      const h = nativeStartupHarness({ automatic: false });
+      const pending = h.executor.psql(request);
+      h.current.text = mutate(normalIdentityError) + normalIdentityError;
+      h.children[0].finish({ rawExit: 2 });
+      const timer = disappears
+        ? setTimeout(() => {
+            h.current.text = normalIdentityError;
+          }, 40)
+        : null;
+      try {
+        const result = await pending;
+        assert.equal(result.origin, "channel");
+        assert.equal(result.sqlState, null);
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
+    });
 test("native ordinary target application legacy error cannot use identity-free fallback", async () => {
   const h = nativeStartupHarness({ automatic: false });
   const pending = h.executor.psql(request);
