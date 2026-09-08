@@ -1,11 +1,28 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "acc427b9d6cf1fb907e57004cedae715eedbcd32",
+  "verifiedThrough": "90d7d151136c6aa1efa68deb6da8c7b027f9bed7",
   "trailingAllowedPaths": [
     "state/W001-OWNERSHIP.json"
   ],
   "tasks": {
+    "W001-T04FB-fixture-host-signals-seal": {
+      "base": "acc427b9d6cf1fb907e57004cedae715eedbcd32",
+      "head": "02a1df04f315b2c0e823f834888df2110acb454f",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-fixture-fresh-admission": {
+      "base": "02a1df04f315b2c0e823f834888df2110acb454f",
+      "head": "90d7d151136c6aa1efa68deb6da8c7b027f9bed7",
+      "allowedPaths": [
+        "security/postgres-test-fixture-admission.json",
+        "state/ACTIVE-WAVE.md",
+        "state/W001-PG17-FIXTURE.md",
+        "tests/integration/postgres/live/FIXTURE-CONTRACT.md",
+        "tests/integration/postgres/live/fixture-admission.mjs",
+        "tests/integration/postgres/live/fixture-admission.test.mjs"
+      ]
+    },
     "W001-T00-wave-open": {
       "base": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
       "head": "c9fcb16b8556115b2df5fe971e3c1090f093a312",
