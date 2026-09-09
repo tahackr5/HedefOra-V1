@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "waveStart": "bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b",
-  "verifiedThrough": "e3f755b88b8e5bdb26cf973726130365cbecaec7",
+  "verifiedThrough": "38756f89901c11839aff7a4b22a02a0cbad404bb",
   "trailingAllowedPaths": ["state/W001-OWNERSHIP.json"],
   "tasks": {
     "W001-T04FB-fixture-engine-checkpoint-seal": {
@@ -1245,6 +1245,34 @@
         "state/RELEASE-LEDGER.md",
         "state/W001-EVIDENCE.md",
         "state/W001-OWNERSHIP.md"
+      ]
+    },
+    "W001-T04FB-postseal-marker-evidence-seal": {
+      "base": "e3f755b88b8e5bdb26cf973726130365cbecaec7",
+      "head": "dbd52ad9dbc9899b954db0ceb5082a024b0543d4",
+      "allowedPaths": ["state/W001-OWNERSHIP.json"]
+    },
+    "W001-T04FB-native-log-settling-remediation": {
+      "base": "dbd52ad9dbc9899b954db0ceb5082a024b0543d4",
+      "head": "e0e01321f2070b325348952c4d56be374848942c",
+      "allowedPaths": [
+        "tests/integration/postgres/live/FIXTURE-CONTRACT.md",
+        "tests/integration/postgres/live/fixture-container.mjs",
+        "tests/integration/postgres/live/fixture-container.test.mjs",
+        "tests/integration/postgres/live/fixture-native-psql.mjs",
+        "tests/integration/postgres/live/runner.test.mjs"
+      ]
+    },
+    "W001-T04FB-native-log-settling-evidence": {
+      "base": "e0e01321f2070b325348952c4d56be374848942c",
+      "head": "38756f89901c11839aff7a4b22a02a0cbad404bb",
+      "allowedPaths": [
+        "state/ACTIVE-WAVE.md",
+        "state/RELEASE-LEDGER.md",
+        "state/W001-EVIDENCE.md",
+        "state/W001-OWNERSHIP.md",
+        "state/W001-PG17-FIXTURE.md",
+        "state/W001-PHASE-B.md"
       ]
     }
   }
