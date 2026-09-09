@@ -622,3 +622,42 @@ mismatch matrisini içeren exact Node24.20 iki-file suite `326/326`, format ve
 diff check PASS. Yeni seal, gerçek engine ve tüm exact gate'ler yeniden
 koşulmadan fixture admission PASS değildir; DEC-031/R-026/Grype ve
 no-deployment sınırları değişmez.
+
+## S5 hosted/local ayrımı ve delayed-log remediation — 2026-09-09
+
+S5 `dbd52ad9dbc9899b954db0ceb5082a024b0543d4`, tree
+`cddba11f3904277447f0881aa49bb12da96f9624`, hosted CI `34293730275`,
+trusted `34293730907`, Dependency Review ve CodeQL `34293730446` üzerinde
+PASS oldu. Push/trusted R-016 artifacts `10082370198`/486 raw ve
+`10082370086`/516 raw strict replay mismatch `0` verdi. Bunlar hosted alt
+kapılarıdır; S5 için gerçek engine PASS veya overall release PASS değildir.
+
+S5 local R-016 koşumları `20260909T000509360Z-26012-3d47a01e` ve
+`20260909T002533804Z-32464-fb473dae`, `PROCESS-OSV-DATABASE-ZIP-VALIDATION`
+aşamasında sırasıyla 600541 ve 600481 ms timeout/SIGKILL ile exit `21` verdi.
+Her FAIL evidence strict replay'de 396 raw/198 process/3 terminal ve mismatch
+`0`; container absence PASS. Aynı yolu üçüncü kez çalıştırmak yerine bounded
+WSL UNC probe yapıldı. Node temp/mkdtemp/hash parity PASS olsa da Docker bind,
+eksik distro-service socket nedeniyle exit `127`/NO-GO oldu; keeper ve
+hardlink/recursive-link sınırları da canonical R-016 sözleşmesinde mühürlü
+değildir. Full UNC R-016 çalıştırılmadı, dış ayar değiştirilmedi ve cleanup
+tamamlandı.
+
+Fresh security S5-A08-01 ordinary native log poll'un ilk geçerli SQLSTATE'te
+sabit close+500ms penceresi dolmadan döndüğünü doğruladı. Gecikmiş malformed,
+missing/mismatched body, `00000` veya farklı geçerli state taşıyan
+ERROR/FATAL/PANIC matrisi 15/15 yanlış `postgres/42501` verdi;
+MEDIUM/HIGH-confidence CWE-367/CWE-20 ve S5 overall FAIL'dir.
+
+Source remediation `e0e01321f2070b325348952c4d56be374848942c`, tree
+`e3dd8c1cc52983f4a3a6202e8c20b23b0bce5298`, pre-launch generation/eviction
+snapshot'ı, append-only suffix zinciri ve tam close+500ms settling window
+uygular. Review sırasında bulunan sub-ms final-snapshot yarışı da yalnız
+deadline sonrasında başlayan snapshot'ın karar verebilmesi ve zorunlu
+yield/resnapshot ile kapandı. Exact Node iki-file `364/364`, broad PostgreSQL
+`653/653`, root PostgreSQL `26/26`, clean source-tree `ci:check` 872 total/870
+PASS/iki Windows skip ve pinned Go build/vet/shuffle PASS; source security
+re-review PASS. Final ownership seal, exact engine, local R-016, hosted ve
+fresh cold/release kapıları henüz bu yeni head için çalıştırılmadı. A13-A16
+ve diğer tarihsel FAIL/NOT_RUN kayıtları değişmez; DEC-031 expiry/max20m,
+Grype FAIL, R-026 ve no-production/no-deployment sınırı korunur.

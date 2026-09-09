@@ -1,10 +1,10 @@
 # W001-T04F Phase B — plan, ownership ve kanıt
 
-- Status: IN_PROGRESS; güncel checkpoint tarihi: 2026-09-08.
+- Status: IN_PROGRESS; güncel checkpoint tarihi: 2026-09-09.
 - Initial Phase B immutable base: `7a1e124e432b51694e7d60c0d3d1589867a8835f`; tree `ec6d12847c657adedbd84e44565598d234c7b928`.
 - Current continuation checkpoint: `aba3d13ed057bbe80a2e67486058180479c3c50e`; tree `ed51da48638d362ff52169658321604dedba442a`. PR #7 owner merge ve aşağıdaki post-merge admission sonrasında ilerletildi; mevcut runtime lineage yeniden yazılmadı.
 - Merged candidate: `df67eb1d2c59009552602a666f352605494587ce`; tree `c04ce8c0adb6fa9a8ebcb30b3a750f23c6af1857`. Remote `main` olsa da post-merge CodeQL alert #5 nedeniyle `UNTRUSTED`; current continuation checkpoint değildir.
-- Remediation checkpoint: `393e32b9082040aa654a4abe0c97eec89b50bb7a`; tree `1133bf59f7da0dc81cf000a8a7b1656995850b65`. S1 security/cold, S2 ise temporal pre-seal review'da reddedildi; bu yeni source head henüz final seal ve yeni exact gates'i geçmedi.
+- Remediation source head: `e0e01321f2070b325348952c4d56be374848942c`; tree `e3dd8c1cc52983f4a3a6202e8c20b23b0bce5298`. S5 `dbd52ad` hosted alt kapıları geçti fakat iki local R-016 timeout'u ve delayed-evidence security finding'i nedeniyle FAIL oldu; e0 source security PASS olsa da henüz final seal ve yeni exact gates'i geçmedi.
 - Historical W001 base değişmez: `bde560f182032e1e4ec9f1a1b02db4cd8ec5e99b`.
 - Orchestrator branch/worktree: `codex/w001-t04f-postmerge-codeql5`, `C:\Users\ihsan\.codex\worktrees\HedefOra\W001\T04F-CODEQL5`.
 - Etkin model/effort tool kanıtında doğrulanmadı: UNKNOWN/UNKNOWN; repository config değiştirilmedi, alt ajanlara override gönderilmedi.
@@ -853,3 +853,38 @@ korunur. Malformed satır kalsa da kaybolsa da missing/mismatch + valid
 matrisi eklendi. Exact Node24.20 iki-file suite `326/326`, Prettier ve diff
 check PASS. Yeni state/ownership seal ile bütün exact local/engine/hosted ve
 fresh review kapıları NOT_RUN; eski S1/S2 sonucu bu head'e taşınmaz.
+
+## 2026-09-09 — S5 hosted PASS, local/security FAIL ve e0 remediation
+
+S5 `dbd52ad9dbc9899b954db0ceb5082a024b0543d4`, tree
+`cddba11f3904277447f0881aa49bb12da96f9624`, CI `34293730275`, trusted
+`34293730907`, Dependency Review ve CodeQL `34293730446` kapılarında PASS;
+push/trusted R-016 artifacts `10082370198`/486 raw ve `10082370086`/516 raw
+strict replay mismatch `0` oldu. Bu exact hosted sonuçlar S5 overall veya
+sonraki source head için release PASS değildir.
+
+İki S5 local R-016 koşumu
+`20260909T000509360Z-26012-3d47a01e`/600541 ms ve
+`20260909T002533804Z-32464-fb473dae`/600481 ms sürelerinde OSV DB ZIP
+validation timeout/SIGKILL ile exit `21` verdi; FAIL evidence ve container
+absence korundu. Alternatif WSL UNC bind probe'u missing Docker Desktop
+distro-service socket nedeniyle exit `127`/NO-GO; full R-016 çalıştırılmadı,
+host ayarı değiştirilmedi ve cleanup tamamlandı.
+
+Fresh security S5-A08-01, ordinary native poll'un ilk geçerli SQLSTATE'te
+close+500ms penceresi dolmadan dönerek gecikmiş malformed/conflicting severe
+kanıtı kaçırdığını 15/15 ERROR/FATAL/PANIC varyantıyla doğruladı;
+MEDIUM/HIGH-confidence CWE-367/CWE-20 ve S5 FAIL'dir. Source
+`e0e01321f2070b325348952c4d56be374848942c`, tree
+`e3dd8c1cc52983f4a3a6202e8c20b23b0bce5298`, launch-öncesi generation
+snapshot'ı, append-only suffix ve sabit pencerenin tamamında tarama uygular.
+İncelemede bulunan sub-ms final-snapshot yarışı da deadline sonrası resnapshot
+ile kapandı. Exact Node `364/364`, broad PG `653/653`, root PG `26/26`, clean
+source `ci:check` 872 total/870 PASS/iki Windows skip, pinned Go build/vet/
+shuffle ve source security re-review PASS.
+
+Yeni exact ownership seal, actual engine, local R-016, hosted ve fresh cold
+kapıları henüz çalıştırılmadı. Trusted/task-phase base `aba3d13` kalır; PR #8
+owner onayı PR #9 S5/e0/final seal merge'ini kapsamaz. T04G PENDING;
+DEC-031 expiry/max20m, Grype FAIL, R-026 ve production/deployment yasağı
+değişmez.

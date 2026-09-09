@@ -549,3 +549,86 @@ Bu düzeltme yalnız söz konusu anlatımı işaret taşımayan eşdeğer metne 
 ve başarısız koşumu kaydeder; source/runtime/policy/test expectation değişmez.
 Yeni state commit ve JSON-only seal sonrasında bütün exact kapılar yeniden
 koşulacaktır. Başarılı alt adımlar yeni seal adına taşınmaz.
+
+## 2026-09-09 — S5 kapıları, delayed-evidence FAIL ve `e0e0132` remediation
+
+S5 `dbd52ad9dbc9899b954db0ceb5082a024b0543d4`, tree
+`cddba11f3904277447f0881aa49bb12da96f9624`, exact PR #9 head'idir. CI
+`34293730275` içindeki quality `102285692602` ve R-016 `102285692612`;
+trusted run `34293730907` içindeki Dependency Review `102285690965` ve R-016
+`102285690966` SUCCESS oldu. CodeQL `34293730446` Actions `1744765883`, Go
+`1744766911`, Python `1744766626` ve JavaScript/TypeScript `1744767546`
+analizlerinin her birinde result `0`/error empty verdi; PR/head ve branch açık
+alert listeleri boştur.
+
+Push artifact `10082370198`, 248795 byte, API/ZIP SHA-256
+`5bf060b848bf019c20034f7ec418b4ca52dad073d0e1158e735be95fc6aa02a4`;
+evidence SHA-256
+`a03362820283b703ac25fe2c9458549bed4a7bc0391453993c9d79d659836563`, DB
+seal `1f38a00bce7ab246a224a478ac6e2e3a140aa0de135c351d26915685f7ee0654`,
+486 raw/243 process/19 terminal. Trusted artifact `10082370086`, 279321 byte,
+API/ZIP SHA-256
+`3b10944a387d1712cb7caac7e9c51e1cad3ffac7597a2660d7e66c3a7e4d9374`;
+evidence SHA-256
+`502e6c7faa4daae0c12233fb1c07b87f056f6dcf0206c7a8225fb9d6332f0b1f`, DB
+seal `4ffb78cdd154e3587c19226c5ec9fc9510ab86a059179d15d2a45866f9682fe7`,
+516 raw/258 process/19 terminal. Exact filesystem/Git-byte/hash/process/
+terminal/DB-seal ve authenticated run/job/artifact replay mismatch `0`.
+
+S5 local R-016 `20260909T000509360Z-26012-3d47a01e`, evidence SHA-256
+`4f1d2e134642388adb4330041dd2406139f1f0b373465216107ecef62a15ebea`,
+`PROCESS-OSV-DATABASE-ZIP-VALIDATION` aşamasında 600541 ms timeout ve SIGKILL
+ile exit `21` verdi. Tek isolated retry
+`20260909T002533804Z-32464-fb473dae`, evidence SHA-256
+`a3688f5d15456a41733718bf6ee4ab82cdb62245c352d44a389ba627cc64edf8`,
+aynı aşamada 600481 ms timeout/SIGKILL ve exit `21` verdi. Her ikisinde 396
+raw/198 process/3 terminal strict replay mismatch `0`; DB seal oluşmadı ve
+owned container final count `0`. 214764348-byte/228844-entry güncel OSV
+npm archive'i Windows-Docker bind I/O hattında ilerlemedi; timeout, threshold
+ve controller değiştirilmedi, üçüncü aynı-yol retry yapılmadı.
+
+Maddi olarak farklı WSL UNC feasibility probe'u
+`\\wsl.localhost\Ubuntu-24.04\tmp\hedefora-r016-unc-probe-qktGT1Aa` üzerinde
+Windows Node24.20 temp/mkdtemp/realpath ve 33-byte fixture hash parity'sini
+PASS yaptı. Pinned Go image'in ağsız/read-only/cap-dropALL bind denemesi ise
+487 ms'de exit `127`: Docker Desktop distro service socket'i
+`/run/guest-services/distro-services/ubuntu-24-04.sock` yoktu. Distro liveness
+keeper'ı R-016 sözleşmesinde mühürlü değildir; WSL-created hardlink ve
+directory-child link sınırı da canonical mount guard için yeterli değildir.
+Full UNC R-016 çalıştırılmadı; temp/keeper/container cleanup tamamlandı ve
+Docker Desktop ayarı değiştirilmedi. Sonuç FAIL/NO-GO'dur.
+
+Fresh security S5-A08-01, ordinary native log poll'ün close sonrası sabit 500
+ms pencereyi tamamlamadan ilk geçerli SQLSTATE'te dönüp gecikmiş malformed,
+missing-body, mismatched-body, `00000` veya distinct-valid severe satırı
+kaçırabildiğini gösterdi. ERROR/FATAL/PANIC × beş varyantın 15/15'i yanlış
+`origin=postgres/sqlState=42501` üretti: MEDIUM, HIGH-confidence,
+CWE-367/CWE-20. Production yolu değil, fixture acceptance oracle false-PASS
+riskidir; S5 overall FAIL ve merge adayı değildir.
+
+Source remediation `e0e01321f2070b325348952c4d56be374848942c`, tree
+`e3dd8c1cc52983f4a3a6202e8c20b23b0bce5298`, parent S5; exact beş path,
++260/-36. Ordinary nonzero istem pre-launch generation/eviction snapshot'ına
+bağlanır; close+500ms boyunca append-only suffix taranır. İlk valid kayıt aday
+kalır; malformed/ambiguity/generation/eviction/non-monotonic replacement
+terminal fail-closed'dur. Review sırasında bulunan sub-ms final-snapshot
+CWE-367 LOW/HIGH-confidence varyantı da yalnız deadline sonrasında başlatılan
+snapshot'ın karar verebilmesi ve pre-deadline parse sınırı aşarsa mandatory
+yield/resnapshot ile CLOSED oldu.
+
+Exact Node24.20 iki-file `364/364`, broad PostgreSQL `653/653`, root
+PostgreSQL `26/26`; 30 delayed-invalid/disappearance, 15 late-450ms ve
+120441-byte/499.6ms boundary matrisleri PASS. Source-level security re-review
+PASS. Dirty çalışma ağacındaki ilk `ci:check`, repository `871` test/869 PASS/
+iki mevcut Windows skip ve build sonrasında beş modified runtime path'ini
+`invalid-runtime-index-entry` ile doğru biçimde reddetti; overall exit `1`
+korunur. Commitli exact source üzerinde `ci:check` exit `0`: repository `872`
+test/870 PASS/iki skip, web `3/3`, coverage %100, build/generated/go-mod/
+work-marker/license/audit PASS. Pinned Go1.26.7 gofmt/build/vet/shuffle test
+exit `0`; Windows `CGO_ENABLED=0` olduğundan race sonucu üretilmedi.
+
+Bu source commit final state/ownership seal değildir. Gerçek PG engine, exact
+sealed-head local R-016, hosted CI/trusted R-016/Dependency Review/CodeQL,
+fresh final security/cold ve yeni exact-head owner merge gate'i beklenir.
+Trusted/task-phase base `aba3d13`, T04G PENDING; DEC-031 expiry/max20m,
+Grype FAIL, R-026 ve production/deployment yasağı değişmez.
