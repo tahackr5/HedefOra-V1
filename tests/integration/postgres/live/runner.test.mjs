@@ -1109,6 +1109,7 @@ function nativeStartupHarness({
     calls: [],
     snapshots: 0,
     orphan: 0,
+    onSnapshot: null,
   };
   h.executor = createNativePsqlExecutor({
     negative,
@@ -1122,7 +1123,9 @@ function nativeStartupHarness({
       ? {
           logSnapshot: () => {
             h.snapshots++;
-            return { ...h.current };
+            const current = { ...h.current };
+            h.onSnapshot?.(current);
+            return current;
           },
         }
       : {}),
@@ -1672,7 +1675,14 @@ const logIdentity = Object.freeze({
   user: "hedefora_app",
   database: "hedefora_dev",
 });
-const normalIdentityError = `${logIdentity.application} 42501 [fixture:hedefora_app:hedefora_dev] ERROR:  42501: synthetic-private\n`;
+const ordinaryIdentityError = ({
+  state = "42501",
+  severity = "ERROR",
+  bodyState = state,
+  message = "synthetic-private",
+} = {}) =>
+  `${logIdentity.application} ${state} [fixture:hedefora_app:hedefora_dev] ${severity}:  ${bodyState}: ${message}\n`;
+const normalIdentityError = ordinaryIdentityError();
 const removeFixtureIdentityClosingBracketForTest = (text) => {
   const identityClose = text.indexOf("] ERROR:");
   assert.notEqual(identityClose, -1);
@@ -1737,18 +1747,166 @@ for (const split of [
     const h = nativeStartupHarness({ automatic: false });
     const pending = h.executor.psql(request);
     h.current.text = normalIdentityError.slice(0, split);
+    const began = performance.now();
     h.children[0].finish({ rawExit: 2 });
     const timer = setTimeout(() => {
       h.current.text = normalIdentityError;
     }, 40);
     try {
       const result = await pending;
+      assert.ok(performance.now() - began >= 490);
       assert.equal(result.origin, "postgres");
       assert.equal(result.sqlState, "42501");
       assert.doesNotMatch(JSON.stringify(result), /synthetic-private/);
     } finally {
       clearTimeout(timer);
     }
+  });
+const delayedInvalidTargetLines = Object.freeze([
+  [
+    "malformed prefix state",
+    ({ severity }) => ordinaryIdentityError({ state: "?????", severity }),
+  ],
+  [
+    "missing verbose body state",
+    ({ severity }) =>
+      `${logIdentity.application} 42501 [fixture:hedefora_app:hedefora_dev] ${severity}: synthetic-private\n`,
+  ],
+  [
+    "mismatched verbose body state",
+    ({ severity }) => ordinaryIdentityError({ severity, bodyState: "28P01" }),
+  ],
+  [
+    "zero SQLSTATE",
+    ({ severity }) => ordinaryIdentityError({ state: "00000", severity }),
+  ],
+  [
+    "distinct valid SQLSTATE",
+    ({ severity }) => ordinaryIdentityError({ state: "28P01", severity }),
+  ],
+]);
+for (const severity of ["ERROR", "FATAL", "PANIC"])
+  for (const [kind, render] of delayedInvalidTargetLines)
+    for (const disappears of [false, true])
+      test(`native ordinary candidate rejects delayed ${severity} ${kind}${disappears ? " even after it disappears" : ""}`, async () => {
+        const h = nativeStartupHarness({ automatic: false });
+        const pending = h.executor.psql(request);
+        h.current.text = normalIdentityError;
+        h.children[0].finish({ rawExit: 2 });
+        let delivered = false,
+          removed = false,
+          removalTimer = null;
+        const deliveryTimer = setTimeout(() => {
+          h.current.text += render({ severity });
+          delivered = true;
+          if (disappears)
+            removalTimer = setTimeout(() => {
+              h.current.text = normalIdentityError;
+              removed = true;
+            }, 20);
+        }, 25);
+        try {
+          const result = await pending;
+          if (disappears) await delay(50);
+          assert.equal(delivered, true);
+          assert.equal(removed, disappears);
+          assert.equal(result.origin, "channel");
+          assert.equal(result.sqlState, null);
+          assert.ok(h.snapshots >= 3);
+        } finally {
+          clearTimeout(deliveryTimer);
+          if (removalTimer) clearTimeout(removalTimer);
+        }
+      });
+for (const [kind, mutate] of [
+  ["disappearance", (h) => (h.current.text = "")],
+  [
+    "replacement",
+    (h) => (h.current.text = ordinaryIdentityError({ state: "28P01" })),
+  ],
+  ["generation change", (h) => (h.current.generation = "8".repeat(32))],
+  ["sticky eviction", (h) => (h.current.evicted = true)],
+])
+  test(`native ordinary candidate rejects delayed log ${kind}`, async () => {
+    const h = nativeStartupHarness({ automatic: false });
+    const pending = h.executor.psql(request);
+    h.current.text = normalIdentityError;
+    h.children[0].finish({ rawExit: 2 });
+    const timer = setTimeout(() => mutate(h), 25);
+    try {
+      const result = await pending;
+      assert.equal(result.origin, "channel");
+      assert.equal(result.sqlState, null);
+      assert.ok(h.snapshots >= 3);
+    } finally {
+      clearTimeout(timer);
+    }
+  });
+test("native ordinary candidate accepts only one stable state after the full window", async () => {
+  const h = nativeStartupHarness({ automatic: false });
+  const pending = h.executor.psql(request);
+  h.current.text = normalIdentityError;
+  const began = performance.now();
+  h.children[0].finish({ rawExit: 2 });
+  const timer = setTimeout(() => {
+    h.current.text +=
+      ordinaryIdentityError({ severity: "FATAL", message: "same-state" }) +
+      `${logIdentity.application} 28P01 [fixture:hedefora_app:hedefora_dev] NOTICE: unrelated target notice\n` +
+      `${logIdentity.application} 28P01 [fixture:hedefora_app:hedefora_dev] WARNING: unrelated target warning\n` +
+      "unrelated 28P01 FATAL:  28P01: unrelated application\n";
+  }, 25);
+  try {
+    const result = await pending;
+    assert.ok(performance.now() - began >= 490);
+    assert.equal(result.origin, "postgres");
+    assert.equal(result.sqlState, "42501");
+    assert.doesNotMatch(JSON.stringify(result), /synthetic-private|same-state/);
+  } finally {
+    clearTimeout(timer);
+  }
+});
+test("native ordinary decision resamples after pre-deadline snapshot work crosses the window", async () => {
+  const h = nativeStartupHarness({ automatic: false });
+  const pending = h.executor.psql(request);
+  h.current.text = normalIdentityError;
+  const boundary = performance.now() + 500;
+  let blocked = false;
+  h.onSnapshot = () => {
+    const now = performance.now();
+    if (blocked || now < boundary - 100 || now >= boundary) return;
+    blocked = true;
+    while (performance.now() < boundary + 20) {
+      // Model bounded synchronous validation of a snapshot captured just
+      // before the decision deadline while a timer-delivered record is queued.
+    }
+  };
+  const timer = setTimeout(() => {
+    h.current.text += ordinaryIdentityError({ state: "28P01" });
+  }, 490);
+  h.children[0].finish({ rawExit: 2 });
+  try {
+    const result = await pending;
+    assert.equal(blocked, true);
+    assert.equal(result.origin, "channel");
+    assert.equal(result.sqlState, null);
+  } finally {
+    clearTimeout(timer);
+  }
+});
+for (const [kind, text] of [
+  ["no evidence", ""],
+  ["unresolved partial evidence", normalIdentityError.slice(0, 30)],
+])
+  test(`native ordinary ${kind} waits through the full decision window`, async () => {
+    const h = nativeStartupHarness({ automatic: false });
+    const pending = h.executor.psql(request);
+    h.current.text = text;
+    const began = performance.now();
+    h.children[0].finish({ rawExit: 2 });
+    const result = await pending;
+    assert.ok(performance.now() - began >= 490);
+    assert.equal(result.origin, "channel");
+    assert.equal(result.sqlState, null);
   });
 for (const [malformation, mutate] of [
   [

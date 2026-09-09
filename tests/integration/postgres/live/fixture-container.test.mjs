@@ -1329,6 +1329,11 @@ async function runNativeErrorWithLog(renderLog) {
     runId: run().runId,
     passwords: createPrivateRunSecrets().passwords,
     readLogs: async () => logs,
+    logSnapshot: () => ({
+      generation: "7".repeat(32),
+      evicted: false,
+      text: logs,
+    }),
     markOrphanRisk() {},
     start(options) {
       application = options.env.PGAPPNAME;

@@ -102,6 +102,12 @@ hedefora_dev ile migration/app/worker rollerinin postgres/template1
 Exact case/role/database/`SELECT 1;`/boş variables gerekir; yanlış case veya
 persistent dahil her tuple girişimi hakkı ilk bağlantıdan önce tüketir.
 Primary verify-full/SCRAM, gerçek nonzero exit ve observed close zorunludur.
+Ordinary nonzero istem de launch öncesi generation/eviction bağlı log snapshot'ı
+alır; close anından sonraki sabit 500ms boyunca append-only snapshot zincirini
+ve deadline final snapshot'ını tarar. İlk geçerli severe kayıt yalnız adaydır;
+gecikmiş bozuk/çelişkili kayıt, generation değişimi, sticky eviction veya
+non-monotonic replacement terminal ve fail-closed'dur. Partial tail yalnız aynı
+append-only zincirde tamamlanabilir; deadline'da çözülmemişse reddedilir.
 Diğer psql/session işleriyle çakışma reddedilir; kilit log kararı bitene kadar
 korunur. Postmaster generation, sticky eviction ve LF-bütünlüğü bağlı önce/
 sonra cursor yalnız yeni suffix'i kapsar. Close sonrası tam500ms beklenir;
