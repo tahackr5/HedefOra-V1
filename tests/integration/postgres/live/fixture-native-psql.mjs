@@ -189,12 +189,13 @@ export function createNativePsqlExecutor({
   function release(owner) {
     for (const application of owner) identities.delete(application);
   }
-  function snapshot() {
+  function snapshot({
+    requiredCode = "SQL_NATIVE_STARTUP_LOG_REQUIRED",
+    invalidCode = "SQL_NATIVE_STARTUP_LOG_INVALID",
+    allowPartialText = false,
+  } = {}) {
     try {
-      requireLive(
-        typeof logSnapshot === "function",
-        "SQL_NATIVE_STARTUP_LOG_REQUIRED",
-      );
+      requireLive(typeof logSnapshot === "function", requiredCode);
       const value = logSnapshot();
       requireLive(
         value &&
@@ -207,8 +208,8 @@ export function createNativePsqlExecutor({
           typeof value.text === "string" &&
           value.text.length <= 131072 &&
           Buffer.byteLength(value.text) <= 131072 &&
-          (value.text === "" || value.text.endsWith("\n")),
-        "SQL_NATIVE_STARTUP_LOG_INVALID",
+          (allowPartialText || value.text === "" || value.text.endsWith("\n")),
+        invalidCode,
       );
       return Object.freeze({
         generation: value.generation,
@@ -216,8 +217,15 @@ export function createNativePsqlExecutor({
         text: value.text,
       });
     } catch {
-      requireLive(false, "SQL_NATIVE_STARTUP_LOG_INVALID");
+      requireLive(false, invalidCode);
     }
+  }
+  function ordinarySnapshot() {
+    return snapshot({
+      requiredCode: "SQL_NATIVE_LOG_SNAPSHOT_REQUIRED",
+      invalidCode: "SQL_NATIVE_LOG_SNAPSHOT_INVALID",
+      allowPartialText: true,
+    });
   }
   const core = createPsqlCore({
     ...options,
@@ -225,34 +233,61 @@ export function createNativePsqlExecutor({
     port: negative ? "5433" : "5432",
     sslMode: negative ? "disable" : "verify-full",
     async readLogs(request) {
-      // The postmaster stderr pipe and psql close event are independent. Await
-      // the matching server record briefly instead of guessing from stderr or
-      // depending on event-loop delivery order. The callback itself is bounded.
-      const deadline = performance.now() + 500;
-      let invalid = null,
-        tainted = false;
+      const identity = identities.get(request.application);
+      requireLive(identity, "SQL_NATIVE_LOG_IDENTITY_BOUND");
+      // Startup authentication happens before application_name is installed.
+      // Its separate exact-one-FATAL proof owns the generation-bound suffix.
+      if (identity.startup) return "";
+      if (identity.baselineError) throw identity.baselineError;
+      requireLive(
+        identity.connectionClosed === true &&
+          Number.isFinite(identity.closedAt) &&
+          identity.baseline,
+        "SQL_NATIVE_LOG_LIFETIME",
+      );
+
+      // The postmaster stderr pipe and psql close event are independent. Bind
+      // the pre-launch snapshot, then observe the entire fixed settling window.
+      // A first valid record is only a candidate: delayed ambiguity, malformed
+      // evidence, restart, eviction, or non-monotonic replacement stays fatal.
+      const deadline = identity.closedAt + 500;
+      let previous = identity.baseline,
+        logs = "",
+        partial = null;
       while (true) {
-        let logs = null;
+        // The decision may use only a snapshot whose read starts at or after
+        // the fixed deadline. A large pre-deadline snapshot can take long
+        // enough to parse past the boundary while a queued record is pending.
+        const sampledAt = performance.now();
+        const current = ordinarySnapshot();
+        requireLive(
+          current.generation === identity.baseline.generation &&
+            current.evicted === false &&
+            current.text.startsWith(previous.text),
+          "SQL_NATIVE_LOG_CHANGED",
+        );
+        previous = current;
         try {
-          logs = normalizeNativeLogs(await readLogs(request), {
-            application: request.application,
-            ...identities.get(request.application),
-          });
+          logs = normalizeNativeLogs(
+            current.text.slice(identity.baseline.text.length),
+            {
+              application: request.application,
+              user: identity.user,
+              database: identity.database,
+            },
+          );
+          correlatedSqlState(logs, request.application);
+          partial = null;
         } catch (error) {
-          invalid = error;
-          if (error?.code !== "SQL_NATIVE_LOG_PARTIAL") tainted = true;
+          if (error?.code !== "SQL_NATIVE_LOG_PARTIAL") throw error;
+          partial = error;
         }
-        if (
-          logs !== null &&
-          !tainted &&
-          correlatedSqlState(logs, request.application)
-        )
-          return logs;
-        if (performance.now() >= deadline) {
-          if (tainted || logs === null) throw invalid;
+        if (sampledAt >= deadline) {
+          if (partial) throw partial;
           return logs;
         }
-        await delay(10);
+        const remaining = deadline - performance.now();
+        await delay(remaining > 0 ? Math.min(10, Math.max(1, remaining)) : 1);
       }
     },
     launchClient(args, processOptions) {
@@ -263,10 +298,26 @@ export function createNativePsqlExecutor({
           launchOwner && identities.size < 256 && !identities.has(application),
           "SQL_NATIVE_LOG_IDENTITY_BOUND",
         );
-        identities.set(application, {
+        let baseline = proof?.before ?? null,
+          baselineError = null;
+        if (!proof)
+          try {
+            baseline = ordinarySnapshot();
+          } catch (error) {
+            // A successful client needs no server error evidence. Preserve the
+            // failure and enforce it only if a nonzero result requests logs.
+            baselineError = error;
+          }
+        const identity = {
           user: processOptions.env.PGUSER,
           database: processOptions.env.PGDATABASE,
-        });
+          baseline,
+          baselineError,
+          startup: Boolean(proof),
+          closedAt: null,
+          connectionClosed: false,
+        };
+        identities.set(application, identity);
         launchOwner.add(application);
         const child = start({
           ...processOptions,
@@ -280,9 +331,11 @@ export function createNativePsqlExecutor({
             (result) => {
               lastFailure = classifyNativeFailure(result);
               if (result.connectionClosed !== true) unsafeLifetime = true;
+              identity.closedAt = performance.now();
+              identity.connectionClosed = result.connectionClosed === true;
               if (proof) {
                 proof.raw = result;
-                proof.closedAt = performance.now();
+                proof.closedAt = identity.closedAt;
               }
               return result;
             },
@@ -354,11 +407,12 @@ export function createNativePsqlExecutor({
       active === 0 && !unsafeLifetime,
       "SQL_NATIVE_STARTUP_EXCLUSIVE",
     );
-    const proof = { raw: null, closedAt: null };
+    const proof = { raw: null, closedAt: null, before: null };
     startupProof = proof;
     active++;
     try {
       const before = snapshot();
+      proof.before = before;
       // Startup authentication/database permission checks precede application_name.
       // These seven denials require an exclusive, same-postmaster fresh suffix;
       // it never supplies a generic client-stderr or server-log fallback.

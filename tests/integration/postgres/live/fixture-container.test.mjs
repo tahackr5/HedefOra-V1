@@ -1179,7 +1179,7 @@ test("postmaster lifetime may exceed five minutes but stops only after real clos
   assert.equal(server.isRunning(), true);
   assert.equal(seen.executable, `${PG_BIN}/postgres`);
   assert.deepEqual(seen.args, ["-D", "/fixture/primary"]);
-  child.stderr.write("ho_aaaaaaaaaaaaaaaa_1 42501 ERROR: secret\n");
+  child.stderr.write("ho_aaaaaaaaaaaaaaaa_1 42501 ERROR:  42501: secret\n");
   assert.match(server.readLogs(), /42501/);
   assert.equal((await server.stop()).connectionClosed, true);
   assert.equal(server.isRunning(), false);
@@ -1322,18 +1322,23 @@ test("SSL-off witness is socket-only and never plaintext authenticated TCP", asy
   assert.equal(seen.env.PGPORT, "5433");
   assert.equal(seen.env.PGSSLMODE, "disable");
 });
-test("native error waits for independently delivered matching postmaster log", async () => {
+async function runNativeErrorWithLog(renderLog) {
   let logs = "",
     application;
   const executor = createNativePsqlExecutor({
     runId: run().runId,
     passwords: createPrivateRunSecrets().passwords,
     readLogs: async () => logs,
+    logSnapshot: () => ({
+      generation: "7".repeat(32),
+      evicted: false,
+      text: logs,
+    }),
     markOrphanRisk() {},
     start(options) {
       application = options.env.PGAPPNAME;
       setTimeout(() => {
-        logs = `${application} 42501 [fixture:hedefora_app:hedefora_dev] ERROR: synthetic-secret\n`;
+        logs = renderLog(application);
       }, 20);
       return {
         closed: Promise.resolve({
@@ -1347,16 +1352,40 @@ test("native error waits for independently delivered matching postmaster log", a
       };
     },
   });
-  const result = await executor.psql({
+  return executor.psql({
     caseId: "native.late-error",
     role: "app",
     timeoutMs: 1000,
     inputSql: "SELECT 1;",
   });
+}
+test("native error waits for an independently delivered matching verbose postmaster log", async () => {
+  const result = await runNativeErrorWithLog(
+    (application) =>
+      `${application} 42501 [fixture:hedefora_app:hedefora_dev] ERROR:  42501: synthetic-secret\n`,
+  );
   assert.equal(result.origin, "postgres");
   assert.equal(result.sqlState, "42501");
   assert.doesNotMatch(JSON.stringify(result), /synthetic-|23505/);
 });
+for (const [name, renderLog] of [
+  [
+    "missing verbose body state",
+    (application) =>
+      `${application} 42501 [fixture:hedefora_app:hedefora_dev] ERROR: synthetic-secret\n`,
+  ],
+  [
+    "mismatched verbose body state",
+    (application) =>
+      `${application} 42501 [fixture:hedefora_app:hedefora_dev] ERROR:  28P01: synthetic-secret\n`,
+  ],
+])
+  test(`native error rejects ${name} as PostgreSQL evidence`, async () => {
+    const result = await runNativeErrorWithLog(renderLog);
+    assert.equal(result.origin, "channel");
+    assert.equal(result.sqlState, null);
+    assert.doesNotMatch(JSON.stringify(result), /synthetic-|23505/);
+  });
 test("fixed PG configs retain redaction and durable engine semantics", () => {
   assert.match(postgresConfiguration(false), /ssl = on/);
   assert.match(postgresConfiguration(true), /ssl = off/);

@@ -1528,6 +1528,7 @@ export async function runFixtureContainer() {
       ...common,
       negative: true,
       readLogs: async () => servers.get("negative").readLogs(),
+      logSnapshot: () => servers.get("negative").logSnapshot(),
     });
     executors.push(primary, negative);
     async function readiness(

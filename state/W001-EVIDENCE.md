@@ -385,3 +385,250 @@ NOT_RUN. Dar public test marker adlandırma/açıklama değişikliği scanner
 sonucunu geriye dönük değiştirmez; yeni exact tüm gate'ler ayrı koşulacaktır.
 Actual SARIF ve static not_actionable triage kanıtı state/W001-PG17-FIXTURE.md
 içindedir. PR8 DRAFT; main/production mutation yoktur.
+
+## 2026-09-08 — PR #8 owner merge ve exact post-merge gate
+
+Owner-approved head `799630bdad8cde8c784bc3a797731d9186bd96e0`, base
+`aba3d13ed057bbe80a2e67486058180479c3c50e` üzerine ordered two-parent,
+content-identical `df67eb1d2c59009552602a666f352605494587ce` olarak birleşti. Tree
+`c04ce8c0adb6fa9a8ebcb30b3a750f23c6af1857` head ile exact; endpoint diff
+boş. Owner report SHA-256
+`cc24192acda6522bc8b6f1a93884c954c04ab821dc07fba70f69f8cead3f904c`.
+PR merge zamanı `2026-09-08T20:49:42Z`; remote main exact merge, branch
+korundu; admin/squash/rebase/auto/delete yoktur.
+
+CI `34277066786` exact merge için SUCCESS. R-016 job `102232618392` ve
+artifact `10076195679`: 248782 byte, API ve downloaded ZIP SHA-256
+`cb97b0c065f494a1037b3a357cb5447bda7740ebe2843d20a9004bbdc4f5688c`.
+Bounded ZIP validation 488 regular entry, 486 raw artifact, traversal/link/
+collision/CRC error0. Exact Node24.20 Linux strict replay486raw/243process/
+19terminal; 99source+32control Git blob,546pnpm package,16selected Go module;
+hash/size/object/policy verdict mismatch0. Evidence SHA-256
+`4f23d503dd619c1fb4741552623e7ccd62a100f2e55397769e8ec9370aaf4c93`,
+DB seal `9970ee6ba9520611379478e412b76a31ad3552b939d0617061b112c7022fc6a1`.
+Hosted R-016 alt kapısı PASS.
+
+CodeQL `34277063233` dört workflow job'ında SUCCESS; fakat exact merge'de
+HIGH/open alert #5, `js/incomplete-sanitization`,
+`tests/integration/postgres/live/runner.test.mjs:1665` vardır. Test-only
+negative mutator reachability triage'ı NOT_ACTIONABLE/high-confidence;
+dismissal/suppression yapılmadı. Overall hosted post-merge security FAIL ve
+`df67eb1` trusted checkpoint değildir. PR #8 head'indeki Dependency Review
+yalnız tarihsel head kanıtıdır, merge SHA adına taşınmaz. T04G başlamadı.
+
+Local post-merge exact Node24.20/pnpm11.24 `ci:check` exit0:825 toplam,
+823PASS/iki mevcut Windows skip; web3/3/coverage100, build/generated/tidy/
+license/audit PASS. İlk yanlış Node24.19 PATH denemesi FAIL korunur. Native
+Go1.26.7 list/build/vet PASS; `go test` Windows Application Control temporary
+executable block nedeniyle FAIL. Isolated Linux attempt-01 yalnız awk harness
+raw2; attempt-02 exact source/isolation/Go/gofmt/mod-verify PASS sonrası
+`go list ./...` sırasında 1201.21s hard timeout. Build/vet/test/race/repolint/
+integration NOT_RUN; receipt
+`ccfac8eea2939098d29b3a7106856757264d3524e8f4e194b264782843b54cda`.
+Owned container ve fresh-clone dirt yokluğu PASS.
+
+Post-merge engine A13 build-command failure, A14 cleanup failure, A15 exact
+source verification 30s timeout ile FAIL; A16 NOT_RUN. Windows bind-mount
+exact snapshot okuması 45–61s olduğundan otomatik retry durduruldu. Eski
+pre-merge A12/approved-head engine PASS sonucu `df67eb1` adına etiketlenmez.
+Docker settings exact original SHA-256
+`df5418998cadef7eab0a0c89e67a54954b2968437e8ad0367c282731f77c6bc0`
+olarak geri yüklendi; iki preserved stale runtime directory grubu recoverable,
+silinmedi. DEC-031 expiry `2026-09-10T06:30:10Z`, max20m/run ve Grype FAIL
+değişmez; R-026 production block korunur.
+
+## 2026-09-09 — CodeQL alert #5 source remediation
+
+Commit `4d62c24c7ebf6a9e5cdfd9a5dca26b751d1caf86`, tree
+`cf89b55096ad84a23aa23ca7dfb94ce2e09cbd25`, parent exact `df67eb1`; yalnız
+`tests/integration/postgres/live/runner.test.mjs`, +13/-1. Generic first
+bracket replacement yerine exact identity closing delimiter'ını bulan ve
+yalnız structural `]` byte'ını slice eden test helper'ı kullanılır. Body'deki
+başka closing bracket'ın korunduğu regression eklendi; production runtime,
+policy, scanner, threshold ve dismissal değişmedi.
+
+Focused pinned Node24.20 test132/132 PASS, Prettier ve diff check PASS.
+Frozen install PASS. İlk full-gate girişinde canonical Go PATH eksikliği,
+sonraki iki girişte lifecycle'ın Node24.19 fallback seçmesi ayrı FAIL olarak
+korunur. Exact Node24.20.0/pnpm11.24.0/Go1.26.7 shim doğrulaması ardından
+`pnpm ci:check` exit0:826 toplam,824PASS/iki mevcut Windows skip; web3/3,
+coverage100, build/generated/go-mod/license/audit PASS. Final evidence/
+ownership seal, exact local R-016, fresh security/cold, hosted CI/trusted
+R-016/Dependency Review/CodeQL ve yeni exact-head owner merge gate'i NOT_RUN.
+PR #8 owner onayı bu remediation merge'ini kapsamaz. Production/deployment/
+SSH/DNS/secret mutation yoktur; trusted/task-phase base hâlâ `aba3d13`.
+
+## 2026-09-09 — PR #9 S1 hosted evidence, review FAIL ve S2
+
+S1 `7545583cf1d88a6e7604ce23b431f7ea4145b09f` hosted CI
+`34287282561` ve trusted PR `34287323088` SUCCESS; Dependency Review ve
+hosted Linux Go race PASS. CodeQL `34287321357`, exact
+`refs/pull/9/head`: Actions/Go/JavaScript-TypeScript/Python
+`results_count=0`, PR/head ve branch ref açık alert `0`. Main alert #5 yalnız
+`df67eb1` ref'inde merge'e kadar açık; dismissal/suppression yoktur.
+
+Push R-016 artifact `10080010444`, 248802 byte, ZIP SHA-256
+`d269f19e47f1913a26b76cd68a8565c0129bc7e6f8a92ab04723cf2ed7084624`,
+evidence SHA-256
+`16d43242d2b635ee1c45828e110cca8c25580c60b4b73439f018ba5243b98c98`, DB
+seal `21e89d877179c1a54b5ffb9e2fe562119ee5f8488279019b574dcf547f27af25`,
+486 raw. Trusted artifact `10080032714`, 279361 byte, ZIP SHA-256
+`cbc61f5f07064ec1e417e4fc119499cdc39e975728e3662b580bb9df9d45aacd`,
+evidence SHA-256
+`e602a8bb4b4d13d7389ba6806629dba21d4f4fd285cc8ed844d61866892e5776`, DB
+seal `b5c089b606ee91cb431e47424d116ab42788c4629a3c31a0373aa4851819e2a4`,
+516 raw. Bounded ZIP safety, exact file set, SHA-256/size, process linkage,
+terminal PASS, policy verdict ve DB seal bağımsız replay mismatch `0`.
+
+S1 local pinned Node24.20/pnpm11.24/Go1.26.7 `ci:check` exit0:826 toplam,
+824PASS/iki mevcut Windows skip; web3/3/coverage100 ve build/generated/
+go-mod/license/audit PASS. Native Go gofmt/mod/list/build/vet/test PASS;
+Windows cgo gereksinimli race yerine hosted Linux race kanıtı ayrı tutulur.
+Local R-016 `20260908T224431206Z-32448-7841339c` ve
+`20260908T224459723Z-37708-cf25506a` yanlış repository full-name nedeniyle
+acquisition öncesi fail-closed. Doğru-env
+`20260908T224527112Z-35472-ff232ce7`, 394 raw sonrası S1 review FAIL üzerine
+bilinçli durduruldu; evidence/finalization yok, PASS değildir ve orphan
+container/process kalmadı.
+
+Fresh security ile cold review ortak F-01 verdi: target application'ın
+`ERROR/FATAL/PANIC` satırında verbose body SQLSTATE bulunması ve prefix state
+ile eşitliği sözleşmesel zorunlulukken common korelatör yalnız prefix'i kabul
+ediyordu. Missing body veya prefix `42501`/body `28P01` probe'u yanlış
+`42501/origin=postgres` üretti. MEDIUM, HIGH-confidence, CWE-20; production
+runtime etkisi değil, PG acceptance oracle false-PASS riskidir. Açık
+`df67eb1` tabanında pre-existing olduğundan S1 CodeQL5 düzeltmesini geri
+almaz, fakat S1 overall/release verdict'ini FAIL yapar.
+
+S2 `758b86ba38db0c3172dafb2540f6d7c33f74df76`, tree
+`97b86c17c43a2711fefe16d47a27cb62be320efc`, parent S1; yalnız
+`process.mjs`, `runner.test.mjs`, `fixture-container.test.mjs`, +86/-19.
+Exact verbose body state prefix ile eşit değilse/missing ise veya geçerli
+kanıta malformed target severe satır eşlik ederse sonuç fail-closed olur;
+unrelated app ile NOTICE/WARNING ayrımı ve gerçek ambiguity korunur. Exact
+Node24.20 iki-file suite322/322, focused9/9, Prettier ve diff check exit0.
+Yeni state/ownership seal ve S2'ye bağlı full-tree/local R-016/PG engine/
+hosted/fresh reviews NOT_RUN. PR #8 onayı yeni PR #9 head'ini kapsamaz;
+trusted base `aba3d13`, T04G PENDING ve production/deployment yetkisi yoktur.
+
+### S2 temporal pre-seal finding ve `393e32b` remediation
+
+Read-only pre-seal review exact S2 `758b86ba38db0c3172dafb2540f6d7c33f74df76`
+üzerinde ek F-01 varyantı buldu. Native log polling yalnız normalizer
+exception'ını sticky taint yapıyordu; `correlatedSqlState` missing/mismatch
+için `null` döndürdüğünden malformed line sonraki snapshot'ta kaybolup valid
+line geldiğinde kanıt kabul edilebiliyordu. Exact Node24.20 reproduction:
+prefix `42501`/body `28P01`, 40 ms sonra valid `42501/42501`; actual sonuç
+`origin=postgres`, `sqlState=42501`. S2 FAIL ve merge adayı değildir.
+
+Source commit `393e32b9082040aa654a4abe0c97eec89b50bb7a`, tree
+`1133bf59f7da0dc81cf000a8a7b1656995850b65`, parent S2; yalnız
+`process.mjs` ve `runner.test.mjs`, +43/-31. Malformed canonical syntax,
+prefix/body inequality veya severe `00000` artık `SQLSTATE_INVALID` typed
+terminal error'dır; no-evidence `null`, unrelated/non-severe ignore,
+partial-tail retry ve ambiguity korunur. Native missing/mismatch + valid
+satırın hem kaldığı hem kaybolduğu regression matrisi public channel/null
+sonucunu doğrular. Exact Node24.20.0 iki-file suite `326/326`; failed, skipped
+ve pending test sayıları `0`. Prettier ve diff check exit `0`. State
+promotion/seal ve bütün exact
+local/engine/hosted/security/cold kapıları henüz NOT_RUN'dır.
+
+### S4 full-tree marker FAIL ve dar state düzeltmesi
+
+İlk JSON-only seal S4 `804c877958f8e1825d6cfa8b9387a22a580d818a`, tree
+`eadb3fcb0629b92b543fcca7eaf7cfb03dcaa2cc`. Canonical ownership/repolint
+106-task zinciri `bde560f → ac23d98` continuous ve bir trailing JSON path ile
+S4'e erişerek PASS oldu. İlk `ci:check` girişi nested lifecycle'ın fallback
+Node24.19 seçmesiyle testlerden önce FAIL; doğru shim PATH ile ikinci girişte
+repository 834 test/832 PASS/iki mevcut Windows skip, web3/3/coverage100,
+build/generated ve go-mod kontrolleri PASS oldu. Ardından work-marker gate bu
+dosyadaki test sonucu anlatımında geçen yasak işaret sözcüğünü satır 531'de
+yakaladı ve overall exit `1` verdi. S4 full-tree PASS değildir.
+
+Bu düzeltme yalnız söz konusu anlatımı işaret taşımayan eşdeğer metne çevirir
+ve başarısız koşumu kaydeder; source/runtime/policy/test expectation değişmez.
+Yeni state commit ve JSON-only seal sonrasında bütün exact kapılar yeniden
+koşulacaktır. Başarılı alt adımlar yeni seal adına taşınmaz.
+
+## 2026-09-09 — S5 kapıları, delayed-evidence FAIL ve `e0e0132` remediation
+
+S5 `dbd52ad9dbc9899b954db0ceb5082a024b0543d4`, tree
+`cddba11f3904277447f0881aa49bb12da96f9624`, exact PR #9 head'idir. CI
+`34293730275` içindeki quality `102285692602` ve R-016 `102285692612`;
+trusted run `34293730907` içindeki Dependency Review `102285690965` ve R-016
+`102285690966` SUCCESS oldu. CodeQL `34293730446` Actions `1744765883`, Go
+`1744766911`, Python `1744766626` ve JavaScript/TypeScript `1744767546`
+analizlerinin her birinde result `0`/error empty verdi; PR/head ve branch açık
+alert listeleri boştur.
+
+Push artifact `10082370198`, 248795 byte, API/ZIP SHA-256
+`5bf060b848bf019c20034f7ec418b4ca52dad073d0e1158e735be95fc6aa02a4`;
+evidence SHA-256
+`a03362820283b703ac25fe2c9458549bed4a7bc0391453993c9d79d659836563`, DB
+seal `1f38a00bce7ab246a224a478ac6e2e3a140aa0de135c351d26915685f7ee0654`,
+486 raw/243 process/19 terminal. Trusted artifact `10082370086`, 279321 byte,
+API/ZIP SHA-256
+`3b10944a387d1712cb7caac7e9c51e1cad3ffac7597a2660d7e66c3a7e4d9374`;
+evidence SHA-256
+`502e6c7faa4daae0c12233fb1c07b87f056f6dcf0206c7a8225fb9d6332f0b1f`, DB
+seal `4ffb78cdd154e3587c19226c5ec9fc9510ab86a059179d15d2a45866f9682fe7`,
+516 raw/258 process/19 terminal. Exact filesystem/Git-byte/hash/process/
+terminal/DB-seal ve authenticated run/job/artifact replay mismatch `0`.
+
+S5 local R-016 `20260909T000509360Z-26012-3d47a01e`, evidence SHA-256
+`4f1d2e134642388adb4330041dd2406139f1f0b373465216107ecef62a15ebea`,
+`PROCESS-OSV-DATABASE-ZIP-VALIDATION` aşamasında 600541 ms timeout ve SIGKILL
+ile exit `21` verdi. Tek isolated retry
+`20260909T002533804Z-32464-fb473dae`, evidence SHA-256
+`a3688f5d15456a41733718bf6ee4ab82cdb62245c352d44a389ba627cc64edf8`,
+aynı aşamada 600481 ms timeout/SIGKILL ve exit `21` verdi. Her ikisinde 396
+raw/198 process/3 terminal strict replay mismatch `0`; DB seal oluşmadı ve
+owned container final count `0`. 214764348-byte/228844-entry güncel OSV
+npm archive'i Windows-Docker bind I/O hattında ilerlemedi; timeout, threshold
+ve controller değiştirilmedi, üçüncü aynı-yol retry yapılmadı.
+
+Maddi olarak farklı WSL UNC feasibility probe'u
+`\\wsl.localhost\Ubuntu-24.04\tmp\hedefora-r016-unc-probe-qktGT1Aa` üzerinde
+Windows Node24.20 temp/mkdtemp/realpath ve 33-byte fixture hash parity'sini
+PASS yaptı. Pinned Go image'in ağsız/read-only/cap-dropALL bind denemesi ise
+487 ms'de exit `127`: Docker Desktop distro service socket'i
+`/run/guest-services/distro-services/ubuntu-24-04.sock` yoktu. Distro liveness
+keeper'ı R-016 sözleşmesinde mühürlü değildir; WSL-created hardlink ve
+directory-child link sınırı da canonical mount guard için yeterli değildir.
+Full UNC R-016 çalıştırılmadı; temp/keeper/container cleanup tamamlandı ve
+Docker Desktop ayarı değiştirilmedi. Sonuç FAIL/NO-GO'dur.
+
+Fresh security S5-A08-01, ordinary native log poll'ün close sonrası sabit 500
+ms pencereyi tamamlamadan ilk geçerli SQLSTATE'te dönüp gecikmiş malformed,
+missing-body, mismatched-body, `00000` veya distinct-valid severe satırı
+kaçırabildiğini gösterdi. ERROR/FATAL/PANIC × beş varyantın 15/15'i yanlış
+`origin=postgres/sqlState=42501` üretti: MEDIUM, HIGH-confidence,
+CWE-367/CWE-20. Production yolu değil, fixture acceptance oracle false-PASS
+riskidir; S5 overall FAIL ve merge adayı değildir.
+
+Source remediation `e0e01321f2070b325348952c4d56be374848942c`, tree
+`e3dd8c1cc52983f4a3a6202e8c20b23b0bce5298`, parent S5; exact beş path,
++260/-36. Ordinary nonzero istem pre-launch generation/eviction snapshot'ına
+bağlanır; close+500ms boyunca append-only suffix taranır. İlk valid kayıt aday
+kalır; malformed/ambiguity/generation/eviction/non-monotonic replacement
+terminal fail-closed'dur. Review sırasında bulunan sub-ms final-snapshot
+CWE-367 LOW/HIGH-confidence varyantı da yalnız deadline sonrasında başlatılan
+snapshot'ın karar verebilmesi ve pre-deadline parse sınırı aşarsa mandatory
+yield/resnapshot ile CLOSED oldu.
+
+Exact Node24.20 iki-file `364/364`, broad PostgreSQL `653/653`, root
+PostgreSQL `26/26`; 30 delayed-invalid/disappearance, 15 late-450ms ve
+120441-byte/499.6ms boundary matrisleri PASS. Source-level security re-review
+PASS. Dirty çalışma ağacındaki ilk `ci:check`, repository `871` test/869 PASS/
+iki mevcut Windows skip ve build sonrasında beş modified runtime path'ini
+`invalid-runtime-index-entry` ile doğru biçimde reddetti; overall exit `1`
+korunur. Commitli exact source üzerinde `ci:check` exit `0`: repository `872`
+test/870 PASS/iki skip, web `3/3`, coverage %100, build/generated/go-mod/
+work-marker/license/audit PASS. Pinned Go1.26.7 gofmt/build/vet/shuffle test
+exit `0`; Windows `CGO_ENABLED=0` olduğundan race sonucu üretilmedi.
+
+Bu source commit final state/ownership seal değildir. Gerçek PG engine, exact
+sealed-head local R-016, hosted CI/trusted R-016/Dependency Review/CodeQL,
+fresh final security/cold ve yeni exact-head owner merge gate'i beklenir.
+Trusted/task-phase base `aba3d13`, T04G PENDING; DEC-031 expiry/max20m,
+Grype FAIL, R-026 ve production/deployment yasağı değişmez.

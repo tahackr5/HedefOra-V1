@@ -543,3 +543,121 @@ Sonraki source/seal için A12 engine, clean-clone full-tree/R016, hosted
 push+trusted ve fresh security/cold ayrı artifact'larla doğrulanır. A11
 PASS yeni SHA'ya taşınmaz. PR8 DRAFT bu kapılar bitmeden kaldırılmaz; owner
 exact-head merge ve post-merge full-tree hâlâ sonraki yetki eşiğidir.
+
+## PR #8 merge sonrası A13–A16 ayrımı — 2026-09-08
+
+Pre-merge exact approved head `799630bdad8cde8c784bc3a797731d9186bd96e0`
+owner gate'inden sonra PR #8, `df67eb1d2c59009552602a666f352605494587ce`
+olarak ordered two-parent/content-identical birleşti. Merge tree exact
+`c04ce8c0adb6fa9a8ebcb30b3a750f23c6af1857`. Yeni SHA için eski A12 engine
+PASS yeniden etiketlenmedi; canonical post-merge koşumlar ayrı tutuldu.
+
+- A13, `FIXTURE_BUILD_DOCKER_COMMAND` aşamasında container oluşmadan FAIL.
+- A14, `FIXTURE_BUILD_CLEANUP_COMMAND` aşamasında FAIL; owned leftover yok.
+- A15 builder create/start ve Node version sonrasında exact `/source`
+  verifier 30 saniyeyi aştı; builder kill/remove edildi ve absence doğrulandı.
+- A16 config hazırlanmış olsa da kesinlikle çalıştırılmadı: `NOT_RUN`.
+
+Aynı public 259-file/2,756,510-byte snapshot'ın Windows Docker bind-mount
+okuması bağımsız olarak 45–61 saniye sürdü; engine'in immutable 30 saniye
+source-verifier bütçesi aşılır. Eşik veya verifier değiştirilmedi ve yeni
+otomatik retry yapılmadı. WSL integration diagnostic'i sonrası Docker Desktop
+settings original SHA-256
+`df5418998cadef7eab0a0c89e67a54954b2968437e8ad0367c282731f77c6bc0`
+byte'ına döndü. Recovery sırasında silme yapılmadı; şu host diagnostics
+recoverable olarak korundu:
+
+- `C:\Users\ihsan\AppData\Local\Docker\run.stale-20260908T214436Z`
+- `C:\Users\ihsan\AppData\Local\docker-secrets-engine.stale-20260908T215027Z`
+- `C:\Users\ihsan\AppData\Local\Docker\run.stale-20260908T215233Z`
+- `C:\Users\ihsan\AppData\Local\docker-secrets-engine.stale-20260908T215233Z`
+
+Docker 29.7.2 Linux/amd64 yeniden çalışır durumda, running container0 ve
+mevcut iki stopped container korunmuştur. Bu platform diagnostic'i A13-A15'i
+PASS yapmaz; A16 NOT_RUN değişmez. Hosted CI/R-016 PASS olsa da exact merge
+CodeQL HIGH/open alert #5 nedeniyle overall security FAIL ve `df67eb1`
+untrusted kaldı. Test-only triage scanner sonucunu değiştirmez; dismissal,
+suppression, production/image/PG mutation yoktur. Dar source remediation
+`4d62c24c7ebf6a9e5cdfd9a5dca26b751d1caf86` yeni exact seal/hosted/review ve
+owner gate'i bekler. DEC-031 expiry `2026-09-10T06:30:10Z`, max20m/run,
+Grype FAIL ve R-026 production block korunur; T04G PENDING.
+
+## PR #9 S1 evidence-integrity FAIL ve S2 — 2026-09-09
+
+CodeQL #5 için ilk final seal S1
+`7545583cf1d88a6e7604ce23b431f7ea4145b09f` hosted CI/trusted/Dependency
+Review ve dört dilli CodeQL kapılarını geçti; iki hosted R-016 artifact'ının
+strict replay'i de PASS oldu. Buna rağmen fresh security ve cold review,
+ordinary native log korelatörünün verbose body SQLSTATE'i prefix ile
+eşleştirmediğini doğruladı. Eksik veya çelişkili body state'in
+`origin=postgres` kanıtı üretebilmesi fixture acceptance oracle'ında false
+PASS riski yarattığı için S1 overall FAIL ve merge edilemezdir. Local R-016
+iki yanlış repository identity girişinde acquisition öncesi fail-closed;
+doğru üçüncü giriş review FAIL sonrası finalization'dan önce durduruldu ve
+PASS değildir.
+
+S2 `758b86ba38db0c3172dafb2540f6d7c33f74df76`, tree
+`97b86c17c43a2711fefe16d47a27cb62be320efc`, yalnız common correlator ve iki
+test dosyasında exact verbose prefix/body equality zorunluluğu ile
+missing/mismatch/valid+malformed fail-closed regresyonlarını ekler. Exact Node
+24.20.0 `runner.test.mjs + fixture-container.test.mjs` `322/322`, focused
+regression `9/9`, Prettier/diff check PASS. Gerçek PG17 engine dahil tüm final
+exact-head kapıları yeni ownership seal sonrasında yeniden koşacaktır; A12,
+A13-A15 veya S1 kanıtı S2 adına etiketlenmez. DEC-031 expiry
+`2026-09-10T06:30:10Z`, max 20 dakika/run, Grype FAIL, R-026 production block
+ve no-deployment sınırı değişmez.
+
+### S2 temporal review FAIL ve `393e32b` source head
+
+S2 pre-seal exact probe, native polling'in malformed missing/mismatched body
+state'i yalnız o snapshot için `null` yaptığını; satır kaybolup valid satır
+geldiğinde `origin=postgres/42501` kabul edebildiğini gösterdi. Bu nedenle S2
+temporal fail-closed şartında FAIL ve merge adayı değildir.
+
+`393e32b9082040aa654a4abe0c97eec89b50bb7a`, tree
+`1133bf59f7da0dc81cf000a8a7b1656995850b65`, common korelatörde malformed,
+prefix/body mismatch ve `00000` target severe kanıtını typed terminal error
+yapar; psql core dışarı yalnız channel/null verir. Disappearing missing/
+mismatch matrisini içeren exact Node24.20 iki-file suite `326/326`, format ve
+diff check PASS. Yeni seal, gerçek engine ve tüm exact gate'ler yeniden
+koşulmadan fixture admission PASS değildir; DEC-031/R-026/Grype ve
+no-deployment sınırları değişmez.
+
+## S5 hosted/local ayrımı ve delayed-log remediation — 2026-09-09
+
+S5 `dbd52ad9dbc9899b954db0ceb5082a024b0543d4`, tree
+`cddba11f3904277447f0881aa49bb12da96f9624`, hosted CI `34293730275`,
+trusted `34293730907`, Dependency Review ve CodeQL `34293730446` üzerinde
+PASS oldu. Push/trusted R-016 artifacts `10082370198`/486 raw ve
+`10082370086`/516 raw strict replay mismatch `0` verdi. Bunlar hosted alt
+kapılarıdır; S5 için gerçek engine PASS veya overall release PASS değildir.
+
+S5 local R-016 koşumları `20260909T000509360Z-26012-3d47a01e` ve
+`20260909T002533804Z-32464-fb473dae`, `PROCESS-OSV-DATABASE-ZIP-VALIDATION`
+aşamasında sırasıyla 600541 ve 600481 ms timeout/SIGKILL ile exit `21` verdi.
+Her FAIL evidence strict replay'de 396 raw/198 process/3 terminal ve mismatch
+`0`; container absence PASS. Aynı yolu üçüncü kez çalıştırmak yerine bounded
+WSL UNC probe yapıldı. Node temp/mkdtemp/hash parity PASS olsa da Docker bind,
+eksik distro-service socket nedeniyle exit `127`/NO-GO oldu; keeper ve
+hardlink/recursive-link sınırları da canonical R-016 sözleşmesinde mühürlü
+değildir. Full UNC R-016 çalıştırılmadı, dış ayar değiştirilmedi ve cleanup
+tamamlandı.
+
+Fresh security S5-A08-01 ordinary native log poll'un ilk geçerli SQLSTATE'te
+sabit close+500ms penceresi dolmadan döndüğünü doğruladı. Gecikmiş malformed,
+missing/mismatched body, `00000` veya farklı geçerli state taşıyan
+ERROR/FATAL/PANIC matrisi 15/15 yanlış `postgres/42501` verdi;
+MEDIUM/HIGH-confidence CWE-367/CWE-20 ve S5 overall FAIL'dir.
+
+Source remediation `e0e01321f2070b325348952c4d56be374848942c`, tree
+`e3dd8c1cc52983f4a3a6202e8c20b23b0bce5298`, pre-launch generation/eviction
+snapshot'ı, append-only suffix zinciri ve tam close+500ms settling window
+uygular. Review sırasında bulunan sub-ms final-snapshot yarışı da yalnız
+deadline sonrasında başlayan snapshot'ın karar verebilmesi ve zorunlu
+yield/resnapshot ile kapandı. Exact Node iki-file `364/364`, broad PostgreSQL
+`653/653`, root PostgreSQL `26/26`, clean source-tree `ci:check` 872 total/870
+PASS/iki Windows skip ve pinned Go build/vet/shuffle PASS; source security
+re-review PASS. Final ownership seal, exact engine, local R-016, hosted ve
+fresh cold/release kapıları henüz bu yeni head için çalıştırılmadı. A13-A16
+ve diğer tarihsel FAIL/NOT_RUN kayıtları değişmez; DEC-031 expiry/max20m,
+Grype FAIL, R-026 ve no-production/no-deployment sınırı korunur.
